@@ -158,11 +158,7 @@ pub fn try_cast_ref<A: Pod, B: Pod>(a: &A) -> Result<&B, PodCastError> {
   if align_of::<B>() > align_of::<A>() && (a as *const A as usize) % align_of::<B>() != 0 {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else if size_of::<B>() == size_of::<A>() {
-    Ok(unsafe {
-      (a as *const A as *const B)
-        .as_ref()
-        .unwrap_or_else(|| core::hint::unreachable_unchecked())
-    })
+    Ok(unsafe { &*(a as *const A as *const B) })
   } else {
     Err(PodCastError::SizeMismatch)
   }
