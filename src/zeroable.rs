@@ -14,6 +14,7 @@ pub unsafe trait Zeroable: Sized {
   /// This is a trait method so that you can write `MyType::zeroed()` in your
   /// code. It is a contract of this trait that if you implement it on your type
   /// you **must not** override this method.
+  #[inline]
   fn zeroed() -> Self {
     unsafe { core::mem::zeroed() }
   }
