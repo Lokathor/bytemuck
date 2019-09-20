@@ -62,6 +62,9 @@ pub enum PodCastError {
   /// When casting an individual `T`, `&T`, or `&mut T` value the source size
   /// and destination size must be an exact match.
   SizeMismatch,
+  /// For this type of cast the alignments must be exactly the same and they
+  /// were not so now you're sad.
+  AlignmentMismatch,
 }
 
 /// Cast `T` into `U`
