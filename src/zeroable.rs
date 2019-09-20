@@ -35,6 +35,7 @@ unsafe impl Zeroable for u128 {}
 unsafe impl Zeroable for i128 {}
 unsafe impl Zeroable for f32 {}
 unsafe impl Zeroable for f64 {}
+unsafe impl<T: Zeroable> Zeroable for Wrapping<T> {}
 
 unsafe impl Zeroable for Option<NonZeroI8> {}
 unsafe impl Zeroable for Option<NonZeroI16> {}
@@ -52,70 +53,35 @@ unsafe impl Zeroable for Option<NonZeroUsize> {}
 unsafe impl<T> Zeroable for *mut T {}
 unsafe impl<T> Zeroable for *const T {}
 unsafe impl<T> Zeroable for Option<NonNull<T>> {}
-unsafe impl<T> Zeroable for PhantomData<T> where T: Zeroable {}
+unsafe impl<T: Zeroable> Zeroable for PhantomData<T> {}
+unsafe impl<T: Zeroable> Zeroable for ManuallyDrop<T> {}
 
-unsafe impl<A> Zeroable for (A,) where A: Zeroable {}
-unsafe impl<A, B> Zeroable for (A, B)
-where
-  A: Zeroable,
-  B: Zeroable,
+unsafe impl<A: Zeroable> Zeroable for (A,) {}
+unsafe impl<A: Zeroable, B: Zeroable> Zeroable for (A, B) {}
+unsafe impl<A: Zeroable, B: Zeroable, C: Zeroable> Zeroable for (A, B, C) {}
+unsafe impl<A: Zeroable, B: Zeroable, C: Zeroable, D: Zeroable> Zeroable for (A, B, C, D) {}
+unsafe impl<A: Zeroable, B: Zeroable, C: Zeroable, D: Zeroable, E: Zeroable> Zeroable
+  for (A, B, C, D, E)
 {
 }
-unsafe impl<A, B, C> Zeroable for (A, B, C)
-where
-  A: Zeroable,
-  B: Zeroable,
-  C: Zeroable,
+unsafe impl<A: Zeroable, B: Zeroable, C: Zeroable, D: Zeroable, E: Zeroable, F: Zeroable> Zeroable
+  for (A, B, C, D, E, F)
 {
 }
-unsafe impl<A, B, C, D> Zeroable for (A, B, C, D)
-where
-  A: Zeroable,
-  B: Zeroable,
-  C: Zeroable,
-  D: Zeroable,
+unsafe impl<A: Zeroable, B: Zeroable, C: Zeroable, D: Zeroable, E: Zeroable, F: Zeroable, G: Zeroable>
+  Zeroable for (A, B, C, D, E, F, G)
 {
 }
-unsafe impl<A, B, C, D, E> Zeroable for (A, B, C, D, E)
-where
-  A: Zeroable,
-  B: Zeroable,
-  C: Zeroable,
-  D: Zeroable,
-  E: Zeroable,
-{
-}
-unsafe impl<A, B, C, D, E, F> Zeroable for (A, B, C, D, E, F)
-where
-  A: Zeroable,
-  B: Zeroable,
-  C: Zeroable,
-  D: Zeroable,
-  E: Zeroable,
-  F: Zeroable,
-{
-}
-unsafe impl<A, B, C, D, E, F, G> Zeroable for (A, B, C, D, E, F, G)
-where
-  A: Zeroable,
-  B: Zeroable,
-  C: Zeroable,
-  D: Zeroable,
-  E: Zeroable,
-  F: Zeroable,
-  G: Zeroable,
-{
-}
-unsafe impl<A, B, C, D, E, F, G, H> Zeroable for (A, B, C, D, E, F, G, H)
-where
-  A: Zeroable,
-  B: Zeroable,
-  C: Zeroable,
-  D: Zeroable,
-  E: Zeroable,
-  F: Zeroable,
-  G: Zeroable,
-  H: Zeroable,
+unsafe impl<
+    A: Zeroable,
+    B: Zeroable,
+    C: Zeroable,
+    D: Zeroable,
+    E: Zeroable,
+    F: Zeroable,
+    G: Zeroable,
+    H: Zeroable,
+  > Zeroable for (A, B, C, D, E, F, G, H)
 {
 }
 
