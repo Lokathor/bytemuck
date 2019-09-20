@@ -42,6 +42,9 @@ pub fn try_cast_box<A: Pod, B: Pod>(input: Box<A>) -> Result<Box<B>, (PodCastErr
 /// large boxes without fear of a stack overflow.
 #[inline]
 pub fn try_zeroed_box<T: Zeroable>() -> Result<Box<T>, ()> {
+  if size_of::<T>() == 0 {
+    return Err(());
+  }
   let layout = Layout::from_size_align(size_of::<T>(), align_of::<T>()).unwrap();
   let ptr = unsafe { alloc_zeroed(layout) };
   if ptr.is_null() {
