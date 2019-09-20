@@ -99,7 +99,7 @@ pub fn try_cast_vec<A: Pod, B: Pod>(input: Vec<A>) -> Result<Vec<B>, (PodCastErr
     // Note(Lokathor): Finally, we carefully get the pointer we need, cast the
     // type, and then make a new Vec to return. This works all the way back to
     // 1.7, if you're on 1.37 or later you can use `Vec::as_mut_ptr` directly.
-    let vec_ptr: *mut A = Vec::as_mut_slice(&mut manual_drop_vec).as_mut_ptr();
+    let vec_ptr: *mut A = Vec::as_mut_slice(&mut *manual_drop_vec).as_mut_ptr();
     let ptr: *mut B = vec_ptr as *mut B;
     Ok(unsafe { Vec::from_raw_parts(ptr, length, capacity) })
   }
