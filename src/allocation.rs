@@ -48,7 +48,7 @@ pub fn try_zeroed_box<T: Zeroable>() -> Result<Box<T>, ()> {
     // we don't know what the error is because `alloc_zeroed` is a dumb API
     Err(())
   } else {
-    Box::<T>::from_raw(ptr as *mut T)
+    Ok(Box::<T>::from_raw(ptr as *mut T))
   }
 }
 
