@@ -50,17 +50,13 @@ pub enum PodCastError {
   /// You tried to cast a slice to an element type with a higher alignment
   /// requirement but the slice wasn't aligned.
   TargetAlignmentGreaterAndInputNotAligned,
-  /// You tried to cast between a zero-sized type and a non-zero-sized type.
-  /// Because the output slice resizes based on the input and output types, it's
-  /// fairly nonsensical to throw a ZST into the mix. You can go from a ZST to
-  /// another ZST, if you want.
-  CantConvertBetweenZSTAndNonZST,
   /// If the element size changes then the output slice changes length
   /// accordingly. If the output slice wouldn't be a whole number of elements
   /// then the conversion fails.
   OutputSliceWouldHaveSlop,
-  /// When casting an individual `T`, `&T`, or `&mut T` value the source size
-  /// and destination size must be an exact match.
+  /// When casting a slice you can't convert between ZST elements and non-ZST
+  /// elements. When casting an individual `T`, `&T`, or `&mut T` value the
+  /// source size and destination size must be an exact match.
   SizeMismatch,
   /// For this type of cast the alignments must be exactly the same and they
   /// were not so now you're sad.
@@ -217,7 +213,7 @@ pub fn try_cast_slice<A: Pod, B: Pod>(a: &[A]) -> Result<&[B], PodCastError> {
   } else if size_of::<B>() == size_of::<A>() {
     Ok(unsafe { core::slice::from_raw_parts(a.as_ptr() as *const B, a.len()) })
   } else if size_of::<A>() == 0 || size_of::<B>() == 0 {
-    Err(PodCastError::CantConvertBetweenZSTAndNonZST)
+    Err(PodCastError::SizeMismatch)
   } else if core::mem::size_of_val(a) % size_of::<B>() == 0 {
     let new_len = core::mem::size_of_val(a) / size_of::<B>();
     Ok(unsafe { core::slice::from_raw_parts(a.as_ptr() as *const B, new_len) })
@@ -238,7 +234,7 @@ pub fn try_cast_slice_mut<A: Pod, B: Pod>(a: &mut [A]) -> Result<&mut [B], PodCa
   } else if size_of::<B>() == size_of::<A>() {
     Ok(unsafe { core::slice::from_raw_parts_mut(a.as_ptr() as *mut B, a.len()) })
   } else if size_of::<A>() == 0 || size_of::<B>() == 0 {
-    Err(PodCastError::CantConvertBetweenZSTAndNonZST)
+    Err(PodCastError::SizeMismatch)
   } else if core::mem::size_of_val(a) % size_of::<B>() == 0 {
     let new_len = core::mem::size_of_val(a) / size_of::<B>();
     Ok(unsafe { core::slice::from_raw_parts_mut(a.as_ptr() as *mut B, new_len) })
