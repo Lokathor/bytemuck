@@ -18,8 +18,8 @@ use super::*;
 ///   [Infallible](core::convert::Infallible)).
 /// * The type must allow any bit pattern (eg: no `bool` or `char`).
 /// * The type must not contain any padding bytes (eg: no `(u8, u16)`).
-/// * A struct needs to be `repr(C)`, `repr(transparent)` wrapper around a
-///   `Pod` type, or `repr(packed)` with all fields as `Pod` types.
+/// * A struct needs to have all fields be `Pod` and be `repr(C)`,
+///   `repr(transparent)`, or `repr(packed)`.
 pub unsafe trait Pod: Zeroable + Copy + 'static {}
 
 unsafe impl Pod for () {}
