@@ -174,11 +174,7 @@ pub fn try_cast_mut<A: Pod, B: Pod>(a: &mut A) -> Result<&mut B, PodCastError> {
   if align_of::<B>() > align_of::<A>() && (a as *mut A as usize) % align_of::<B>() != 0 {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else if size_of::<B>() == size_of::<A>() {
-    Ok(unsafe {
-      (a as *mut A as *mut B)
-        .as_mut()
-        .unwrap_or_else(|| core::hint::unreachable_unchecked())
-    })
+    Ok(unsafe { &mut *(a as *mut A as *mut B) })
   } else {
     Err(PodCastError::SizeMismatch)
   }
