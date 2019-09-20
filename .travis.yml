@@ -1,0 +1,64 @@
+language: rust
+sudo: false
+git:
+  quiet: true
+
+rust:
+  - 1.36.0
+  - stable
+  - beta
+  - nightly
+
+os:
+  - osx
+  - linux
+  # Technically works, but super slow, so we use AppVeyor
+  #- windows 
+
+branches:
+  only:
+    - staging
+    - trying
+    - master
+    - dev
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - rust: nightly
+  include:
+    # If we wanted to flag on --release mode we'd add a line like this
+    #- { os: linux, rust: 1.36.0,  env: FLAGS=--release }
+
+    - { os: linux, rust: 1.36.0,  env: TARGET=wasm32-unknown-unknown }
+    - { os: linux, rust: 1.36.0,  env: TARGET=wasm32-wasi }
+
+    - { os: linux, rust: 1.36.0,  env: TARGET=aarch64-linux-android }
+    - { os: linux, rust: 1.36.0,  env: TARGET=armv7-linux-androideabi }
+    - { os: linux, rust: 1.36.0,  env: TARGET=i686-linux-android }
+    - { os: linux, rust: 1.36.0,  env: TARGET=x86_64-linux-android }
+
+    - { os: linux, rust: 1.36.0,  env: TARGET=arm-unknown-linux-gnueabihf }
+    - { os: linux, rust: 1.36.0,  env: TARGET=armv7-unknown-linux-gnueabihf }
+    - { os: linux, rust: 1.36.0,  env: TARGET=thumbv7neon-unknown-linux-gnueabihf }
+
+    - { os: osx,   rust: 1.36.0,  env: TARGET=aarch64-apple-ios }
+    - { os: osx,   rust: 1.36.0,  env: TARGET=armv7-apple-ios }
+    - { os: osx,   rust: 1.36.0,  env: TARGET=armv7s-apple-ios }
+    - { os: osx,   rust: 1.36.0,  env: TARGET=i386-apple-ios }
+    - { os: osx,   rust: 1.36.0,  env: TARGET=x86_64-apple-ios }
+
+script:
+  - pushd scripts
+  - ./travis.sh
+  - popd
+
+# Configured so we cache cargo-web for WASM unit testing, otherwise it takes
+# forever (13+ minutes) to compile. See also
+# https://levans.fr/rust_travis_cache.html
+cache:
+  directories:
+    - $TRAVIS_HOME/.cargo/
+    - $TRAVIS_HOME/.rustup/
+before_cache:
+  - rm -rf "$TRAVIS_HOME/.cargo/registry/src"

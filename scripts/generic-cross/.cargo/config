@@ -1,0 +1,16 @@
+# Don't generate CPU mismatch warnings when cross-compiling
+
+[target.arm-unknown-linux-gnueabihf]
+ar     = "arm-linux-gnueabihf-ar"
+linker = "arm-linux-gnueabihf-gcc"
+rustflags = ["-C","target-cpu=generic"]
+
+[target.armv7-unknown-linux-gnueabihf]
+ar     = "arm-linux-gnueabihf-ar"
+linker = "arm-linux-gnueabihf-gcc"
+rustflags = ["-C","target-cpu=generic"]
+
+[target.thumbv7neon-unknown-linux-gnueabihf]
+ar     = "arm-linux-gnueabihf-ar"
+linker = "arm-linux-gnueabihf-gcc"
+rustflags = ["-C","target-cpu=generic"]

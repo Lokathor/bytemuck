@@ -1,0 +1,18 @@
+[package]
+name = "bytemuck"
+description = "A crate for mucking around with piles of bytes."
+version = "0.1.0"
+authors = ["Lokathor <zefria@gmail.com>"]
+repository = "https://github.com/Lokathor/bytemuck"
+readme = "README.md"
+keywords = ["transmute", "bytes", "casting"]
+categories = ["encoding", "no-std"]
+edition = "2018"
+license = "0BSD"
+
+[features]
+extern_crate_alloc = []
+
+[badges]
+appveyor = { repository = "Lokathor/bytemuck" }
+travis-ci = { repository = "Lokathor/bytemuck" }

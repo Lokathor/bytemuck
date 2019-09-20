@@ -1,0 +1,21 @@
+# Android ar/linker/flags config for when building on windows.
+
+[target.aarch64-linux-android]
+ar = "aarch64-linux-android-ar.cmd"
+linker = "aarch64-linux-android21-clang.cmd"
+rustflags = ["-C","target-cpu=generic"]
+
+[target.armv7-linux-androideabi]
+ar = "armv7a-linux-androideabi-ar.cmd"
+linker = "armv7a-linux-androideabi21-clang.cmd"
+rustflags = ["-C","target-cpu=generic"]
+
+[target.i686-linux-android]
+ar = "i686-linux-android-ar.cmd"
+linker = "i686-linux-android21-clang.cmd"
+rustflags = ["-C","target-cpu=generic"]
+
+[target.x86_64-linux-android]
+ar = "x86_64-linux-android-ar.cmd"
+linker = "x86_64-linux-android21-clang.cmd"
+rustflags = ["-C","target-cpu=generic"]

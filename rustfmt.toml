@@ -1,0 +1,7 @@
+error_on_line_overflow = false
+merge_imports = true
+reorder_imports = true
+use_try_shorthand = true
+tab_spaces = 2
+max_width = 100
+color = "Never"
