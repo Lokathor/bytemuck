@@ -1,3 +1,5 @@
+#![no_std]
+
 #[cfg(target_arch = "x86")]
 pub(crate) use core::arch::x86;
 #[cfg(target_arch = "x86_64")]
@@ -10,6 +12,13 @@ macro_rules! impl_unsafe_marker_for_array {
     $(unsafe impl<T> $marker for [T; $n] where T: $marker {})*
   }
 }
+
+#[cfg(feature = "extern_crate_alloc")]
+extern crate alloc;
+#[cfg(feature = "extern_crate_alloc")]
+mod allocation;
+#[cfg(feature = "extern_crate_alloc")]
+pub use allocation::*;
 
 mod zeroable;
 pub use zeroable::*;
