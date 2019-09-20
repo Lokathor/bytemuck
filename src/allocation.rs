@@ -4,8 +4,6 @@ use super::*;
 use alloc::{
   alloc::{alloc_zeroed, Layout},
   boxed::Box,
-  rc::Rc,
-  sync::Arc,
   vec::Vec,
 };
 
@@ -50,7 +48,7 @@ pub fn try_zeroed_box<T: Zeroable>() -> Result<Box<T>, ()> {
     // we don't know what the error is because `alloc_zeroed` is a dumb API
     Err(())
   } else {
-    Box::<T>::from_raw(ptr)
+    Box::<T>::from_raw(ptr as *mut T)
   }
 }
 
