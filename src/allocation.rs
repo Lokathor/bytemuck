@@ -122,7 +122,8 @@ pub fn try_cast_vec<A: Pod, B: Pod>(input: Vec<A>) -> Result<Vec<B>, (PodCastErr
     let capacity: usize = input.capacity();
     // Note(Lokathor): Next we "pre-forget" the old Vec by wrapping with
     // ManuallyDrop, because if we used `core::mem::forget` after taking the
-    // pointer then that would invalidate our pointer.
+    // pointer then that would invalidate our pointer (I think? If not this
+    // still doesn't hurt).
     let mut manual_drop_vec = ManuallyDrop::new(input);
     // Note(Lokathor): Finally, we carefully get the pointer we need, cast the
     // type, and then make a new Vec to return. This works all the way back to
