@@ -2,6 +2,8 @@
 
 use super::*;
 use alloc::{boxed::Box, rc::Rc, sync::Arc, vec::Vec};
+use alloc::alloc::Layout;
+use alloc::alloc::alloc_zeroed;
 
 /// As [`try_cast_box`](try_cast_box), but unwraps for you.
 #[inline]
@@ -29,6 +31,29 @@ pub fn try_cast_box<A: Pod, B: Pod>(input: Box<A>) -> Result<Box<B>, (PodCastErr
     let ptr: *mut B = Box::into_raw(input) as *mut B;
     Ok(unsafe { Box::from_raw(ptr) })
   }
+}
+
+/// Allocates a `Box<T>` with all of the contents being zeroed out.
+///
+/// This is not the same as using `Box::new(T::zeroed())`. With this function
+/// the contents of the box never exists on the stack, so this can create very
+/// large boxes without fear of a stack overflow.
+#[inline]
+pub fn try_zeroed_box<T: Zeroable>() -> Result<Box<T>,()>  {
+  let layout = Layout::from_size_align(size_of::<T>(), align_of::<T>()).unwrap();
+  let ptr = unsafe { alloc_zeroed(layout) };
+  if ptr.is_null() {
+    // we don't know what the error is because `alloc_zeroed` is a dumb API
+    Err(())
+  } else {
+    Box::<T>::from_raw(ptr)
+  }
+}
+
+/// As [`try_zeroed_box`], but unwraps for you.
+#[inline]
+pub fn zeroed_box<T: Zeroable>() -> Box<T>  {
+  try_zeroed_box().unwrap()
 }
 
 /// As [`try_cast_vec`](try_cast_vec), but unwraps for you.
