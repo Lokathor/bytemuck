@@ -1,9 +1,13 @@
 //! Stuff to boost things in the `alloc` crate.
 
 use super::*;
-use alloc::{boxed::Box, rc::Rc, sync::Arc, vec::Vec};
-use alloc::alloc::Layout;
-use alloc::alloc::alloc_zeroed;
+use alloc::{
+  alloc::{alloc_zeroed, Layout},
+  boxed::Box,
+  rc::Rc,
+  sync::Arc,
+  vec::Vec,
+};
 
 /// As [`try_cast_box`](try_cast_box), but unwraps for you.
 #[inline]
@@ -39,7 +43,7 @@ pub fn try_cast_box<A: Pod, B: Pod>(input: Box<A>) -> Result<Box<B>, (PodCastErr
 /// the contents of the box never exists on the stack, so this can create very
 /// large boxes without fear of a stack overflow.
 #[inline]
-pub fn try_zeroed_box<T: Zeroable>() -> Result<Box<T>,()>  {
+pub fn try_zeroed_box<T: Zeroable>() -> Result<Box<T>, ()> {
   let layout = Layout::from_size_align(size_of::<T>(), align_of::<T>()).unwrap();
   let ptr = unsafe { alloc_zeroed(layout) };
   if ptr.is_null() {
@@ -52,7 +56,7 @@ pub fn try_zeroed_box<T: Zeroable>() -> Result<Box<T>,()>  {
 
 /// As [`try_zeroed_box`], but unwraps for you.
 #[inline]
-pub fn zeroed_box<T: Zeroable>() -> Box<T>  {
+pub fn zeroed_box<T: Zeroable>() -> Box<T> {
   try_zeroed_box().unwrap()
 }
 
