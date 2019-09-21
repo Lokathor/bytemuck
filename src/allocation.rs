@@ -1,4 +1,7 @@
 //! Stuff to boost things in the `alloc` crate.
+//!
+//! You must use the crate with the `extern_crate_alloc` feature for the content
+//! in this module to be compiled in!
 
 use super::*;
 use alloc::{

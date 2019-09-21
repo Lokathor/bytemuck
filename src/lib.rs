@@ -16,7 +16,7 @@ macro_rules! impl_unsafe_marker_for_array {
 #[cfg(feature = "extern_crate_alloc")]
 extern crate alloc;
 #[cfg(feature = "extern_crate_alloc")]
-mod allocation;
+pub mod allocation;
 #[cfg(feature = "extern_crate_alloc")]
 pub use allocation::*;
 

@@ -16,3 +16,6 @@ extern_crate_alloc = []
 [badges]
 appveyor = { repository = "Lokathor/bytemuck" }
 travis-ci = { repository = "Lokathor/bytemuck" }
+
+[package.metadata.docs.rs]
+all-features = true
