@@ -40,13 +40,17 @@ pub fn try_cast_box<A: Pod, B: Pod>(input: Box<A>) -> Result<Box<B>, (PodCastErr
 
 /// Allocates a `Box<T>` with all of the contents being zeroed out.
 ///
-/// This is not the same as using `Box::new(T::zeroed())`. With this function
-/// the contents of the box never exists on the stack, so this can create very
-/// large boxes without fear of a stack overflow.
+/// This uses the global allocator to create a zeroed allocation and _then_
+/// turns it into a Box. In other words, it's 100% assured that the zeroed data
+/// won't be put temporarily on the stack. You can make a box of any size
+/// without fear of a stack overflow.
+///
+/// (As a _small_ detail, a zero sized type will box up `T::zeroed()` normally,
+/// but since it's zero sized you still can't overflow the stack with it.)
 #[inline]
 pub fn try_zeroed_box<T: Zeroable>() -> Result<Box<T>, ()> {
   if size_of::<T>() == 0 {
-    return Err(());
+    return Ok(Box::new(T::zeroed()));
   }
   let layout = Layout::from_size_align(size_of::<T>(), align_of::<T>()).unwrap();
   let ptr = unsafe { alloc_zeroed(layout) };
