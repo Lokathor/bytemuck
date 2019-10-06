@@ -56,6 +56,7 @@ unsafe impl<T> Zeroable for *const T {}
 unsafe impl<T> Zeroable for Option<NonNull<T>> {}
 unsafe impl<T: Zeroable> Zeroable for PhantomData<T> {}
 unsafe impl<T: Zeroable> Zeroable for ManuallyDrop<T> {}
+unsafe impl<T> Zeroable for MaybeUninit<T> {}
 
 unsafe impl<A: Zeroable> Zeroable for (A,) {}
 unsafe impl<A: Zeroable, B: Zeroable> Zeroable for (A, B) {}
