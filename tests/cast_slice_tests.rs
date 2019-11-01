@@ -1,6 +1,6 @@
 use core::mem::size_of;
 
-use lokacore::*;
+use bytemuck::*;
 
 #[test]
 fn test_try_cast_slice() {
