@@ -1,4 +1,4 @@
-[![License:0BSD](https://img.shields.io/badge/License-0BSD-brightgreen.svg)](https://opensource.org/licenses/FPL-1.0.0)
+[![License:BlueOak-1.0.0](https://img.shields.io/badge/License-BlueOak_1.0.0-brightgreen.svg)](https://blueoakcouncil.org/license/1.0.0)
 ![Minimum Rust Version](https://img.shields.io/badge/Min%20Rust-1.36-green.svg)
 [![travis.ci](https://travis-ci.org/Lokathor/bytemuck.svg?branch=master)](https://travis-ci.org/Lokathor/bytemuck)
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/hgr4if0snmkmqj88/branch/master?svg=true)](https://ci.appveyor.com/project/Lokathor/bytemuck/branch/master)

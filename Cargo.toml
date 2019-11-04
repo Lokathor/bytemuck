@@ -8,7 +8,7 @@ readme = "README.md"
 keywords = ["transmute", "bytes", "casting"]
 categories = ["encoding", "no-std"]
 edition = "2018"
-license = "0BSD"
+license = "BlueOak-1.0.0"
 
 [package.metadata.docs.rs]
 all-features = true
