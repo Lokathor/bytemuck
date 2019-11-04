@@ -44,9 +44,9 @@ pub fn try_cast_box<A: Pod, B: Pod>(input: Box<A>) -> Result<Box<B>, (PodCastErr
 /// turns it into a Box. In other words, it's 100% assured that the zeroed data
 /// won't be put temporarily on the stack. You can make a box of any size
 /// without fear of a stack overflow.
-/// 
+///
 /// ## Failure
-/// 
+///
 /// This fails if the allocation fails.
 #[inline]
 pub fn try_zeroed_box<T: Zeroable>() -> Result<Box<T>, ()> {

@@ -43,6 +43,7 @@ fn test_try_cast_slice_mut() {
   let u32_slice: &mut [u32] = &mut [4, 5, 6];
   let u32_len = u32_slice.len();
   let u32_ptr = u32_slice.as_ptr();
+
   // the same data as align1
   let the_bytes: &mut [u8] = try_cast_slice_mut(u32_slice).unwrap();
   let the_bytes_len = the_bytes.len();
