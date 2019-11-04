@@ -214,9 +214,9 @@ pub fn try_cast_slice<A: Pod, B: Pod>(a: &[A]) -> Result<&[B], PodCastError> {
   }
 }
 
-/// Try to convert `&mut [T]` into `mut [U]` (possibly with a change in length).
+/// Try to convert `&mut [T]` into `&mut [U]` (possibly with a change in length).
 ///
-/// As [`try_cast_slice`], but `mut`.
+/// As [`try_cast_slice`], but `&mut`.
 #[inline]
 pub fn try_cast_slice_mut<A: Pod, B: Pod>(a: &mut [A]) -> Result<&mut [B], PodCastError> {
   // Note(Lokathor): everything with `align_of` and `size_of` will optimize away
