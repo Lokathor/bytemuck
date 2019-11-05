@@ -136,8 +136,8 @@ pub fn try_cast<A: Pod, B: Pod>(a: A) -> Result<B, PodCastError> {
     let mut b = B::zeroed();
     // Note(Lokathor): We copy in terms of `u8` because that allows us to bypass
     // any potential alignment difficulties.
-    let ap = &a as *const A as *const u8;
-    let bp = &mut b as *mut B as *mut u8;
+    let ap = (&a as *const A).cast::<u8>();
+    let bp = (&mut b as *mut B).cast::<u8>();
     unsafe { ap.copy_to_nonoverlapping(bp, size_of::<A>()) };
     Ok(b)
   } else {
@@ -158,7 +158,7 @@ pub fn try_cast_ref<A: Pod, B: Pod>(a: &A) -> Result<&B, PodCastError> {
   if align_of::<B>() > align_of::<A>() && (a as *const A as usize) % align_of::<B>() != 0 {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else if size_of::<B>() == size_of::<A>() {
-    Ok(unsafe { &*(a as *const A as *const B) })
+    Ok(unsafe { &*(a as *const A).cast::<B>() })
   } else {
     Err(PodCastError::SizeMismatch)
   }
@@ -174,7 +174,7 @@ pub fn try_cast_mut<A: Pod, B: Pod>(a: &mut A) -> Result<&mut B, PodCastError> {
   if align_of::<B>() > align_of::<A>() && (a as *mut A as usize) % align_of::<B>() != 0 {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else if size_of::<B>() == size_of::<A>() {
-    Ok(unsafe { &mut *(a as *mut A as *mut B) })
+    Ok(unsafe { &mut *(a as *mut A).cast::<B>() })
   } else {
     Err(PodCastError::SizeMismatch)
   }
@@ -203,12 +203,12 @@ pub fn try_cast_slice<A: Pod, B: Pod>(a: &[A]) -> Result<&[B], PodCastError> {
   if align_of::<B>() > align_of::<A>() && (a.as_ptr() as usize) % align_of::<B>() != 0 {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else if size_of::<B>() == size_of::<A>() {
-    Ok(unsafe { core::slice::from_raw_parts(a.as_ptr() as *const B, a.len()) })
+    Ok(unsafe { core::slice::from_raw_parts(a.as_ptr().cast::<B>(), a.len()) })
   } else if size_of::<A>() == 0 || size_of::<B>() == 0 {
     Err(PodCastError::SizeMismatch)
   } else if core::mem::size_of_val(a) % size_of::<B>() == 0 {
     let new_len = core::mem::size_of_val(a) / size_of::<B>();
-    Ok(unsafe { core::slice::from_raw_parts(a.as_ptr() as *const B, new_len) })
+    Ok(unsafe { core::slice::from_raw_parts(a.as_ptr().cast::<B>(), new_len) })
   } else {
     Err(PodCastError::OutputSliceWouldHaveSlop)
   }
@@ -221,15 +221,15 @@ pub fn try_cast_slice<A: Pod, B: Pod>(a: &[A]) -> Result<&[B], PodCastError> {
 pub fn try_cast_slice_mut<A: Pod, B: Pod>(a: &mut [A]) -> Result<&mut [B], PodCastError> {
   // Note(Lokathor): everything with `align_of` and `size_of` will optimize away
   // after monomorphization.
-  if align_of::<B>() > align_of::<A>() && (a.as_ptr() as usize) % align_of::<B>() != 0 {
+  if align_of::<B>() > align_of::<A>() && (a.as_mut_ptr() as usize) % align_of::<B>() != 0 {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else if size_of::<B>() == size_of::<A>() {
-    Ok(unsafe { core::slice::from_raw_parts_mut(a.as_ptr() as *mut B, a.len()) })
+    Ok(unsafe { core::slice::from_raw_parts_mut(a.as_mut_ptr().cast::<B>(), a.len()) })
   } else if size_of::<A>() == 0 || size_of::<B>() == 0 {
     Err(PodCastError::SizeMismatch)
   } else if core::mem::size_of_val(a) % size_of::<B>() == 0 {
     let new_len = core::mem::size_of_val(a) / size_of::<B>();
-    Ok(unsafe { core::slice::from_raw_parts_mut(a.as_ptr() as *mut B, new_len) })
+    Ok(unsafe { core::slice::from_raw_parts_mut(a.as_mut_ptr().cast::<B>(), new_len) })
   } else {
     Err(PodCastError::OutputSliceWouldHaveSlop)
   }

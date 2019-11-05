@@ -14,13 +14,13 @@ matrix:
 environment:
   matrix:
     # Stable
-    - channel: 1.36.0
+    - channel: 1.38.0
       target: i686-pc-windows-msvc
-    - channel: 1.36.0
+    - channel: 1.38.0
       target: i686-pc-windows-gnu
-    - channel: 1.36.0
+    - channel: 1.38.0
       target: x86_64-pc-windows-msvc
-    - channel: 1.36.0
+    - channel: 1.38.0
       target: x86_64-pc-windows-gnu
     # Beta and Nightly are checked by TravisCI since builds there run in
     # parallel.
