@@ -104,13 +104,10 @@ pub fn try_cast_vec<A: Pod, B: Pod>(input: Vec<A>) -> Result<Vec<B>, (PodCastErr
     let capacity: usize = input.capacity();
     // Note(Lokathor): Next we "pre-forget" the old Vec by wrapping with
     // ManuallyDrop, because if we used `core::mem::forget` after taking the
-    // pointer then that would invalidate our pointer (I think? If not this
-    // still doesn't hurt).
+    // pointer then that would invalidate our pointer. In nightly there's a
+    // "into raw parts" method, which we can switch this too eventually.
     let mut manual_drop_vec = ManuallyDrop::new(input);
-    // Note(Lokathor): Finally, we carefully get the pointer we need, cast the
-    // type, and then make a new Vec to return. This works all the way back to
-    // 1.7, if you're on 1.37 or later you can use `Vec::as_mut_ptr` directly.
-    let vec_ptr: *mut A = Vec::as_mut_slice(&mut *manual_drop_vec).as_mut_ptr();
+    let vec_ptr: *mut A = manual_drop_vec.as_mut_ptr();
     let ptr: *mut B = vec_ptr.cast::<B>();
     Ok(unsafe { Vec::from_raw_parts(ptr, length, capacity) })
   }
