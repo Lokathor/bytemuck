@@ -42,4 +42,4 @@ test_script:
   - cargo clippy
   - cargo test --no-default-features
   - cargo test
-  - cargo test --all-features
+  #- cargo test --all-features

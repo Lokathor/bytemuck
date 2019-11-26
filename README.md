@@ -8,7 +8,3 @@
 # bytemuck
 
 A crate for mucking around with piles of bytes.
-
-CI coverage:
-* Tested on: `x86`, `x86_64`, `wasm`
-* Built on: `armv7`, `aarch64`, `thumbv7neon`
