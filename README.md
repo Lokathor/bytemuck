@@ -8,3 +8,7 @@
 # bytemuck
 
 A crate for mucking around with piles of bytes.
+
+## Stability
+
+The goal is to stay at 1.0 until at least the next edition of Rust.
