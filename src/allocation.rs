@@ -1,7 +1,7 @@
 //! Stuff to boost things in the `alloc` crate.
 //!
-//! You must use the crate with the `extern_crate_alloc` feature for the content
-//! in this module to be compiled in!
+//! * You must enable the `extern_crate_alloc` feature of `bytemuck` or you will
+//!   not be able to use this module!
 
 use super::*;
 use alloc::{
@@ -26,14 +26,16 @@ pub fn cast_box<A: Pod, B: Pod>(input: Box<A>) -> Box<B> {
 ///   alignment.
 /// * The start and end size of the `Box` must have the exact same size.
 #[inline]
-pub fn try_cast_box<A: Pod, B: Pod>(input: Box<A>) -> Result<Box<B>, (PodCastError, Box<A>)> {
+pub fn try_cast_box<A: Pod, B: Pod>(
+  input: Box<A>,
+) -> Result<Box<B>, (PodCastError, Box<A>)> {
   if align_of::<A>() != align_of::<B>() {
     Err((PodCastError::AlignmentMismatch, input))
   } else if size_of::<A>() != size_of::<B>() {
     Err((PodCastError::SizeMismatch, input))
   } else {
     // Note(Lokathor): This is much simpler than with the Vec casting!
-    let ptr: *mut B = Box::into_raw(input).cast::<B>();
+    let ptr: *mut B = Box::into_raw(input) as *mut B;
     Ok(unsafe { Box::from_raw(ptr) })
   }
 }
@@ -53,13 +55,14 @@ pub fn try_zeroed_box<T: Zeroable>() -> Result<Box<T>, ()> {
   if size_of::<T>() == 0 {
     return Ok(Box::new(T::zeroed()));
   }
-  let layout = Layout::from_size_align(size_of::<T>(), align_of::<T>()).unwrap();
+  let layout =
+    Layout::from_size_align(size_of::<T>(), align_of::<T>()).unwrap();
   let ptr = unsafe { alloc_zeroed(layout) };
   if ptr.is_null() {
     // we don't know what the error is because `alloc_zeroed` is a dumb API
     Err(())
   } else {
-    Ok(unsafe { Box::<T>::from_raw(ptr.cast::<T>()) })
+    Ok(unsafe { Box::<T>::from_raw(ptr as *mut T) })
   }
 }
 
@@ -88,7 +91,9 @@ pub fn cast_vec<A: Pod, B: Pod>(input: Vec<A>) -> Vec<B> {
 ///   capacity and length get adjusted during transmutation, but for now it's
 ///   absolute.
 #[inline]
-pub fn try_cast_vec<A: Pod, B: Pod>(input: Vec<A>) -> Result<Vec<B>, (PodCastError, Vec<A>)> {
+pub fn try_cast_vec<A: Pod, B: Pod>(
+  input: Vec<A>,
+) -> Result<Vec<B>, (PodCastError, Vec<A>)> {
   if align_of::<A>() != align_of::<B>() {
     Err((PodCastError::AlignmentMismatch, input))
   } else if size_of::<A>() != size_of::<B>() {
@@ -108,7 +113,7 @@ pub fn try_cast_vec<A: Pod, B: Pod>(input: Vec<A>) -> Result<Vec<B>, (PodCastErr
     // "into raw parts" method, which we can switch this too eventually.
     let mut manual_drop_vec = ManuallyDrop::new(input);
     let vec_ptr: *mut A = manual_drop_vec.as_mut_ptr();
-    let ptr: *mut B = vec_ptr.cast::<B>();
+    let ptr: *mut B = vec_ptr as *mut B;
     Ok(unsafe { Vec::from_raw_parts(ptr, length, capacity) })
   }
 }

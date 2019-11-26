@@ -1,10 +1,14 @@
 use super::*;
 
-/// Trait for types that can be safely created with [`zeroed`](core::mem::zeroed).
+/// Trait for types that can be safely created with
+/// [`zeroed`](core::mem::zeroed).
+///
+/// An all-zeroes value may or may not be the same value as the
+/// [Default](core::default::Default) value of the type.
 ///
 /// ## Safety
 ///
-/// * Your type must be _inhabited_ (eg: no
+/// * Your type must be inhabited (eg: no
 ///   [Infallible](core::convert::Infallible)).
 /// * Your type must be allowed to be an "all zeroes" bit pattern (eg: no
 ///   [`NonNull<T>`](core::ptr::NonNull)).
@@ -56,22 +60,40 @@ unsafe impl<T> Zeroable for *const T {}
 unsafe impl<T> Zeroable for Option<NonNull<T>> {}
 unsafe impl<T: Zeroable> Zeroable for PhantomData<T> {}
 unsafe impl<T: Zeroable> Zeroable for ManuallyDrop<T> {}
-unsafe impl<T> Zeroable for MaybeUninit<T> {}
+
+// 2.0: add MaybeUninit
+//unsafe impl<T> Zeroable for MaybeUninit<T> {}
 
 unsafe impl<A: Zeroable> Zeroable for (A,) {}
 unsafe impl<A: Zeroable, B: Zeroable> Zeroable for (A, B) {}
 unsafe impl<A: Zeroable, B: Zeroable, C: Zeroable> Zeroable for (A, B, C) {}
-unsafe impl<A: Zeroable, B: Zeroable, C: Zeroable, D: Zeroable> Zeroable for (A, B, C, D) {}
-unsafe impl<A: Zeroable, B: Zeroable, C: Zeroable, D: Zeroable, E: Zeroable> Zeroable
-  for (A, B, C, D, E)
+unsafe impl<A: Zeroable, B: Zeroable, C: Zeroable, D: Zeroable> Zeroable
+  for (A, B, C, D)
 {
 }
-unsafe impl<A: Zeroable, B: Zeroable, C: Zeroable, D: Zeroable, E: Zeroable, F: Zeroable> Zeroable
-  for (A, B, C, D, E, F)
+unsafe impl<A: Zeroable, B: Zeroable, C: Zeroable, D: Zeroable, E: Zeroable>
+  Zeroable for (A, B, C, D, E)
 {
 }
-unsafe impl<A: Zeroable, B: Zeroable, C: Zeroable, D: Zeroable, E: Zeroable, F: Zeroable, G: Zeroable>
-  Zeroable for (A, B, C, D, E, F, G)
+unsafe impl<
+    A: Zeroable,
+    B: Zeroable,
+    C: Zeroable,
+    D: Zeroable,
+    E: Zeroable,
+    F: Zeroable,
+  > Zeroable for (A, B, C, D, E, F)
+{
+}
+unsafe impl<
+    A: Zeroable,
+    B: Zeroable,
+    C: Zeroable,
+    D: Zeroable,
+    E: Zeroable,
+    F: Zeroable,
+    G: Zeroable,
+  > Zeroable for (A, B, C, D, E, F, G)
 {
 }
 unsafe impl<
@@ -88,8 +110,9 @@ unsafe impl<
 }
 
 impl_unsafe_marker_for_array!(
-  Zeroable, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-  24, 25, 26, 27, 28, 29, 30, 31, 32, 48, 64, 96, 128, 256, 512, 1024, 2048, 4096
+  Zeroable, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+  19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 48, 64, 96, 128, 256,
+  512, 1024, 2048, 4096
 );
 
 #[cfg(target_arch = "x86")]

@@ -16,10 +16,14 @@ use super::*;
 ///
 /// * The type must be inhabited (eg: no
 ///   [Infallible](core::convert::Infallible)).
-/// * The type must allow any bit pattern (eg: no `bool` or `char`).
-/// * The type must not contain any padding bytes (eg: no `(u8, u16)`).
-/// * A struct needs to have all fields be `Pod` and be `repr(C)`,
-///   `repr(transparent)`, or `repr(packed)`.
+/// * The type must allow any bit pattern (eg: no `bool` or `char`, which have
+///   illegal bit patterns).
+/// * The type must not contain any padding bytes, either in the middle or on
+///   the end (eg: no `#[repr(C)] struct Foo(u8, u16)`, which has padding in the
+///   middle, and also no `#[repr(C)] struct Foo(u16, u8)`, which has padding on
+///   the end).
+/// * The type needs to have all fields also be `Pod`.
+/// * The type needs to be `repr(C)`, `repr(transparent)`, or `repr(packed)`.
 pub unsafe trait Pod: Zeroable + Copy + 'static {}
 
 unsafe impl Pod for () {}
@@ -58,9 +62,12 @@ unsafe impl<T: 'static> Pod for Option<NonNull<T>> {}
 unsafe impl<T: Pod> Pod for PhantomData<T> {}
 unsafe impl<T: Pod> Pod for ManuallyDrop<T> {}
 
+// Note(Lokathor): MaybeUninit can NEVER be Pod.
+
 impl_unsafe_marker_for_array!(
-  Pod, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-  25, 26, 27, 28, 29, 30, 31, 32, 48, 64, 96, 128, 256, 512, 1024, 2048, 4096
+  Pod, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+  20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 48, 64, 96, 128, 256,
+  512, 1024, 2048, 4096
 );
 
 #[cfg(target_arch = "x86")]

@@ -8,7 +8,7 @@ readme = "README.md"
 keywords = ["transmute", "bytes", "casting"]
 categories = ["encoding", "no-std"]
 edition = "2018"
-license = "BlueOak-1.0.0"
+license = "Zlib"
 
 [package.metadata.docs.rs]
 all-features = true
