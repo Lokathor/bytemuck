@@ -16,10 +16,14 @@ use super::*;
 ///
 /// * The type must be inhabited (eg: no
 ///   [Infallible](core::convert::Infallible)).
-/// * The type must allow any bit pattern (eg: no `bool` or `char`).
-/// * The type must not contain any padding bytes (eg: no `(u8, u16)`).
-/// * A struct needs to have all fields be `Pod` and be `repr(C)`,
-///   `repr(transparent)`, or `repr(packed)`.
+/// * The type must allow any bit pattern (eg: no `bool` or `char`, which have
+///   illegal bit patterns).
+/// * The type must not contain any padding bytes, either in the middle or on
+///   the end (eg: no `#[repr(C)] struct Foo(u8, u16)`, which has padding in the
+///   middle, and also no `#[repr(C)] struct Foo(u16, u8)`, which has padding on
+///   the end).
+/// * The type needs to have all fields also be `Pod`.
+/// * The type needs to be `repr(C)`, `repr(transparent)`, or `repr(packed)`.
 pub unsafe trait Pod: Zeroable + Copy + 'static {}
 
 unsafe impl Pod for () {}

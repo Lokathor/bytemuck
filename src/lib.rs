@@ -1,4 +1,41 @@
 #![no_std]
+#![warn(missing_docs)]
+
+//! This crate gives small utilities for casting between plain data types.
+//!
+//! ## Basics
+//!
+//! Data comes in five basic forms in Rust, so we have five basic casting
+//! functions:
+//!
+//! * `T` uses [`cast`]
+//! * `&T` uses [`cast_ref`]
+//! * `&mut T` uses [`cast_mut`]
+//! * `&[T]` uses [`cast_slice`]
+//! * `&mut [T]` uses [`cast_slice_mut`]
+//!
+//! Some casts will never fail (eg: `cast::<u32, f32>` always works), other
+//! casts might fail (eg: `cast_ref::<[u8; 4], u32>` will fail if the reference
+//! isn't already aligned to 4). Each casting function has a "try" version which
+//! will return a `Result`, and the "normal" version which will simply panic on
+//! invalid input.
+//!
+//! ## Using Your Own Types
+//!
+//! All the functions here are guarded by the [`Pod`] trait, which is a
+//! sub-trait of the [`Zeroable`] trait.
+//!
+//! If you're very sure that your type is eligible, you can implement those
+//! traits for your type and then they'll have full casting support. However,
+//! these traits are `unsafe`, and you should carefully read the requirements
+//! before adding the them to your own types.
+//!
+//! ## Features
+//!
+//! * This crate is core only by default, but if you're using Rust 1.36 or later
+//!   you can enable the `extern_crate_alloc` cargo feature for some additional
+//!   methods related to `Box` and `Vec`. Note that the `docs.rs` documentation
+//!   is always built with `extern_crate_alloc` cargo feature enabled.
 
 #[cfg(target_arch = "x86")]
 pub(crate) use core::arch::x86;

@@ -1,10 +1,14 @@
 use super::*;
 
-/// Trait for types that can be safely created with [`zeroed`](core::mem::zeroed).
+/// Trait for types that can be safely created with
+/// [`zeroed`](core::mem::zeroed).
+///
+/// An all-zeroes value may or may not be the same value as the
+/// [Default](core::default::Default) value of the type.
 ///
 /// ## Safety
 ///
-/// * Your type must be _inhabited_ (eg: no
+/// * Your type must be inhabited (eg: no
 ///   [Infallible](core::convert::Infallible)).
 /// * Your type must be allowed to be an "all zeroes" bit pattern (eg: no
 ///   [`NonNull<T>`](core::ptr::NonNull)).

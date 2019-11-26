@@ -1,7 +1,7 @@
 //! Stuff to boost things in the `alloc` crate.
 //!
-//! You must use the crate with the `extern_crate_alloc` feature for the content
-//! in this module to be compiled in!
+//! * You must enable the `extern_crate_alloc` feature of `bytemuck` or you will
+//!   not be able to use this module!
 
 use super::*;
 use alloc::{
