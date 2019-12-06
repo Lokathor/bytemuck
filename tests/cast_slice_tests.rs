@@ -37,10 +37,7 @@ fn test_try_cast_slice() {
   try_cast_slice::<u8, u32>(the_bytes).unwrap();
 
   // ZST to non-ZST
-  assert_eq!(
-    try_cast_slice::<(), u8>(&[(), (), ()]),
-    Ok(&[][..])
-  );
+  assert_eq!(try_cast_slice::<(), u8>(&[(), (), ()]), Ok(&[][..]));
 }
 
 #[test]
@@ -80,10 +77,7 @@ fn test_try_cast_slice_mut() {
   try_cast_slice_mut::<u8, u32>(the_bytes).unwrap();
 
   // ZST to non-ZST
-  assert_eq!(
-    try_cast_slice_mut::<(), u8>(&mut [(), (), ()]),
-    Ok(&mut [][..])
-  );
+  assert_eq!(try_cast_slice_mut::<(), u8>(&mut [(), (), ()]), Ok(&mut [][..]));
 }
 
 #[test]

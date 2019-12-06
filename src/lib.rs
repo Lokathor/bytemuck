@@ -68,7 +68,9 @@ pub use pod::*;
 /// Any ZST becomes an empty slice.
 #[inline]
 pub fn bytes_of<T: Pod>(t: &T) -> &[u8] {
-  try_cast_slice::<T, u8>(core::slice::from_ref(t)).unwrap()
+  unsafe {
+    core::slice::from_raw_parts(t as *const T as *const u8, size_of::<T>())
+  }
 }
 
 /// Re-interprets `&mut T` as `&mut [u8]`.
@@ -76,7 +78,9 @@ pub fn bytes_of<T: Pod>(t: &T) -> &[u8] {
 /// Any ZST becomes an empty slice.
 #[inline]
 pub fn bytes_of_mut<T: Pod>(t: &mut T) -> &mut [u8] {
-  try_cast_slice_mut::<T, u8>(core::slice::from_mut(t)).unwrap()
+  unsafe {
+    core::slice::from_raw_parts_mut(t as *mut T as *mut u8, size_of::<T>())
+  }
 }
 
 /// The things that can go wrong when casting between [`Pod`] data forms.
