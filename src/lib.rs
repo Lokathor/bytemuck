@@ -65,20 +65,18 @@ pub use pod::*;
 
 /// Re-interprets `&T` as `&[u8]`.
 ///
-/// Any ZST becomes an empty slice, and in that case the pointer value of that
-/// empty slice might not match the pointer value of the input reference.
+/// Any ZST becomes an empty slice.
 #[inline]
 pub fn bytes_of<T: Pod>(t: &T) -> &[u8] {
-  try_cast_slice::<T, u8>(core::slice::from_ref(t)).unwrap_or(&[])
+  try_cast_slice::<T, u8>(core::slice::from_ref(t)).unwrap()
 }
 
 /// Re-interprets `&mut T` as `&mut [u8]`.
 ///
-/// Any ZST becomes an empty slice, and in that case the pointer value of that
-/// empty slice might not match the pointer value of the input reference.
+/// Any ZST becomes an empty slice.
 #[inline]
 pub fn bytes_of_mut<T: Pod>(t: &mut T) -> &mut [u8] {
-  try_cast_slice_mut::<T, u8>(core::slice::from_mut(t)).unwrap_or(&mut [])
+  try_cast_slice_mut::<T, u8>(core::slice::from_mut(t)).unwrap()
 }
 
 /// The things that can go wrong when casting between [`Pod`] data forms.
@@ -236,9 +234,9 @@ pub fn try_cast_mut<A: Pod, B: Pod>(a: &mut A) -> Result<&mut B, PodCastError> {
 ///   type, and the output slice wouldn't be a whole number of elements when
 ///   accounting for the size change (eg: three `u16` values is 1.5 `u32`
 ///   values, so that's a failure).
-/// * Similarly, you can't convert between a
+/// * Similarly, you can't convert to a
 ///   [ZST](https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
-///   and a non-ZST.
+///   from a non-ZST.
 #[inline]
 pub fn try_cast_slice<A: Pod, B: Pod>(a: &[A]) -> Result<&[B], PodCastError> {
   // Note(Lokathor): everything with `align_of` and `size_of` will optimize away
@@ -249,7 +247,7 @@ pub fn try_cast_slice<A: Pod, B: Pod>(a: &[A]) -> Result<&[B], PodCastError> {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else if size_of::<B>() == size_of::<A>() {
     Ok(unsafe { core::slice::from_raw_parts(a.as_ptr() as *const B, a.len()) })
-  } else if size_of::<A>() == 0 || size_of::<B>() == 0 {
+  } else if size_of::<A>() > 0 && size_of::<B>() == 0 {
     Err(PodCastError::SizeMismatch)
   } else if core::mem::size_of_val(a) % size_of::<B>() == 0 {
     let new_len = core::mem::size_of_val(a) / size_of::<B>();
@@ -276,7 +274,7 @@ pub fn try_cast_slice_mut<A: Pod, B: Pod>(
     Ok(unsafe {
       core::slice::from_raw_parts_mut(a.as_mut_ptr() as *mut B, a.len())
     })
-  } else if size_of::<A>() == 0 || size_of::<B>() == 0 {
+  } else if size_of::<A>() > 0 && size_of::<B>() == 0 {
     Err(PodCastError::SizeMismatch)
   } else if core::mem::size_of_val(a) % size_of::<B>() == 0 {
     let new_len = core::mem::size_of_val(a) / size_of::<B>();

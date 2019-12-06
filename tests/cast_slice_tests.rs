@@ -35,6 +35,12 @@ fn test_try_cast_slice() {
 
   // if we don't mess with it we can up-alignment cast
   try_cast_slice::<u8, u32>(the_bytes).unwrap();
+
+  // ZST to non-ZST
+  assert_eq!(
+    try_cast_slice::<(), u8>(&[(), (), ()]),
+    Ok(&[][..])
+  );
 }
 
 #[test]
@@ -72,6 +78,12 @@ fn test_try_cast_slice_mut() {
 
   // if we don't mess with it we can up-alignment cast
   try_cast_slice_mut::<u8, u32>(the_bytes).unwrap();
+
+  // ZST to non-ZST
+  assert_eq!(
+    try_cast_slice_mut::<(), u8>(&mut [(), (), ()]),
+    Ok(&mut [][..])
+  );
 }
 
 #[test]
