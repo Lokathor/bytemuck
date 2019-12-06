@@ -38,11 +38,16 @@ install:
 build: false
 
 test_script:
+  # check basic ability on 1.34
   - cargo fmt -- --check
   - cargo clippy
   - cargo test
-  - rustup default nightly-2019-12-06 # any date with known-working miri should do
+
+  # check all features and advanced checks with latest nightly + miri
+  # any date with known-working miri should do
+  - rustup default nightly-2019-12-06
   - cargo test --all-features
   - rustup component add miri
+  - rustup component add rust-src
   - cargo install xargo -f
   - cargo miri test --all-features
