@@ -290,8 +290,8 @@ pub fn try_cast_mut<A: Pod, B: Pod>(a: &mut A) -> Result<&mut B, PodCastError> {
 ///   isn't aligned.
 /// * If the target element type is a different size from the current element
 ///   type, and the output slice wouldn't be a whole number of elements when
-///   accounting for the size change (eg: three `u16` values is 1.5 `u32`
-///   values, so that's a failure).
+///   accounting for the size change (eg: 3 `u16` values is 1.5 `u32` values, so
+///   that's a failure).
 /// * Similarly, you can't convert between a
 ///   [ZST](https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
 ///   and a non-ZST.
