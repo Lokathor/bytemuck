@@ -41,5 +41,8 @@ test_script:
   - cargo fmt -- --check
   - cargo clippy
   - cargo test --no-default-features
+  - rustup default nightly-2019-12-05 # any date with known-working miri should do
   - cargo test
-  #- cargo test --all-features
+  - cargo test --all-features
+  - rustup component add miri
+  - cargo miri test
