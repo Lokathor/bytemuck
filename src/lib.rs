@@ -81,6 +81,62 @@ pub fn bytes_of_mut<T: Pod>(t: &mut T) -> &mut [u8] {
   try_cast_slice_mut::<T, u8>(core::slice::from_mut(t)).unwrap_or(&mut [])
 }
 
+/// Re-interprets `&[u8]` as `&T`.
+///
+/// ## Panics
+///
+/// This is [`try_from_bytes`] with an unwrap.
+#[inline]
+pub fn from_bytes<T: Pod>(s: &[u8]) -> &T {
+  try_from_bytes(s).unwrap()
+}
+
+/// Re-interprets `&mut [u8]` as `&mut T`.
+///
+/// ## Panics
+///
+/// This is [`try_from_bytes_mut`] with an unwrap.
+#[inline]
+pub fn from_bytes_mut<T: Pod>(s: &mut [u8]) -> &mut T {
+  try_from_bytes_mut(s).unwrap()
+}
+
+/// Re-interprets `&[u8]` as `&T`.
+///
+/// ## Failure
+///
+/// * If the slice isn't aligned for the new type
+/// * If the slice's length isn’t exactly the size of the new type
+#[inline]
+pub fn try_from_bytes<T: Pod>(s: &[u8]) -> Result<&T, PodCastError> {
+  if s.len() != size_of::<T>() {
+    Err(PodCastError::SizeMismatch)
+  } else if (s.as_ptr() as usize) % align_of::<T>() != 0 {
+    Err(PodCastError::AlignmentMismatch)
+  } else {
+    Ok(unsafe { &*(s.as_ptr() as *const T) })
+  }
+}
+
+/// Re-interprets `&mut [u8]` as `&mut T`.
+///
+/// ## Failure
+///
+/// * If the slice isn't aligned for the new type
+/// * If the slice's length isn’t exactly the size of the new type
+#[inline]
+pub fn try_from_bytes_mut<T: Pod>(
+  s: &mut [u8],
+) -> Result<&mut T, PodCastError> {
+  if s.len() != size_of::<T>() {
+    Err(PodCastError::SizeMismatch)
+  } else if (s.as_ptr() as usize) % align_of::<T>() != 0 {
+    Err(PodCastError::AlignmentMismatch)
+  } else {
+    Ok(unsafe { &mut *(s.as_mut_ptr() as *mut T) })
+  }
+}
+
 /// The things that can go wrong when casting between [`Pod`] data forms.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PodCastError {
