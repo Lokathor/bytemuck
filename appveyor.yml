@@ -44,4 +44,5 @@ test_script:
   - rustup default nightly-2019-12-06 # any date with known-working miri should do
   - cargo test --all-features
   - rustup component add miri
+  - cargo install xargo -f
   - cargo miri test --all-features
