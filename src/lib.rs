@@ -63,6 +63,9 @@ pub use zeroable::*;
 mod pod;
 pub use pod::*;
 
+mod contiguous;
+pub use contiguous::*;
+
 // Used from macros to ensure we aren't using some locally defined name and
 // actually are referencing libcore. This also would allow pre-2018 edition
 // crates to use our macros, but I'm not sure how important that is.
