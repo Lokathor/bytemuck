@@ -72,6 +72,44 @@ pub fn zeroed_box<T: Zeroable>() -> Box<T> {
   try_zeroed_box().unwrap()
 }
 
+/// Allocates a `Box<[T]>` with all contents being zeroed out.
+///
+/// This uses the global allocator to create a zeroed allocation and _then_
+/// turns it into a Box. In other words, it's 100% assured that the zeroed data
+/// won't be put temporarily on the stack. You can make a box of any size
+/// without fear of a stack overflow.
+///
+/// ## Failure
+///
+/// This fails if the allocation fails.
+#[inline]
+pub fn try_zeroed_slice_box<T: Pod>(length: usize) -> Result<Box<[T]>, ()> {
+  if size_of::<T>() == 0 {
+    // This will not allocate but simple create a dangling slice pointer.
+    let mut vec = Vec::with_capacity(length);
+    vec.resize(length, T::zeroed());
+    return Ok(vec.into_boxed_slice());
+  }
+  if length == 0 {
+    // This will also not allocate.
+    return Ok(Vec::new().into_boxed_slice());
+  }
+  // For Pod types, the layout of the array/slice is equivalent to repeating the type.
+  let layout_length = size_of::<T>().checked_mul(length).ok_or(())?;
+  assert!(layout_length != 0);
+  let layout =
+    Layout::from_size_align(layout_length, align_of::<T>()).map_err(|_| ())?;
+  let ptr = unsafe { alloc_zeroed(layout) };
+  if ptr.is_null() {
+    // we don't know what the error is because `alloc_zeroed` is a dumb API
+    Err(())
+  } else {
+    let slice =
+      unsafe { core::slice::from_raw_parts_mut(ptr as *mut T, length) };
+    Ok(unsafe { Box::<[T]>::from_raw(slice) })
+  }
+}
+
 /// As [`try_cast_vec`](try_cast_vec), but unwraps for you.
 #[inline]
 pub fn cast_vec<A: Pod, B: Pod>(input: Vec<A>) -> Vec<B> {
