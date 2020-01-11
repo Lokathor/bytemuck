@@ -48,6 +48,8 @@ matrix:
     - { os: osx,   rust: 1.34.0,  env: TARGET=i386-apple-ios }
     - { os: osx,   rust: 1.34.0,  env: TARGET=x86_64-apple-ios }
 
+    - { os: linux, rust: nightly, env: RUN_MIRI=1 }
+
 script:
   - pushd scripts
   - ./travis.sh
