@@ -98,7 +98,7 @@ pub unsafe trait TransparentWrapper<Wrapped: ?Sized> {
       //
       // SAFETY: The unsafe contract requires that these have identical
       // representations. Using this transmute_copy instead of transmute here is
-      // annoying, but is required as `Self` and `Self::Int` have unspecified
+      // annoying, but is required as `Self` and `Wrapped` have unspecified
       // sizes still.
       let wrapped_ptr = s as *const Wrapped;
       let wrapper_ptr: *const Self = transmute_copy(&wrapped_ptr);
@@ -123,42 +123,11 @@ pub unsafe trait TransparentWrapper<Wrapped: ?Sized> {
       //
       // SAFETY: The unsafe contract requires that these have identical
       // representations. Using this transmute_copy instead of transmute here is
-      // annoying, but is required as `Self` and `Self::Int` have unspecified
+      // annoying, but is required as `Self` and `Wrapped` have unspecified
       // sizes still.
       let wrapped_ptr = s as *mut Wrapped;
       let wrapper_ptr: *mut Self = transmute_copy(&wrapped_ptr);
       &mut *wrapper_ptr
     }
-  }
-}
-
-#[cfg(all(test, feature = "extern_crate_alloc"))]
-mod test {
-  use super::*;
-
-  use alloc::format;
-  use core::fmt::Display;
-
-  #[repr(transparent)]
-  struct DisplayTraitObj(dyn Display);
-
-  unsafe impl TransparentWrapper<dyn Display> for DisplayTraitObj {}
-
-  impl Display for DisplayTraitObj {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-      self.0.fmt(f)
-    }
-  }
-
-  #[test]
-  fn test_vtabled() {
-    let v = DisplayTraitObj::wrap_ref(&5i32);
-    let s = format!("{}", v);
-    assert_eq!(s, "5");
-
-    let mut x = 100i32;
-    let v_mut = DisplayTraitObj::wrap_mut(&mut x);
-    let s = format!("{}", v_mut);
-    assert_eq!(s, "100");
   }
 }
