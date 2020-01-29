@@ -19,4 +19,8 @@ in the other repo.
 
 ## Stability
 
-The goal is to stay at 1.0 until at least the next edition of Rust.
+The goal is to stay at 1.y.z until _at least_ the next edition of Rust.
+
+I consider any increase of the Minimum Rust Version to be a semver breaking change,
+so `rustc-1.34` will continue to be supported for at least the rest of the
+`bytemuck-1.y.z` series of the crate.
