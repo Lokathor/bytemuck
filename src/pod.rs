@@ -23,7 +23,9 @@ use super::*;
 ///   middle, and also no `#[repr(C)] struct Foo(u16, u8)`, which has padding on
 ///   the end).
 /// * The type needs to have all fields also be `Pod`.
-/// * The type needs to be `repr(C)`, `repr(transparent)`, or `repr(packed)`.
+/// * The type needs to be `repr(C)` or `repr(transparent)`. In the case of
+///   `repr(C)`, the `packed` and `align` repr modifiers can be used as long as
+///   all other rules end up being followed.
 pub unsafe trait Pod: Zeroable + Copy + 'static {}
 
 unsafe impl Pod for () {}
