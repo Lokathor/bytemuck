@@ -38,11 +38,12 @@
 //!   is always built with `extern_crate_alloc` cargo feature enabled.
 
 #[cfg(target_arch = "x86")]
-pub(crate) use core::arch::x86;
+use core::arch::x86;
 #[cfg(target_arch = "x86_64")]
-pub(crate) use core::arch::x86_64;
+use core::arch::x86_64;
 //
-pub(crate) use core::{marker::*, mem::*, num::*, ptr::*};
+use core::{marker::*, mem::*, num::*, ptr::*};
+use core::hint::unreachable_unchecked;
 
 macro_rules! impl_unsafe_marker_for_array {
   ( $marker:ident , $( $n:expr ),* ) => {
@@ -81,7 +82,9 @@ pub use ::core as __core;
 /// empty slice might not match the pointer value of the input reference.
 #[inline]
 pub fn bytes_of<T: Pod>(t: &T) -> &[u8] {
-  try_cast_slice::<T, u8>(core::slice::from_ref(t)).unwrap_or(&[])
+  // We never fail to go from T to u8s, so we hint the compiler about it.
+  try_cast_slice::<T, u8>(core::slice::from_ref(t))
+    .unwrap_or_else(|_| unsafe { unreachable_unchecked() })
 }
 
 /// Re-interprets `&mut T` as `&mut [u8]`.
@@ -90,7 +93,9 @@ pub fn bytes_of<T: Pod>(t: &T) -> &[u8] {
 /// empty slice might not match the pointer value of the input reference.
 #[inline]
 pub fn bytes_of_mut<T: Pod>(t: &mut T) -> &mut [u8] {
-  try_cast_slice_mut::<T, u8>(core::slice::from_mut(t)).unwrap_or(&mut [])
+  // We never fail to go from T to u8s, so we hint the compiler about it.
+  try_cast_slice_mut::<T, u8>(core::slice::from_mut(t))
+    .unwrap_or_else(|_| unsafe { unreachable_unchecked() })
 }
 
 /// Re-interprets `&[u8]` as `&T`.
@@ -175,7 +180,12 @@ pub enum PodCastError {
 /// This is [`try_cast`] with an unwrap.
 #[inline]
 pub fn cast<A: Pod, B: Pod>(a: A) -> B {
-  try_cast(a).unwrap()
+  if size_of::<A>() == size_of::<B>() {
+    // In this case it will not fail, and so we hint the compiler.
+    try_cast(a).unwrap_or_else(|_| unsafe { unreachable_unchecked() })
+  } else {
+    try_cast(a).unwrap()
+  }
 }
 
 /// Cast `&mut T` into `&mut U`.
@@ -185,7 +195,12 @@ pub fn cast<A: Pod, B: Pod>(a: A) -> B {
 /// This is [`try_cast_mut`] with an unwrap.
 #[inline]
 pub fn cast_mut<A: Pod, B: Pod>(a: &mut A) -> &mut B {
-  try_cast_mut(a).unwrap()
+  if size_of::<A>() == size_of::<B>() && align_of::<A>() >= align_of::<B>() {
+    // In this case it will not fail, and so we hint the compiler.
+    try_cast_mut(a).unwrap_or_else(|_| unsafe { unreachable_unchecked() })
+  } else {
+    try_cast_mut(a).unwrap()
+  }
 }
 
 /// Cast `&T` into `&U`.
@@ -195,7 +210,12 @@ pub fn cast_mut<A: Pod, B: Pod>(a: &mut A) -> &mut B {
 /// This is [`try_cast_ref`] with an unwrap.
 #[inline]
 pub fn cast_ref<A: Pod, B: Pod>(a: &A) -> &B {
-  try_cast_ref(a).unwrap()
+  if size_of::<A>() == size_of::<B>() && align_of::<A>() >= align_of::<B>() {
+    // In this case it will not fail, and so we hint the compiler.
+    try_cast_ref(a).unwrap_or_else(|_| unsafe { unreachable_unchecked() })
+  } else {
+    try_cast_ref(a).unwrap()
+  }
 }
 
 /// Cast `&[T]` into `&[U]`.
@@ -357,14 +377,15 @@ pub fn try_cast_slice_mut<A: Pod, B: Pod>(
 }
 
 /// Find the offset in bytes of the given `$field` of `$Type`, using `$instance`
-/// as an already-initialized reference value.
+/// as an already-initialized value to work with.
 ///
 /// This is similar to the macro from `memoffset`, however it's fully well
 /// defined even in current versions of Rust (and uses no unsafe code).
 ///
-/// It does by using the `$instance` argument to get an already-initialized
+/// It does by using the `$instance` argument to have an already-initialized
 /// instance of `$Type` rather than trying to find a way access the fields of an
-/// uninitialized one without hitting soundness problems.
+/// uninitialized one without hitting soundness problems. The value passed to
+/// the macro is referenced but not moved.
 ///
 /// This means the API is more limited, but it's also sound even in rather
 /// extreme cases, like some of the examples.
@@ -410,7 +431,7 @@ pub fn try_cast_slice_mut<A: Pod, B: Pod>(
 /// ### Use with other types
 ///
 /// More esoteric uses are possible too, including with types generally not safe
-/// to bytemuck. `Strings`, `Vec`s, etc.
+/// to otherwise use with bytemuck. `Strings`, `Vec`s, etc.
 ///
 /// ```
 /// #[derive(Default)]
