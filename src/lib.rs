@@ -42,8 +42,7 @@ use core::arch::x86;
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64;
 //
-use core::{marker::*, mem::*, num::*, ptr::*};
-use core::hint::unreachable_unchecked;
+use core::{hint::unreachable_unchecked, marker::*, mem::*, num::*, ptr::*};
 
 macro_rules! impl_unsafe_marker_for_array {
   ( $marker:ident , $( $n:expr ),* ) => {
