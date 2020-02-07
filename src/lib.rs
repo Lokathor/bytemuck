@@ -42,7 +42,13 @@ use core::arch::x86;
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64;
 //
-use core::{hint::unreachable_unchecked, marker::*, mem::*, num::*, ptr::*};
+use core::{marker::*, mem::*, num::*, ptr::*};
+
+// Used from macros to ensure we aren't using some locally defined name and
+// actually are referencing libcore. This also would allow pre-2018 edition
+// crates to use our macros, but I'm not sure how important that is.
+#[doc(hidden)]
+pub use ::core as __core;
 
 macro_rules! impl_unsafe_marker_for_array {
   ( $marker:ident , $( $n:expr ),* ) => {
@@ -66,14 +72,23 @@ pub use pod::*;
 mod contiguous;
 pub use contiguous::*;
 
+mod offset_of;
+pub use offset_of::*;
+
 mod transparent;
 pub use transparent::*;
 
-// Used from macros to ensure we aren't using some locally defined name and
-// actually are referencing libcore. This also would allow pre-2018 edition
-// crates to use our macros, but I'm not sure how important that is.
-#[doc(hidden)]
-pub use ::core as __core;
+/*
+
+Note(Lokathor): We've switched all of the `unwrap` to `match` because there is
+apparently a bug: https://github.com/rust-lang/rust/issues/68667
+and it doesn't seem to show up in simple godbolt examples but has been reported
+as having an impact when there's a cast mixed in with other more complicated
+code around it. Rustc/LLVM ends up missing that the `Err` can't ever happen for
+particular type combinations, and then it doesn't fully eliminated the panic
+possibility code branch.
+
+*/
 
 /// Re-interprets `&T` as `&[u8]`.
 ///
@@ -81,9 +96,10 @@ pub use ::core as __core;
 /// empty slice might not match the pointer value of the input reference.
 #[inline]
 pub fn bytes_of<T: Pod>(t: &T) -> &[u8] {
-  // We never fail to go from T to u8s, so we hint the compiler about it.
-  try_cast_slice::<T, u8>(core::slice::from_ref(t))
-    .unwrap_or_else(|_| unsafe { unreachable_unchecked() })
+  match try_cast_slice::<T, u8>(core::slice::from_ref(t)) {
+    Ok(s) => s,
+    Err(_) => unreachable!(),
+  }
 }
 
 /// Re-interprets `&mut T` as `&mut [u8]`.
@@ -92,29 +108,36 @@ pub fn bytes_of<T: Pod>(t: &T) -> &[u8] {
 /// empty slice might not match the pointer value of the input reference.
 #[inline]
 pub fn bytes_of_mut<T: Pod>(t: &mut T) -> &mut [u8] {
-  // We never fail to go from T to u8s, so we hint the compiler about it.
-  try_cast_slice_mut::<T, u8>(core::slice::from_mut(t))
-    .unwrap_or_else(|_| unsafe { unreachable_unchecked() })
+  match try_cast_slice_mut::<T, u8>(core::slice::from_mut(t)) {
+    Ok(s) => s,
+    Err(_) => unreachable!(),
+  }
 }
 
 /// Re-interprets `&[u8]` as `&T`.
 ///
 /// ## Panics
 ///
-/// This is [`try_from_bytes`] with an unwrap.
+/// This is [`try_from_bytes`] but will panic on error.
 #[inline]
 pub fn from_bytes<T: Pod>(s: &[u8]) -> &T {
-  try_from_bytes(s).unwrap()
+  match try_from_bytes(s) {
+    Ok(t) => t,
+    Err(e) => panic!("from_bytes>{:?}", e),
+  }
 }
 
 /// Re-interprets `&mut [u8]` as `&mut T`.
 ///
 /// ## Panics
 ///
-/// This is [`try_from_bytes_mut`] with an unwrap.
+/// This is [`try_from_bytes_mut`] but will panic on error.
 #[inline]
 pub fn from_bytes_mut<T: Pod>(s: &mut [u8]) -> &mut T {
-  try_from_bytes_mut(s).unwrap()
+  match try_from_bytes_mut(s) {
+    Ok(t) => t,
+    Err(e) => panic!("from_bytes_mut>{:?}", e),
+  }
 }
 
 /// Re-interprets `&[u8]` as `&T`.
@@ -176,14 +199,20 @@ pub enum PodCastError {
 ///
 /// ## Panics
 ///
-/// This is [`try_cast`] with an unwrap.
+/// This is [`try_cast`] but will panic on error.
 #[inline]
 pub fn cast<A: Pod, B: Pod>(a: A) -> B {
   if size_of::<A>() == size_of::<B>() {
-    // In this case it will not fail, and so we hint the compiler.
-    try_cast(a).unwrap_or_else(|_| unsafe { unreachable_unchecked() })
+    // Plz mr compiler, just notice that we can't ever hit Err in this case.
+    match try_cast(a) {
+      Ok(b) => b,
+      Err(_) => unreachable!(),
+    }
   } else {
-    try_cast(a).unwrap()
+    match try_cast(a) {
+      Ok(b) => b,
+      Err(e) => panic!("cast>{:?}", e),
+    }
   }
 }
 
@@ -191,14 +220,20 @@ pub fn cast<A: Pod, B: Pod>(a: A) -> B {
 ///
 /// ## Panics
 ///
-/// This is [`try_cast_mut`] with an unwrap.
+/// This is [`try_cast_mut`] but will panic on error.
 #[inline]
 pub fn cast_mut<A: Pod, B: Pod>(a: &mut A) -> &mut B {
   if size_of::<A>() == size_of::<B>() && align_of::<A>() >= align_of::<B>() {
-    // In this case it will not fail, and so we hint the compiler.
-    try_cast_mut(a).unwrap_or_else(|_| unsafe { unreachable_unchecked() })
+    // Plz mr compiler, just notice that we can't ever hit Err in this case.
+    match try_cast_mut(a) {
+      Ok(b) => b,
+      Err(_) => unreachable!(),
+    }
   } else {
-    try_cast_mut(a).unwrap()
+    match try_cast_mut(a) {
+      Ok(b) => b,
+      Err(e) => panic!("cast_mut>{:?}", e),
+    }
   }
 }
 
@@ -206,14 +241,20 @@ pub fn cast_mut<A: Pod, B: Pod>(a: &mut A) -> &mut B {
 ///
 /// ## Panics
 ///
-/// This is [`try_cast_ref`] with an unwrap.
+/// This is [`try_cast_ref`] but will panic on error.
 #[inline]
 pub fn cast_ref<A: Pod, B: Pod>(a: &A) -> &B {
   if size_of::<A>() == size_of::<B>() && align_of::<A>() >= align_of::<B>() {
-    // In this case it will not fail, and so we hint the compiler.
-    try_cast_ref(a).unwrap_or_else(|_| unsafe { unreachable_unchecked() })
+    // Plz mr compiler, just notice that we can't ever hit Err in this case.
+    match try_cast_ref(a) {
+      Ok(b) => b,
+      Err(_) => unreachable!(),
+    }
   } else {
-    try_cast_ref(a).unwrap()
+    match try_cast_ref(a) {
+      Ok(b) => b,
+      Err(e) => panic!("cast_ref>{:?}", e),
+    }
   }
 }
 
@@ -221,20 +262,26 @@ pub fn cast_ref<A: Pod, B: Pod>(a: &A) -> &B {
 ///
 /// ## Panics
 ///
-/// This is [`try_cast_slice`] with an unwrap.
+/// This is [`try_cast_slice`] but will panic on error.
 #[inline]
 pub fn cast_slice<A: Pod, B: Pod>(a: &[A]) -> &[B] {
-  try_cast_slice(a).unwrap()
+  match try_cast_slice(a) {
+    Ok(b) => b,
+    Err(e) => panic!("cast_slice>{:?}", e),
+  }
 }
 
 /// Cast `&mut [T]` into `&mut [U]`.
 ///
 /// ## Panics
 ///
-/// This is [`try_cast_slice_mut`] with an unwrap.
+/// This is [`try_cast_slice_mut`] but will panic on error.
 #[inline]
 pub fn cast_slice_mut<A: Pod, B: Pod>(a: &mut [A]) -> &mut [B] {
-  try_cast_slice_mut(a).unwrap()
+  match try_cast_slice_mut(a) {
+    Ok(b) => b,
+    Err(e) => panic!("cast_slice_mut>{:?}", e),
+  }
 }
 
 /// As `align_to`, but safe because of the [`Pod`] bound.
@@ -373,106 +420,4 @@ pub fn try_cast_slice_mut<A: Pod, B: Pod>(
   } else {
     Err(PodCastError::OutputSliceWouldHaveSlop)
   }
-}
-
-/// Find the offset in bytes of the given `$field` of `$Type`, using `$instance`
-/// as an already-initialized value to work with.
-///
-/// This is similar to the macro from `memoffset`, however it's fully well
-/// defined even in current versions of Rust (and uses no unsafe code).
-///
-/// It does by using the `$instance` argument to have an already-initialized
-/// instance of `$Type` rather than trying to find a way access the fields of an
-/// uninitialized one without hitting soundness problems. The value passed to
-/// the macro is referenced but not moved.
-///
-/// This means the API is more limited, but it's also sound even in rather
-/// extreme cases, like some of the examples.
-///
-/// ## Caveats
-///
-/// 1. The offset is in bytes, and so you will likely have to cast your base
-///    pointers to `*const u8`/`*mut u8` before getting field addresses.
-///
-/// 2. The offset values of repr(Rust) types are not stable, and may change
-///    wildly between releases of the compiler. Use repr(C) if you can.
-///
-/// 3. The value of the `$instance` parameter has no bearing on the output of
-///    this macro. It is just used to avoid soundness problems. The only
-///    requirement is that it be initialized. In particular, the value returned
-///    is not a field pointer, or anything like that.
-///
-/// ## Examples
-///
-/// ### Use with zeroable types
-/// A common requirement in GPU apis is to specify the layout of vertices. These
-/// will generally be [`Zeroable`] (if not [`Pod`]), and are a good fit for
-/// `offset_of!`.
-/// ```
-/// # use bytemuck::{Zeroable, offset_of};
-/// #[repr(C)]
-/// struct Vertex {
-///   pos: [f32; 2],
-///   uv: [u16; 2],
-///   color: [u8; 4],
-/// }
-/// unsafe impl Zeroable for Vertex {}
-///
-/// let pos = offset_of!(Zeroable::zeroed(), Vertex, pos);
-/// let uv = offset_of!(Zeroable::zeroed(), Vertex, uv);
-/// let color = offset_of!(Zeroable::zeroed(), Vertex, color);
-///
-/// assert_eq!(pos, 0);
-/// assert_eq!(uv, 8);
-/// assert_eq!(color, 12);
-/// ```
-///
-/// ### Use with other types
-///
-/// More esoteric uses are possible too, including with types generally not safe
-/// to otherwise use with bytemuck. `Strings`, `Vec`s, etc.
-///
-/// ```
-/// #[derive(Default)]
-/// struct Foo {
-///   a: u8,
-///   b: &'static str,
-///   c: i32,
-/// }
-///
-/// let a_offset = bytemuck::offset_of!(Default::default(), Foo, a);
-/// let b_offset = bytemuck::offset_of!(Default::default(), Foo, b);
-/// let c_offset = bytemuck::offset_of!(Default::default(), Foo, c);
-///
-/// assert_ne!(a_offset, b_offset);
-/// assert_ne!(b_offset, c_offset);
-/// // We can't check against hardcoded values for a repr(Rust) type,
-/// // but prove to ourself this way.
-///
-/// let foo = Foo::default();
-/// // Note: offsets are in bytes.
-/// let as_bytes = &foo as *const _ as *const u8;
-///
-/// // we're using wrapping_offset here becasue it's not worth
-/// // the unsafe block, but it would be valid to use `add` instead,
-/// // as it cannot overflow.
-/// assert_eq!(&foo.a as *const _ as usize, as_bytes.wrapping_add(a_offset) as usize);
-/// assert_eq!(&foo.b as *const _ as usize, as_bytes.wrapping_add(b_offset) as usize);
-/// assert_eq!(&foo.c as *const _ as usize, as_bytes.wrapping_add(c_offset) as usize);
-/// ```
-#[macro_export]
-macro_rules! offset_of {
-  ($instance:expr, $Type:path, $field:tt) => {{
-    // This helps us guard against field access going through a Deref impl.
-    #[allow(clippy::unneeded_field_pattern)]
-    let $Type { $field: _, .. };
-    let reference: &$Type = &$instance;
-    let address = reference as *const _ as usize;
-    let field_pointer = &reference.$field as *const _ as usize;
-    // These asserts/unwraps are compiled away at release, and defend against
-    // the case where somehow a deref impl is still invoked.
-    let result = field_pointer.checked_sub(address).unwrap();
-    assert!(result <= $crate::__core::mem::size_of::<$Type>());
-    result
-  }};
 }
