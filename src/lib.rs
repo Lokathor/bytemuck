@@ -90,6 +90,16 @@ possibility code branch.
 
 */
 
+/// Immediately panics.
+#[cold]
+#[inline(never)]
+fn something_went_wrong(src: &str, err: PodCastError) -> ! {
+  // Note(Lokathor): Keeping the panic here makes the panic _formatting_ go
+  // here too, which helps assembly readability and also helps keep down
+  // the inline pressure.
+  panic!("{src}>{err:?}", src = src, err = err)
+}
+
 /// Re-interprets `&T` as `&[u8]`.
 ///
 /// Any ZST becomes an empty slice, and in that case the pointer value of that
@@ -123,7 +133,7 @@ pub fn bytes_of_mut<T: Pod>(t: &mut T) -> &mut [u8] {
 pub fn from_bytes<T: Pod>(s: &[u8]) -> &T {
   match try_from_bytes(s) {
     Ok(t) => t,
-    Err(e) => panic!("from_bytes>{:?}", e),
+    Err(e) => something_went_wrong("from_bytes", e),
   }
 }
 
@@ -136,7 +146,7 @@ pub fn from_bytes<T: Pod>(s: &[u8]) -> &T {
 pub fn from_bytes_mut<T: Pod>(s: &mut [u8]) -> &mut T {
   match try_from_bytes_mut(s) {
     Ok(t) => t,
-    Err(e) => panic!("from_bytes_mut>{:?}", e),
+    Err(e) => something_went_wrong("from_bytes_mut", e),
   }
 }
 
@@ -211,7 +221,7 @@ pub fn cast<A: Pod, B: Pod>(a: A) -> B {
   } else {
     match try_cast(a) {
       Ok(b) => b,
-      Err(e) => panic!("cast>{:?}", e),
+      Err(e) => something_went_wrong("cast", e),
     }
   }
 }
@@ -232,7 +242,7 @@ pub fn cast_mut<A: Pod, B: Pod>(a: &mut A) -> &mut B {
   } else {
     match try_cast_mut(a) {
       Ok(b) => b,
-      Err(e) => panic!("cast_mut>{:?}", e),
+      Err(e) => something_went_wrong("cast_mut", e),
     }
   }
 }
@@ -253,7 +263,7 @@ pub fn cast_ref<A: Pod, B: Pod>(a: &A) -> &B {
   } else {
     match try_cast_ref(a) {
       Ok(b) => b,
-      Err(e) => panic!("cast_ref>{:?}", e),
+      Err(e) => something_went_wrong("cast_ref", e),
     }
   }
 }
@@ -267,7 +277,7 @@ pub fn cast_ref<A: Pod, B: Pod>(a: &A) -> &B {
 pub fn cast_slice<A: Pod, B: Pod>(a: &[A]) -> &[B] {
   match try_cast_slice(a) {
     Ok(b) => b,
-    Err(e) => panic!("cast_slice>{:?}", e),
+    Err(e) => something_went_wrong("cast_slice", e),
   }
 }
 
@@ -280,7 +290,7 @@ pub fn cast_slice<A: Pod, B: Pod>(a: &[A]) -> &[B] {
 pub fn cast_slice_mut<A: Pod, B: Pod>(a: &mut [A]) -> &mut [B] {
   match try_cast_slice_mut(a) {
     Ok(b) => b,
-    Err(e) => panic!("cast_slice_mut>{:?}", e),
+    Err(e) => something_went_wrong("cast_slice_mut", e),
   }
 }
 
