@@ -1,5 +1,17 @@
 # `bytemuck` changelog
 
+## 1.2.0
+
+* [thomcc](https://github.com/thomcc) added many things:
+  * A fully sound `offset_of!` macro [#10](https://github.com/Lokathor/bytemuck/pull/10)
+  * A `Contiguous` trait for when you've got enums with declared values
+    all in a row [#12](https://github.com/Lokathor/bytemuck/pull/12)
+  * A `TransparentWrapper` marker trait for when you want to more clearly
+    enable adding and removing a wrapper struct to its inner value
+    [#15](https://github.com/Lokathor/bytemuck/pull/15)
+  * Now MIRI is run on CI in every sigle push!
+    [#16](https://github.com/Lokathor/bytemuck/pull/16)
+
 ## 1.1.0
 
 * [SimonSapin](https://github.com/SimonSapin) added `from_bytes`,
