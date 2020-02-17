@@ -9,6 +9,7 @@ keywords = ["transmute", "bytes", "casting"]
 categories = ["encoding", "no-std"]
 edition = "2018"
 license = "Zlib"
+exclude = ["/scripts/*", "/.travis.yml", "/appveyor.yml", "/bors.toml", "/pedantic.bat"]
 
 [package.metadata.docs.rs]
 all-features = true
