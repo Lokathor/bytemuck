@@ -1,89 +1,68 @@
 #![forbid(unsafe_code)]
 
-/// Find the offset in bytes of the given `$field` of `$Type`, using `$instance`
-/// as an already-initialized value to work with.
+/// Find the offset in bytes of the given `$field` of `$Type`. Requires an
+/// already initialized `$instance` value to work with.
 ///
-/// This is similar to the macro from `memoffset`, however it's fully well
-/// defined even in current versions of Rust (and uses no unsafe code).
+/// This is similar to the macro from [`memoffset`](https://docs.rs/memoffset),
+/// however it uses no `unsafe` code.
 ///
-/// It does by using the `$instance` argument to have an already-initialized
-/// instance of `$Type` rather than trying to find a way access the fields of an
-/// uninitialized one without hitting soundness problems. The value passed to
-/// the macro is referenced but not moved.
+/// This macro has a 3-argument and 2-argument version.
+/// * In the 3-arg version you specify an instance of the type, the type itself,
+///   and the field name.
+/// * In the 2-arg version the macro will call the [`default`](Default::default)
+///   method to make a temporary instance of the type for you.
 ///
-/// This means the API is more limited, but it's also sound even in rather
-/// extreme cases, like some of the examples.
+/// The output of this macro is the byte offset of the field (as a `usize`). The
+/// calculations of the macro are fixed across the entire program, but if the
+/// type used is `repr(Rust)` then they're *not* fixed across compilations or
+/// compilers.
 ///
-/// ## Caveats
-///
-/// 1. The offset is in bytes, and so you will likely have to cast your base
-///    pointers to `*const u8`/`*mut u8` before getting field addresses.
-///
-/// 2. The offset values of repr(Rust) types are not stable, and may change
-///    wildly between releases of the compiler. Use repr(C) if you can.
-///
-/// 3. The value of the `$instance` parameter has no bearing on the output of
-///    this macro. It is just used to avoid soundness problems. The only
-///    requirement is that it be initialized. In particular, the value returned
-///    is not a field pointer, or anything like that.
+/// **CAUTION:** It is **unsound** to use this macro with a `repr(packed)` type.
+/// Currently this will give a warning, and in the future it will become a hard
+/// error.
+/// * See [rust-lang/rust#27060](https://github.com/rust-lang/rust/issues/27060)
+///   for more info and for status updates.
+/// * Once this issue is resolved, a future version of this crate will use
+///   `raw_ref` to correct the issue. For the duration of the `1.x` version of
+///   this crate it will be an on-by-default cargo feature (to maintain minimum
+///   rust version support).
 ///
 /// ## Examples
 ///
-/// ### Use with zeroable types
-/// A common requirement in GPU apis is to specify the layout of vertices. These
-/// will generally be [`Zeroable`] (if not [`Pod`]), and are a good fit for
-/// `offset_of!`.
+/// ### 3-arg Usage
+///
+/// ```rust
+/// # use bytemuck::offset_of;
+/// // enums can't derive default, and for this example we don't pick one
+/// enum MyExampleEnum {
+///   A, B, C,
+/// }
+///
+/// // so now our struct here doesn't have Default
+/// #[repr(C)]
+/// struct MyNotDefaultType {
+///   pub counter: i32,
+///   pub some_field: MyExampleEnum,
+/// }
+///
+/// // but we provide an instance of the type and it's all good.
+/// let val = MyNotDefaultType { counter: 5, some_field: MyExampleEnum::A };
+/// assert_eq!(offset_of!(val, MyNotDefaultType, some_field), 4);
 /// ```
-/// # use bytemuck::{Zeroable, offset_of};
+///
+/// ### 2-arg Usage
+///
+/// ```rust
+/// # use bytemuck::offset_of;
+/// #[derive(Default)]
 /// #[repr(C)]
 /// struct Vertex {
-///   pos: [f32; 2],
-///   uv: [u16; 2],
-///   color: [u8; 4],
+///   pub loc: [f32; 3],
+///   pub color: [f32; 3],
 /// }
-/// unsafe impl Zeroable for Vertex {}
-///
-/// let pos = offset_of!(Zeroable::zeroed(), Vertex, pos);
-/// let uv = offset_of!(Zeroable::zeroed(), Vertex, uv);
-/// let color = offset_of!(Zeroable::zeroed(), Vertex, color);
-///
-/// assert_eq!(pos, 0);
-/// assert_eq!(uv, 8);
-/// assert_eq!(color, 12);
-/// ```
-///
-/// ### Use with other types
-///
-/// More esoteric uses are possible too, including with types generally not safe
-/// to otherwise use with bytemuck. `Strings`, `Vec`s, etc.
-///
-/// ```
-/// #[derive(Default)]
-/// struct Foo {
-///   a: u8,
-///   b: &'static str,
-///   c: i32,
-/// }
-///
-/// let a_offset = bytemuck::offset_of!(Default::default(), Foo, a);
-/// let b_offset = bytemuck::offset_of!(Default::default(), Foo, b);
-/// let c_offset = bytemuck::offset_of!(Default::default(), Foo, c);
-///
-/// assert_ne!(a_offset, b_offset);
-/// assert_ne!(b_offset, c_offset);
-/// // We can't check against hardcoded values for a repr(Rust) type,
-/// // but prove to ourself this way.
-///
-/// let foo = Foo::default();
-/// // Note: offsets are in bytes.
-/// let as_bytes = &foo as *const _ as *const u8;
-///
-/// // we're using wrapping_offset here becasue it's not worth
-/// // the unsafe block, but it would be valid to use `add` instead,
-/// // as it cannot overflow.
-/// assert_eq!(&foo.a as *const _ as usize, as_bytes.wrapping_add(a_offset) as usize);
-/// assert_eq!(&foo.b as *const _ as usize, as_bytes.wrapping_add(b_offset) as usize);
-/// assert_eq!(&foo.c as *const _ as usize, as_bytes.wrapping_add(c_offset) as usize);
+/// // if the type impls Default the macro can make its own default instance.
+/// assert_eq!(offset_of!(Vertex, loc), 0);
+/// assert_eq!(offset_of!(Vertex, color), 12);
 /// ```
 #[macro_export]
 macro_rules! offset_of {
@@ -99,5 +78,8 @@ macro_rules! offset_of {
     let result = field_pointer.checked_sub(address).unwrap();
     assert!(result <= $crate::__core::mem::size_of::<$Type>());
     result
+  }};
+  ($Type:path, $field:tt) => {{
+    $crate::offset_of!(<$Type as Default>::default(), $Type, $field)
   }};
 }
