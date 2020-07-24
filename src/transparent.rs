@@ -22,8 +22,8 @@ use super::*;
 ///
 /// 3. The `Wrapper` may not impose additional alignment requirements over
 ///    `Wrapped`.
-///     - Note: this is currently guaranteed by repr(transparent), but there
-///       have been discussions of lifting it, so it's stated here explictly.
+///     - Note: this is currently guaranteed by `repr(transparent)`, but there
+///       have been discussions of lifting it, so it's stated here explicitly.
 ///
 /// 4. The `wrap_ref` and `wrap_mut` functions on `TransparentWrapper` may not
 ///    be overridden.
@@ -131,3 +131,5 @@ pub unsafe trait TransparentWrapper<Wrapped: ?Sized> {
     }
   }
 }
+
+unsafe impl<T> TransparentWrapper<T> for core::num::Wrapping<T> {}
