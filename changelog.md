@@ -22,7 +22,7 @@
   * A `TransparentWrapper` marker trait for when you want to more clearly
     enable adding and removing a wrapper struct to its inner value
     [#15](https://github.com/Lokathor/bytemuck/pull/15)
-  * Now MIRI is run on CI in every sigle push!
+  * Now MIRI is run on CI in every single push!
     [#16](https://github.com/Lokathor/bytemuck/pull/16)
 
 ## 1.1.0
