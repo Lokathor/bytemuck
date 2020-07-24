@@ -1,14 +1,14 @@
 [package]
 name = "bytemuck"
 description = "A crate for mucking around with piles of bytes."
-version = "1.3.1-alpha.0"
+version = "1.3.0-alpha.0"
 authors = ["Lokathor <zefria@gmail.com>"]
 repository = "https://github.com/Lokathor/bytemuck"
 readme = "README.md"
 keywords = ["transmute", "bytes", "casting"]
 categories = ["encoding", "no-std"]
 edition = "2018"
-license = "Zlib"
+license = "Zlib OR Apache-2.0 OR MIT"
 exclude = ["/scripts/*", "/.travis.yml", "/appveyor.yml", "/bors.toml", "/pedantic.bat"]
 
 [package.metadata.docs.rs]
