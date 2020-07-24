@@ -1,5 +1,9 @@
 # `bytemuck` changelog
 
+## 1.3.0
+
+* [HeroicKatora](https://github.com/HeroicKatora) added the `try_zeroed_slice_box` function [#10](https://github.com/Lokathor/bytemuck/pull/17).
+
 ## 1.2.0
 
 * [thomcc](https://github.com/thomcc) added many things:
