@@ -10,6 +10,7 @@
   3-arg version.
 * The `PodCastError` type now supports `Hash` and `Display`. Also if you enable
   the `extern_crate_std` feature then it will support `std::error::Error`.
+* We now provide a `TransparentWrapper<T>` impl for `core::num::Wrapper<T>`.
 
 ## 1.2.0
 
