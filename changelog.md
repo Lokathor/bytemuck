@@ -2,12 +2,18 @@
 
 ## 1.3.0
 
-* [HeroicKatora](https://github.com/HeroicKatora) added the `try_zeroed_slice_box` function [#10](https://github.com/Lokathor/bytemuck/pull/17).
+* [HeroicKatora](https://github.com/HeroicKatora) added the
+  `try_zeroed_slice_box` function
+  [#10](https://github.com/Lokathor/bytemuck/pull/17).
+* The `offset_of!` macro now supports a 2-arg version. For types that impl
+  Default, it'll just make an instance using `default` and then call over to the
+  3-arg version.
 
 ## 1.2.0
 
 * [thomcc](https://github.com/thomcc) added many things:
-  * A fully sound `offset_of!` macro [#10](https://github.com/Lokathor/bytemuck/pull/10)
+  * A fully sound `offset_of!` macro
+    [#10](https://github.com/Lokathor/bytemuck/pull/10)
   * A `Contiguous` trait for when you've got enums with declared values
     all in a row [#12](https://github.com/Lokathor/bytemuck/pull/12)
   * A `TransparentWrapper` marker trait for when you want to more clearly
