@@ -15,7 +15,9 @@ exclude = ["/scripts/*", "/.travis.yml", "/appveyor.yml", "/bors.toml", "/pedant
 all-features = true
 
 [features]
+# Note: Yeah these names are non-standard, we'll fix it in v2 some day maybe
 extern_crate_alloc = []
+extern_crate_std = ["extern_crate_alloc"]
 
 [badges]
 appveyor = { repository = "Lokathor/bytemuck" }

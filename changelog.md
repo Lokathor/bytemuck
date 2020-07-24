@@ -8,6 +8,8 @@
 * The `offset_of!` macro now supports a 2-arg version. For types that impl
   Default, it'll just make an instance using `default` and then call over to the
   3-arg version.
+* The `PodCastError` type now supports `Hash` and `Display`. Also if you enable
+  the `extern_crate_std` feature then it will support `std::error::Error`.
 
 ## 1.2.0
 

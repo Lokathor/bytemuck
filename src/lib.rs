@@ -56,6 +56,9 @@ macro_rules! impl_unsafe_marker_for_array {
   }
 }
 
+#[cfg(feature = "extern_crate_std")]
+extern crate std;
+
 #[cfg(feature = "extern_crate_alloc")]
 extern crate alloc;
 #[cfg(feature = "extern_crate_alloc")]
@@ -187,7 +190,7 @@ pub fn try_from_bytes_mut<T: Pod>(
 }
 
 /// The things that can go wrong when casting between [`Pod`] data forms.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PodCastError {
   /// You tried to cast a slice to an element type with a higher alignment
   /// requirement but the slice wasn't aligned.
@@ -204,6 +207,13 @@ pub enum PodCastError {
   /// were not so now you're sad.
   AlignmentMismatch,
 }
+impl core::fmt::Display for PodCastError {
+  fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+    write!(f, "{:?}", self)
+  }
+}
+#[cfg(feature = "extern_crate_std")]
+impl std::error::Error for PodCastError {}
 
 /// Cast `T` into `U`
 ///
