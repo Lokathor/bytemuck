@@ -85,7 +85,9 @@ pub fn zeroed_box<T: Zeroable>() -> Box<T> {
 ///
 /// This fails if the allocation fails.
 #[inline]
-pub fn try_zeroed_slice_box<T: Pod>(length: usize) -> Result<Box<[T]>, ()> {
+pub fn try_zeroed_slice_box<T: Zeroable>(
+  length: usize,
+) -> Result<Box<[T]>, ()> {
   if size_of::<T>() == 0 {
     // This will not allocate but simple create a dangling slice pointer.
     let mut vec = Vec::with_capacity(length);
@@ -113,7 +115,7 @@ pub fn try_zeroed_slice_box<T: Pod>(length: usize) -> Result<Box<[T]>, ()> {
 }
 
 /// As [`try_zeroed_slice_box`](try_zeroed_slice_box), but unwraps for you.
-pub fn zeroed_slice_box<T: Pod>(length: usize) -> Box<[T]> {
+pub fn zeroed_slice_box<T: Zeroable>(length: usize) -> Box<[T]> {
   try_zeroed_slice_box(length).unwrap()
 }
 
