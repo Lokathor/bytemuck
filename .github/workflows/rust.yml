@@ -13,7 +13,7 @@ jobs:
       matrix:
         rust:
         # 1.34 doesn't support the alloc feature! (1.36 or later)
-        - { toolchain: 1.34, extra_args: "" }
+        - { toolchain: 1.34.0, extra_args: "" }
         # Stable and later support all of our features.
         - { toolchain: stable, extra_args: "" }
         - { toolchain: stable, extra_args: "--all-features" }
