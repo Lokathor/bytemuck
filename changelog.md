@@ -15,6 +15,9 @@
 * The `PodCastError` type now supports `Hash` and `Display`. Also if you enable
   the `extern_crate_std` feature then it will support `std::error::Error`.
 * We now provide a `TransparentWrapper<T>` impl for `core::num::Wrapper<T>`.
+* The error type of `try_from_bytes` and `try_from_bytes_mut` when the input
+  isn't aligned has been corrected from being `AlignmentMismatch` (intended for
+  allocation casting only) to `TargetAlignmentGreaterAndInputNotAligned`.
 
 ## 1.2.0
 
