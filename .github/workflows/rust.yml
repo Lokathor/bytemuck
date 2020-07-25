@@ -11,27 +11,23 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: [1.34.0, stable, beta, nightly]
+        rust:
+        # 1.34 doesn't support the alloc feature! (1.36 or later)
+        - { toolchain: 1.34, extra_args: "" }
+        # Stable and later support all of our features.
+        - { toolchain: stable, extra_args: "" }
+        - { toolchain: stable, extra_args: "--all-features" }
+        - { toolchain: beta, extra_args: "" }
+        - { toolchain: beta, extra_args: "--all-features" }
+        - { toolchain: nightly, extra_args: "" }
+        - { toolchain: nightly, extra_args: "--all-features" }
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
-        rust-version: ${{ matrix.rust }}
+        rust-version: ${{ matrix.rust.toolchain }}
     - uses: actions/checkout@v1
-    - name: Build
-      run: cargo build
-    - name: Test
-      run: cargo test
-  build_test_with_features:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust: [1.34.0, stable, nightly]
-    steps:
-    - uses: hecrj/setup-rust-action@v1
+    - uses: actions-rs/cargo@v1
       with:
-        rust-version: ${{ matrix.rust }}
-    - uses: actions/checkout@v1
-    - name: Build
-      run: cargo build --all-features
-    - name: Test
-      run: cargo test --all-features
+        toolchain: ${{ matrix.rust.toolchain }}
+        command: test
+        args: ${{ matrix.rust.extra_args }}

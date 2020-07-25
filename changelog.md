@@ -1,6 +1,6 @@
 # `bytemuck` changelog
 
-## 1.3.0
+## 1.3.1
 
 * The entire crate is now available under the `Apache-2.0 OR MIT` license as
   well as the previous `Zlib` license
@@ -18,6 +18,12 @@
 * The error type of `try_from_bytes` and `try_from_bytes_mut` when the input
   isn't aligned has been corrected from being `AlignmentMismatch` (intended for
   allocation casting only) to `TargetAlignmentGreaterAndInputNotAligned`.
+
+## 1.3.0
+
+* Had a bug because the CI was messed up! It wasn't soundness related, because
+  it prevented the crate from building entirely if the `extern_crate_alloc`
+  feature was used. Still, this is yanked, sorry.
 
 ## 1.2.0
 

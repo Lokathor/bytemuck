@@ -1,3 +1,5 @@
+#![cfg(feature = "extern_crate_alloc")]
+
 //! Stuff to boost things in the `alloc` crate.
 //!
 //! * You must enable the `extern_crate_alloc` feature of `bytemuck` or you will
