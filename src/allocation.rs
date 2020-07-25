@@ -111,7 +111,7 @@ pub fn try_zeroed_slice_box<T: Pod>(length: usize) -> Result<Box<[T]>, ()> {
 }
 
 /// As [`try_zeroed_slice_box`](try_zeroed_slice_box), but unwraps for you.
-pub fn zeroed_slice_box<T: Pod>(length: usize) -> Result<Box<[T]>, ()> {
+pub fn zeroed_slice_box<T: Pod>(length: usize) -> Box<[T]> {
   try_zeroed_slice_box(length).unwrap()
 }
 
