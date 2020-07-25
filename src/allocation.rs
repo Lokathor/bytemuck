@@ -110,6 +110,11 @@ pub fn try_zeroed_slice_box<T: Pod>(length: usize) -> Result<Box<[T]>, ()> {
   }
 }
 
+/// As [`try_zeroed_slice_box`](try_zeroed_slice_box), but unwraps for you.
+pub fn zeroed_slice_box<T: Pod>(length: usize) -> Result<Box<[T]>, ()> {
+  try_zeroed_slice_box(length).unwrap()
+}
+
 /// As [`try_cast_vec`](try_cast_vec), but unwraps for you.
 #[inline]
 pub fn cast_vec<A: Pod, B: Pod>(input: Vec<A>) -> Vec<B> {
