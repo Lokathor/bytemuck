@@ -2,6 +2,9 @@
 
 ## 1.3.0
 
+* The entire crate is now available under the `Apache-2.0 OR MIT` license as
+  well as the previous `Zlib` license
+  [#24](https://github.com/Lokathor/bytemuck/pull/24).
 * [HeroicKatora](https://github.com/HeroicKatora) added the
   `try_zeroed_slice_box` function
   [#10](https://github.com/Lokathor/bytemuck/pull/17). `zeroed_slice_box` is
