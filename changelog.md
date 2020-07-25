@@ -4,7 +4,8 @@
 
 * [HeroicKatora](https://github.com/HeroicKatora) added the
   `try_zeroed_slice_box` function
-  [#10](https://github.com/Lokathor/bytemuck/pull/17).
+  [#10](https://github.com/Lokathor/bytemuck/pull/17). `zeroed_slice_box` is
+  also available.
 * The `offset_of!` macro now supports a 2-arg version. For types that impl
   Default, it'll just make an instance using `default` and then call over to the
   3-arg version.
