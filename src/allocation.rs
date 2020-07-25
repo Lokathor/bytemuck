@@ -91,7 +91,7 @@ pub fn try_zeroed_slice_box<T: Zeroable>(
   if size_of::<T>() == 0 {
     // This will not allocate but simple create a dangling slice pointer.
     let mut vec = Vec::with_capacity(length);
-    vec.resize(length, T::zeroed());
+    vec.resize_with(length, || T::zeroed());
     return Ok(vec.into_boxed_slice());
   }
   if length == 0 {
