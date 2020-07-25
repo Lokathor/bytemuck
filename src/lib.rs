@@ -164,7 +164,7 @@ pub fn try_from_bytes<T: Pod>(s: &[u8]) -> Result<&T, PodCastError> {
   if s.len() != size_of::<T>() {
     Err(PodCastError::SizeMismatch)
   } else if (s.as_ptr() as usize) % align_of::<T>() != 0 {
-    Err(PodCastError::AlignmentMismatch)
+    Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else {
     Ok(unsafe { &*(s.as_ptr() as *const T) })
   }
@@ -183,7 +183,7 @@ pub fn try_from_bytes_mut<T: Pod>(
   if s.len() != size_of::<T>() {
     Err(PodCastError::SizeMismatch)
   } else if (s.as_ptr() as usize) % align_of::<T>() != 0 {
-    Err(PodCastError::AlignmentMismatch)
+    Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else {
     Ok(unsafe { &mut *(s.as_mut_ptr() as *mut T) })
   }
@@ -205,6 +205,10 @@ pub enum PodCastError {
   SizeMismatch,
   /// For this type of cast the alignments must be exactly the same and they
   /// were not so now you're sad.
+  ///
+  /// This error is generated **only** by operations that cast allocated types
+  /// (such as `Box` and `Vec`), because in that case the alignment must stay
+  /// exact.
   AlignmentMismatch,
 }
 impl core::fmt::Display for PodCastError {
