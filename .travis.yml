@@ -13,14 +13,7 @@ os:
   - osx
   - linux
   # Technically works, but super slow, so we use AppVeyor
-  #- windows 
-
-branches:
-  only:
-    - staging
-    - trying
-    - master
-    - dev
+  #- windows
 
 matrix:
   fast_finish: true
