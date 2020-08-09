@@ -1,8 +1,16 @@
-error_on_line_overflow = false
-merge_imports = true
-reorder_imports = true
-use_try_shorthand = true
-tab_spaces = 2
+# Based on
+# https://github.com/rust-lang/rustfmt/blob/rustfmt-1.4.19/Configurations.md
+
+# Stable
+edition = "2018"
+fn_args_layout = "Compressed"
 max_width = 80
-color = "Never"
+tab_spaces = 2
+use_field_init_shorthand = true
+use_try_shorthand = true
 use_small_heuristics = "Max"
+
+# Unstable
+format_code_in_doc_comments = true
+merge_imports = true
+wrap_comments = true
