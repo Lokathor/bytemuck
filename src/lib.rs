@@ -81,6 +81,9 @@ pub use offset_of::*;
 mod transparent;
 pub use transparent::*;
 
+#[cfg(feature = "derive")]
+pub use bytemuck_derive::{Zeroable, Pod};
+
 /*
 
 Note(Lokathor): We've switched all of the `unwrap` to `match` because there is
