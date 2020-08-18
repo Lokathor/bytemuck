@@ -1,10 +1,6 @@
 use proc_macro2::{Ident, Span, TokenStream, TokenTree};
 use quote::{quote, quote_spanned, ToTokens};
-use std::iter::empty;
-use syn::{
-  AttrStyle, Attribute, Data, DataStruct, DeriveInput, Field, Fields,
-  FieldsNamed, FieldsUnnamed, Type,
-};
+use syn::{AttrStyle, Attribute, Data, DataStruct, DeriveInput, Fields, Type};
 
 pub trait Derivable {
   fn ident() -> TokenStream;
@@ -100,7 +96,8 @@ impl Derivable for TransparentWrapper {
       Some(wrapped_type) => wrapped_type.to_string(),
       None => return Err(""), /* other code will already reject this derive */
     };
-    let mut wrapped_fields = get_fields(fields)
+    let mut wrapped_fields = fields
+      .iter()
       .filter(|field| field.ty.to_token_stream().to_string() == wrapped_type);
     if let None = wrapped_fields.next() {
       return Err("TransparentWrapper must have one field of the wrapped type");
@@ -135,20 +132,10 @@ impl Derivable for TransparentWrapper {
   }
 }
 
-fn get_fields<'a>(
-  fields: &'a Fields,
-) -> Box<dyn Iterator<Item = &'a Field> + 'a> {
-  match fields {
-    Fields::Unit => Box::new(empty()),
-    Fields::Named(FieldsNamed { named, .. }) => Box::new(named.iter()),
-    Fields::Unnamed(FieldsUnnamed { unnamed, .. }) => Box::new(unnamed.iter()),
-  }
-}
-
 fn get_field_types<'a>(
   fields: &'a Fields,
 ) -> impl Iterator<Item = &'a Type> + 'a {
-  get_fields(fields).map(|field| &field.ty)
+  fields.iter().map(|field| &field.ty)
 }
 
 /// Check that a struct has no padding by asserting that the size of the struct
