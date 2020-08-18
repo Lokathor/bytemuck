@@ -1,12 +1,18 @@
 #![allow(dead_code)]
 
 use bytemuck_derive::{Pod, TransparentWrapper, Zeroable};
+use std::marker::PhantomData;
 
 #[derive(Copy, Clone, Pod, Zeroable)]
 #[repr(C)]
 struct Test {
   a: u16,
   b: u16,
+}
+
+#[derive(Zeroable)]
+struct ZeroGeneric<T: bytemuck::Zeroable> {
+  a: T,
 }
 
 #[derive(TransparentWrapper)]
@@ -18,7 +24,7 @@ struct TransparentSingle {
 #[derive(TransparentWrapper)]
 #[repr(transparent)]
 #[transparent(u16)]
-struct TransparentWithZeroSized {
+struct TransparentWithZeroSized<T> {
   a: u16,
-  b: (),
+  b: PhantomData<T>,
 }

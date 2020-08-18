@@ -1,15 +1,16 @@
-use proc_macro2::{Ident, Span, TokenStream, TokenTree};
+use proc_macro2::{Ident, TokenStream, TokenTree};
 use quote::{quote, quote_spanned, ToTokens};
-use syn::{AttrStyle, Attribute, Data, DataStruct, DeriveInput, Fields, Type};
+use syn::{
+  spanned::Spanned, AttrStyle, Attribute, Data, DataStruct, DeriveInput,
+  Fields, Type,
+};
 
 pub trait Derivable {
   fn ident() -> TokenStream;
   fn generic_params(_input: &DeriveInput) -> Result<TokenStream, &'static str> {
     Ok(quote!())
   }
-  fn struct_asserts(
-    struct_name: &Ident, fields: &Fields, attributes: &[Attribute], span: Span,
-  ) -> Result<TokenStream, &'static str>;
+  fn struct_asserts(input: &DeriveInput) -> Result<TokenStream, &'static str>;
   fn check_attributes(_attributes: &[Attribute]) -> Result<(), &'static str> {
     Ok(())
   }
@@ -22,13 +23,14 @@ impl Derivable for Pod {
     quote!(::bytemuck::Pod)
   }
 
-  fn struct_asserts(
-    struct_name: &Ident, fields: &Fields, _attributes: &[Attribute], span: Span,
-  ) -> Result<TokenStream, &'static str> {
-    let assert_no_padding =
-      generate_assert_no_padding(struct_name, fields, span);
+  fn struct_asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
+    if !input.generics.params.is_empty() {
+      return Err("Pod requires cannot be derived for structs containing generic parameters because the padding requirements can't be verified for generic structs");
+    }
+
+    let assert_no_padding = generate_assert_no_padding(input)?;
     let assert_fields_are_pod =
-      generate_fields_are_trait(&fields, Self::ident(), span);
+      generate_fields_are_trait(input, Self::ident())?;
 
     Ok(quote!(
       #assert_no_padding
@@ -55,11 +57,8 @@ impl Derivable for Zeroable {
     quote!(::bytemuck::Zeroable)
   }
 
-  fn struct_asserts(
-    _struct_name: &Ident, fields: &Fields, _attributes: &[Attribute],
-    span: Span,
-  ) -> Result<TokenStream, &'static str> {
-    Ok(generate_fields_are_trait(fields, Self::ident(), span))
+  fn struct_asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
+    generate_fields_are_trait(input, Self::ident())
   }
 }
 
@@ -89,21 +88,15 @@ impl Derivable for TransparentWrapper {
   }
 
   fn generic_params(input: &DeriveInput) -> Result<TokenStream, &'static str> {
-    let fields = if let Data::Struct(DataStruct { fields, .. }) = &input.data {
-      fields
-    } else {
-      return Err("deriving this trait is only supported for structs");
-    };
+    let fields = get_struct_fields(input)?;
 
     Self::get_wrapper_type(&input.attrs, fields).map(|ty| quote!(<#ty>))
       .ok_or("when deriving TransparentWrapper for a struct with more than one field you need to specify the transparent field using #[transparent(T)]")
   }
 
-  fn struct_asserts(
-    _struct_name: &Ident, fields: &Fields, attributes: &[Attribute],
-    _span: Span,
-  ) -> Result<TokenStream, &'static str> {
-    let wrapped_type = match Self::get_wrapper_type(attributes, fields) {
+  fn struct_asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
+    let fields = get_struct_fields(input)?;
+    let wrapped_type = match Self::get_wrapper_type(&input.attrs, fields) {
       Some(wrapped_type) => wrapped_type.to_string(),
       None => return Err(""), /* other code will already reject this derive */
     };
@@ -132,6 +125,16 @@ impl Derivable for TransparentWrapper {
   }
 }
 
+fn get_struct_fields<'a>(
+  input: &'a DeriveInput,
+) -> Result<&'a Fields, &'static str> {
+  if let Data::Struct(DataStruct { fields, .. }) = &input.data {
+    Ok(fields)
+  } else {
+    Err("deriving this trait is only supported for structs")
+  }
+}
+
 fn get_field_types<'a>(
   fields: &'a Fields,
 ) -> impl Iterator<Item = &'a Type> + 'a {
@@ -141,29 +144,39 @@ fn get_field_types<'a>(
 /// Check that a struct has no padding by asserting that the size of the struct
 /// is equal to the sum of the size of it's fields
 fn generate_assert_no_padding(
-  struct_type: &Ident, fields: &Fields, span: Span,
-) -> TokenStream {
+  input: &DeriveInput,
+) -> Result<TokenStream, &'static str> {
+  let struct_type = &input.ident;
+  let span = input.span();
+  let fields = get_struct_fields(input)?;
+
   let field_types = get_field_types(&fields);
   let struct_size =
     quote_spanned!(span => core::mem::size_of::<#struct_type>());
   let size_sum =
     quote_spanned!(span => 0 #( + core::mem::size_of::<#field_types>() )*);
 
-  quote_spanned! {span => const _: fn() = || {
+  Ok(quote_spanned! {span => const _: fn() = || {
     let _ = core::mem::transmute::<[u8; #struct_size], [u8; #size_sum]>;
-  };}
+  };})
 }
 
 /// Check that all fields implement a given trait
 fn generate_fields_are_trait(
-  fields: &Fields, trait_: TokenStream, span: Span,
-) -> TokenStream {
+  input: &DeriveInput, trait_: TokenStream,
+) -> Result<TokenStream, &'static str> {
+  let (impl_generics, _ty_generics, where_clause) =
+    input.generics.split_for_impl();
+  let fields = get_struct_fields(input)?;
+  let span = input.span();
   let field_types = get_field_types(&fields);
-  quote_spanned! {span => #(const _: fn() = || {
-      fn assert_impl<T: #trait_>() {}
-      assert_impl::<#field_types>();
+  Ok(quote_spanned! {span => #(const _: fn() = || {
+      fn check #impl_generics () #where_clause {
+        fn assert_impl<T: #trait_>() {}
+        assert_impl::<#field_types>();
+      }
     };)*
-  }
+  })
 }
 
 fn get_ident_from_stream(tokens: TokenStream) -> Option<Ident> {
