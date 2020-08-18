@@ -8,13 +8,13 @@ use syn::{
 
 pub trait Derivable {
   fn ident() -> TokenStream;
-  fn generic_params(_input: &DeriveInput) -> Result<TokenStream, TokenStream> {
+  fn generic_params(_input: &DeriveInput) -> Result<TokenStream, &'static str> {
     Ok(quote!())
   }
   fn struct_asserts(
     struct_name: &Ident, fields: &Fields, attributes: &[Attribute], span: Span,
-  ) -> Result<TokenStream, TokenStream>;
-  fn check_attributes(_attributes: &[Attribute]) -> Result<(), TokenStream> {
+  ) -> Result<TokenStream, &'static str>;
+  fn check_attributes(_attributes: &[Attribute]) -> Result<(), &'static str> {
     Ok(())
   }
 }
@@ -28,7 +28,7 @@ impl Derivable for Pod {
 
   fn struct_asserts(
     struct_name: &Ident, fields: &Fields, _attributes: &[Attribute], span: Span,
-  ) -> Result<TokenStream, TokenStream> {
+  ) -> Result<TokenStream, &'static str> {
     let assert_no_padding =
       generate_assert_no_padding(struct_name, fields, span);
     let assert_fields_are_pod =
@@ -40,14 +40,14 @@ impl Derivable for Pod {
     ))
   }
 
-  fn check_attributes(attributes: &[Attribute]) -> Result<(), TokenStream> {
+  fn check_attributes(attributes: &[Attribute]) -> Result<(), &'static str> {
     let repr = get_repr(attributes);
     match repr.as_ref().map(|repr| repr.as_str()) {
       Some("C") => Ok(()),
       Some("transparent") => Ok(()),
-      _ => Err(quote! {
-        compile_error!("Pod requires the struct to be #[repr(C)] or #[repr(transparent)]");
-      }),
+      _ => {
+        Err("Pod requires the struct to be #[repr(C)] or #[repr(transparent)]")
+      }
     }
   }
 }
@@ -62,7 +62,7 @@ impl Derivable for Zeroable {
   fn struct_asserts(
     _struct_name: &Ident, fields: &Fields, _attributes: &[Attribute],
     span: Span,
-  ) -> Result<TokenStream, TokenStream> {
+  ) -> Result<TokenStream, &'static str> {
     Ok(generate_fields_are_trait(fields, Self::ident(), span))
   }
 }
@@ -95,52 +95,43 @@ impl Derivable for TransparentWrapper {
   fn struct_asserts(
     _struct_name: &Ident, fields: &Fields, attributes: &[Attribute],
     _span: Span,
-  ) -> Result<TokenStream, TokenStream> {
+  ) -> Result<TokenStream, &'static str> {
     let wrapped_type = match Self::get_wrapper_type(attributes, fields) {
       Some(wrapped_type) => wrapped_type.to_string(),
-      None => return Err(quote!()), /* other code will already reject this
-                                     * derive */
+      None => return Err(""), /* other code will already reject this derive */
     };
     let mut wrapped_fields = get_fields(fields)
       .filter(|field| field.ty.to_token_stream().to_string() == wrapped_type);
     if let None = wrapped_fields.next() {
-      return Err(quote! {
-        compile_error!("TransparentWrapper must have one field of the wrapped type");
-      });
+      return Err("TransparentWrapper must have one field of the wrapped type");
     };
     if let Some(_) = wrapped_fields.next() {
-      Err(quote! {
-        compile_error!("TransparentWrapper can only have one field of the wrapped type");
-      })
+      Err("TransparentWrapper can only have one field of the wrapped type")
     } else {
       Ok(quote!())
     }
   }
 
-  fn check_attributes(attributes: &[Attribute]) -> Result<(), TokenStream> {
+  fn check_attributes(attributes: &[Attribute]) -> Result<(), &'static str> {
     let repr = get_repr(attributes);
 
     match repr.as_ref().map(|repr| repr.as_str()) {
       Some("transparent") => Ok(()),
-      _ => Err(quote! {
-        compile_error!("TransparentWrapper requires the struct to be #[repr(transparent)]");
-      }),
+      _ => {
+        Err("TransparentWrapper requires the struct to be #[repr(transparent)]")
+      }
     }
   }
 
-  fn generic_params(input: &DeriveInput) -> Result<TokenStream, TokenStream> {
+  fn generic_params(input: &DeriveInput) -> Result<TokenStream, &'static str> {
     let fields = if let Data::Struct(DataStruct { fields, .. }) = &input.data {
       fields
     } else {
-      return Err(quote! {
-        compile_error!("deriving this trait is only supported for structs");
-      });
+      return Err("deriving this trait is only supported for structs");
     };
 
     Self::get_wrapper_type(&input.attrs, fields).map(|ty| quote!(<#ty>))
-      .ok_or_else(|| quote! {
-        compile_error!("when deriving TransparentWrapper for a struct with more than one field you need to specify the transparent field using #[transparent(T)]");
-      })
+      .ok_or("when deriving TransparentWrapper for a struct with more than one field you need to specify the transparent field using #[transparent(T)]")
   }
 }
 
@@ -166,7 +157,8 @@ fn generate_assert_no_padding(
   struct_type: &Ident, fields: &Fields, span: Span,
 ) -> TokenStream {
   let field_types = get_field_types(&fields);
-  let struct_size = quote_spanned!(span => core::mem::size_of::<#struct_type>());
+  let struct_size =
+    quote_spanned!(span => core::mem::size_of::<#struct_type>());
   let size_sum =
     quote_spanned!(span => 0 #( + core::mem::size_of::<#field_types>() )*);
 
@@ -175,7 +167,7 @@ fn generate_assert_no_padding(
   };}
 }
 
-/// Check that all fields implement Pod
+/// Check that all fields implement a given trait
 fn generate_fields_are_trait(
   fields: &Fields, trait_: TokenStream, span: Span,
 ) -> TokenStream {

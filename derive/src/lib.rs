@@ -36,12 +36,16 @@ pub fn derive_transparent(
 }
 
 fn derive_marker_trait<Trait: Derivable>(input: DeriveInput) -> TokenStream {
-  derive_marker_trait_inner::<Trait>(input).unwrap_or_else(|err| err)
+  derive_marker_trait_inner::<Trait>(input).unwrap_or_else(|err| {
+    quote! {
+      compile_error!(#err);
+    }
+  })
 }
 
 fn derive_marker_trait_inner<Trait: Derivable>(
   input: DeriveInput,
-) -> Result<TokenStream, TokenStream> {
+) -> Result<TokenStream, &'static str> {
   let name = &input.ident;
 
   let (impl_generics, ty_generics, where_clause) =
@@ -51,9 +55,7 @@ fn derive_marker_trait_inner<Trait: Derivable>(
   let fields = if let Data::Struct(DataStruct { fields, .. }) = &input.data {
     fields
   } else {
-    return Err(quote! {
-      compile_error!("deriving this trait is only supported for structs");
-    });
+    return Err("deriving this trait is only supported for structs");
   };
 
   let trait_ = Trait::ident();
