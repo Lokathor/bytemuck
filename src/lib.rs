@@ -223,20 +223,13 @@ impl std::error::Error for PodCastError {}
 ///
 /// ## Panics
 ///
-/// This is [`try_cast`] but will panic on error.
+/// * This is like [`try_cast`](try_cast), but will panic on a size mismatch.
 #[inline]
 pub fn cast<A: Pod, B: Pod>(a: A) -> B {
   if size_of::<A>() == size_of::<B>() {
-    // Plz mr compiler, just notice that we can't ever hit Err in this case.
-    match try_cast(a) {
-      Ok(b) => b,
-      Err(_) => unreachable!(),
-    }
+    unsafe { core::mem::transmute_copy(&a) }
   } else {
-    match try_cast(a) {
-      Ok(b) => b,
-      Err(e) => something_went_wrong("cast", e),
-    }
+    something_went_wrong("cast", PodCastError::SizeMismatch)
   }
 }
 
@@ -324,19 +317,18 @@ pub fn pod_align_to_mut<T: Pod, U: Pod>(
 
 /// Try to cast `T` into `U`.
 ///
+/// Note that for this particular type of cast, alignment isn't a factor. The
+/// input value is semantically copied into the function and then returned to a
+/// new memory location which will have whatever the required alignment of the
+/// output type is.
+///
 /// ## Failure
 ///
 /// * If the types don't have the same size this fails.
 #[inline]
 pub fn try_cast<A: Pod, B: Pod>(a: A) -> Result<B, PodCastError> {
   if size_of::<A>() == size_of::<B>() {
-    let mut b = B::zeroed();
-    // Note(Lokathor): We copy in terms of `u8` because that allows us to bypass
-    // any potential alignment difficulties.
-    let ap = &a as *const A as *const u8;
-    let bp = &mut b as *mut B as *mut u8;
-    unsafe { ap.copy_to_nonoverlapping(bp, size_of::<A>()) };
-    Ok(b)
+    Ok(unsafe { core::mem::transmute_copy(&a) })
   } else {
     Err(PodCastError::SizeMismatch)
   }
@@ -394,8 +386,7 @@ pub fn try_cast_mut<A: Pod, B: Pod>(a: &mut A) -> Result<&mut B, PodCastError> {
 ///   type, and the output slice wouldn't be a whole number of elements when
 ///   accounting for the size change (eg: 3 `u16` values is 1.5 `u32` values, so
 ///   that's a failure).
-/// * Similarly, you can't convert between a
-///   [ZST](https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
+/// * Similarly, you can't convert between a [ZST](https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
 ///   and a non-ZST.
 #[inline]
 pub fn try_cast_slice<A: Pod, B: Pod>(a: &[A]) -> Result<&[B], PodCastError> {
@@ -417,7 +408,8 @@ pub fn try_cast_slice<A: Pod, B: Pod>(a: &[A]) -> Result<&[B], PodCastError> {
   }
 }
 
-/// Try to convert `&mut [T]` into `&mut [U]` (possibly with a change in length).
+/// Try to convert `&mut [T]` into `&mut [U]` (possibly with a change in
+/// length).
 ///
 /// As [`try_cast_slice`], but `&mut`.
 #[inline]
