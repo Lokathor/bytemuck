@@ -88,6 +88,17 @@ impl Derivable for TransparentWrapper {
     quote!(::bytemuck::TransparentWrapper)
   }
 
+  fn generic_params(input: &DeriveInput) -> Result<TokenStream, &'static str> {
+    let fields = if let Data::Struct(DataStruct { fields, .. }) = &input.data {
+      fields
+    } else {
+      return Err("deriving this trait is only supported for structs");
+    };
+
+    Self::get_wrapper_type(&input.attrs, fields).map(|ty| quote!(<#ty>))
+      .ok_or("when deriving TransparentWrapper for a struct with more than one field you need to specify the transparent field using #[transparent(T)]")
+  }
+
   fn struct_asserts(
     _struct_name: &Ident, fields: &Fields, attributes: &[Attribute],
     _span: Span,
@@ -118,17 +129,6 @@ impl Derivable for TransparentWrapper {
         Err("TransparentWrapper requires the struct to be #[repr(transparent)]")
       }
     }
-  }
-
-  fn generic_params(input: &DeriveInput) -> Result<TokenStream, &'static str> {
-    let fields = if let Data::Struct(DataStruct { fields, .. }) = &input.data {
-      fields
-    } else {
-      return Err("deriving this trait is only supported for structs");
-    };
-
-    Self::get_wrapper_type(&input.attrs, fields).map(|ty| quote!(<#ty>))
-      .ok_or("when deriving TransparentWrapper for a struct with more than one field you need to specify the transparent field using #[transparent(T)]")
   }
 }
 
@@ -183,7 +183,7 @@ fn get_simple_attr(attributes: &[Attribute], attr_name: &str) -> Option<Ident> {
       get_ident_from_stream(attr.tokens.clone()),
     ) {
       if outer_ident.to_string() == attr_name {
-        return Some(inner_ident.clone());
+        return Some(inner_ident);
       }
     }
   }
