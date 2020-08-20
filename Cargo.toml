@@ -15,6 +15,7 @@ exclude = ["/pedantic.bat"]
 # Note: Yeah these names are non-standard, we'll fix it in v2 some day maybe
 extern_crate_alloc = []
 extern_crate_std = ["extern_crate_alloc"]
+zeroable_maybe_uninit = []
 
 [package.metadata.docs.rs]
 all-features = true

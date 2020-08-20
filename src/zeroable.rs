@@ -61,8 +61,8 @@ unsafe impl<T> Zeroable for Option<NonNull<T>> {}
 unsafe impl<T: Zeroable> Zeroable for PhantomData<T> {}
 unsafe impl<T: Zeroable> Zeroable for ManuallyDrop<T> {}
 
-// 2.0: add MaybeUninit
-//unsafe impl<T> Zeroable for MaybeUninit<T> {}
+#[cfg(feature = "zeroable_maybe_uninit")]
+unsafe impl<T> Zeroable for core::mem::MaybeUninit<T> {}
 
 unsafe impl<A: Zeroable> Zeroable for (A,) {}
 unsafe impl<A: Zeroable, B: Zeroable> Zeroable for (A, B) {}
