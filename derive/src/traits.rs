@@ -98,7 +98,7 @@ impl Derivable for TransparentWrapper {
     let fields = get_struct_fields(input)?;
     let wrapped_type = match Self::get_wrapper_type(&input.attrs, fields) {
       Some(wrapped_type) => wrapped_type.to_string(),
-      None => return Err(""), /* other code will already reject this derive */
+      None => unreachable!(), /* other code will already reject this derive */
     };
     let mut wrapped_fields = fields
       .iter()
