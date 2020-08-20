@@ -125,9 +125,7 @@ impl Derivable for TransparentWrapper {
   }
 }
 
-fn get_struct_fields<'a>(
-  input: &'a DeriveInput,
-) -> Result<&'a Fields, &'static str> {
+fn get_struct_fields(input: &DeriveInput) -> Result<&Fields, &'static str> {
   if let Data::Struct(DataStruct { fields, .. }) = &input.data {
     Ok(fields)
   } else {
