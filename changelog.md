@@ -1,5 +1,10 @@
 # `bytemuck` changelog
 
+## 1.4
+
+* The `zeroable_maybe_uninit` feature now adds a `Zeroable` impl to the
+  `MaybeUninit` type.
+
 ## 1.3.1
 
 * The entire crate is now available under the `Apache-2.0 OR MIT` license as
