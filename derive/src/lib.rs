@@ -16,7 +16,7 @@ use crate::traits::{Derivable, Pod, TransparentWrapper, Zeroable};
 /// The following constraints need to be satisfied for the macro to succeed
 ///
 /// - All fields in the struct must implement `Pod`
-/// - The struct must be `#[repr(C)]` or `$[repr(transparent)]`
+/// - The struct must be `#[repr(C)]` or `#[repr(transparent)]`
 /// - The struct must not contain any padding bytes
 /// - The struct contains no generic parameters
 ///
