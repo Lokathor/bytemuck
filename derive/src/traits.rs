@@ -1,8 +1,9 @@
 use proc_macro2::{Ident, TokenStream, TokenTree};
 use quote::{quote, quote_spanned, ToTokens};
 use syn::{
-  spanned::Spanned, AttrStyle, Attribute, Data, DataStruct, DeriveInput,
-  Fields, Type,
+  spanned::Spanned, AttrStyle, Attribute, Data, DataEnum, DataStruct,
+  DeriveInput, Expr, ExprLit, ExprUnary, Fields, Lit, LitInt, Type, UnOp,
+  Variant,
 };
 
 pub trait Derivable {
@@ -10,9 +11,14 @@ pub trait Derivable {
   fn generic_params(_input: &DeriveInput) -> Result<TokenStream, &'static str> {
     Ok(quote!())
   }
-  fn struct_asserts(input: &DeriveInput) -> Result<TokenStream, &'static str>;
+  fn struct_asserts(_input: &DeriveInput) -> Result<TokenStream, &'static str> {
+    Ok(quote!())
+  }
   fn check_attributes(_attributes: &[Attribute]) -> Result<(), &'static str> {
     Ok(())
+  }
+  fn trait_impl(_input: &DeriveInput) -> Result<TokenStream, &'static str> {
+    Ok(quote!())
   }
 }
 
@@ -91,7 +97,7 @@ impl Derivable for TransparentWrapper {
     let fields = get_struct_fields(input)?;
 
     Self::get_wrapper_type(&input.attrs, fields).map(|ty| quote!(<#ty>))
-      .ok_or("when deriving TransparentWrapper for a struct with more than one field you need to specify the transparent field using #[transparent(T)]")
+            .ok_or("when deriving TransparentWrapper for a struct with more than one field you need to specify the transparent field using #[transparent(T)]")
   }
 
   fn struct_asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
@@ -125,11 +131,70 @@ impl Derivable for TransparentWrapper {
   }
 }
 
+pub struct Contiguous;
+
+impl Derivable for Contiguous {
+  fn ident() -> TokenStream {
+    quote!(::bytemuck::Contiguous)
+  }
+
+  fn trait_impl(input: &DeriveInput) -> Result<TokenStream, &'static str> {
+    let repr = get_repr(&input.attrs)
+      .ok_or("Contiguous requires the enum to be #[repr(Int)]")?;
+
+    if !repr.starts_with('u') && !repr.starts_with('i') {
+      return Err("Contiguous requires the enum to be #[repr(Int)]");
+    }
+
+    let variants = get_enum_variants(input)?;
+    let mut variants_with_discriminator =
+      VariantDiscriminantIterator::new(variants);
+
+    let (min, max, count) = variants_with_discriminator.try_fold(
+      (i64::max_value(), i64::min_value(), 0),
+      |(min, max, count), res| {
+        let discriminator = res?;
+        Ok((
+          i64::min(min, discriminator),
+          i64::max(max, discriminator),
+          count + 1,
+        ))
+      },
+    )?;
+
+    if max - min != count - 1 {
+      return Err(
+        "Contiguous requires the enum discriminants to be contiguous",
+      );
+    }
+
+    let repr_ident = Ident::new(&repr, input.span());
+    let min_lit = LitInt::new(&format!("{}", min), input.span());
+    let max_lit = LitInt::new(&format!("{}", max), input.span());
+
+    Ok(quote! {
+        type Int = #repr_ident;
+        const MIN_VALUE: #repr_ident = #min_lit;
+        const MAX_VALUE: #repr_ident = #max_lit;
+    })
+  }
+}
+
 fn get_struct_fields(input: &DeriveInput) -> Result<&Fields, &'static str> {
   if let Data::Struct(DataStruct { fields, .. }) = &input.data {
     Ok(fields)
   } else {
     Err("deriving this trait is only supported for structs")
+  }
+}
+
+fn get_enum_variants<'a>(
+  input: &'a DeriveInput,
+) -> Result<impl Iterator<Item = &'a Variant> + 'a, &'static str> {
+  if let Data::Enum(DataEnum { variants, .. }) = &input.data {
+    Ok(variants.iter())
+  } else {
+    Err("deriving this trait is only supported for enums")
   }
 }
 
@@ -204,4 +269,54 @@ fn get_simple_attr(attributes: &[Attribute], attr_name: &str) -> Option<Ident> {
 
 fn get_repr(attributes: &[Attribute]) -> Option<String> {
   get_simple_attr(attributes, "repr").map(|ident| ident.to_string())
+}
+
+struct VariantDiscriminantIterator<'a, I: Iterator<Item = &'a Variant> + 'a> {
+  inner: I,
+  last_value: i64,
+}
+
+impl<'a, I: Iterator<Item = &'a Variant> + 'a>
+  VariantDiscriminantIterator<'a, I>
+{
+  fn new(inner: I) -> Self {
+    VariantDiscriminantIterator { inner, last_value: -1 }
+  }
+}
+
+impl<'a, I: Iterator<Item = &'a Variant> + 'a> Iterator
+  for VariantDiscriminantIterator<'a, I>
+{
+  type Item = Result<i64, &'static str>;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    let variant = self.inner.next()?;
+    if !variant.fields.is_empty() {
+      return Some(Err("Only fieldless enums are supported"));
+    }
+
+    if let Some((_, discriminant)) = &variant.discriminant {
+      let discriminant_value = match parse_int_expr(discriminant) {
+        Ok(value) => value,
+        Err(e) => return Some(Err(e)),
+      };
+      self.last_value = discriminant_value;
+    } else {
+      self.last_value += 1;
+    }
+
+    Some(Ok(self.last_value))
+  }
+}
+
+fn parse_int_expr(expr: &Expr) -> Result<i64, &'static str> {
+  match expr {
+    Expr::Unary(ExprUnary { op: UnOp::Neg(_), expr, .. }) => {
+      parse_int_expr(expr).map(|int| -int)
+    }
+    Expr::Lit(ExprLit { lit: Lit::Int(int), .. }) => {
+      int.base10_parse().map_err(|_| "Invalid integer expression")
+    }
+    _ => Err("Not an integer expression"),
+  }
 }
