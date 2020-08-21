@@ -2,8 +2,14 @@
 
 ## 1.4
 
+* [icewind1991](https://github.com/icewind1991) has contributed the proc-macros
+  for deriving impls of `Pod`, `TransparentWrapper`, `Zeroable`!! Everyone has
+  been waiting for this one folks! It's a big deal. Just enable the `derive`
+  cargo feature and then you'll be able to derive the traits on your types. It
+  generates all the appropriate tests for you.
 * The `zeroable_maybe_uninit` feature now adds a `Zeroable` impl to the
-  `MaybeUninit` type.
+  `MaybeUninit` type. This is only behind a feature flag because `MaybeUninit`
+  didn't exist back in `1.34.0` (the minimum rust version of `bytemuck`).
 
 ## 1.3.1
 
