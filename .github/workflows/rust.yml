@@ -29,3 +29,10 @@ jobs:
         toolchain: ${{ matrix.rust.toolchain }}
         command: test
         args: ${{ matrix.rust.extra_args }}
+    - name: Switch to Derive Folder
+      run: cd derive
+    - uses: actions-rs/cargo@v1
+      with:
+        toolchain: ${{ matrix.rust.toolchain }}
+        command: test
+        args: ${{ matrix.rust.extra_args }}
