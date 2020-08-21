@@ -1,6 +1,6 @@
 [package]
 name = "bytemuck_derive"
-description = "A crate for mucking around with piles of bytes."
+description = "derive proc-macros for `bytemuck`"
 version = "1.0.0"
 authors = ["Lokathor <zefria@gmail.com>"]
 repository = "https://github.com/Lokathor/bytemuck"
