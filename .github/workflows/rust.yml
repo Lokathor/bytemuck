@@ -22,7 +22,9 @@ jobs:
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
-        rust-version: ${{ matrix.rust.toolchain }}
+        profile: minimal
+        toolchain: ${{ matrix.rust.toolchain }}
+        default: true
     - uses: actions/checkout@v1
     - uses: actions-rs/cargo@v1
       with:
