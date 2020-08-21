@@ -16,6 +16,12 @@ exclude = ["/pedantic.bat"]
 extern_crate_alloc = []
 extern_crate_std = ["extern_crate_alloc"]
 zeroable_maybe_uninit = []
+derive = ["bytemuck_derive"]
+
+[dependencies]
+bytemuck_derive = { version = "1.0", path = "derive", optional = true }
 
 [package.metadata.docs.rs]
 all-features = true
+
+[workspace]
