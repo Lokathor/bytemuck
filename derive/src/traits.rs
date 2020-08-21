@@ -150,12 +150,12 @@ fn generate_assert_no_padding(
 
   let field_types = get_field_types(&fields);
   let struct_size =
-    quote_spanned!(span => core::mem::size_of::<#struct_type>());
+    quote_spanned!(span => ::core::mem::size_of::<#struct_type>());
   let size_sum =
-    quote_spanned!(span => 0 #( + core::mem::size_of::<#field_types>() )*);
+    quote_spanned!(span => 0 #( + ::core::mem::size_of::<#field_types>() )*);
 
   Ok(quote_spanned! {span => const _: fn() = || {
-    let _ = core::mem::transmute::<[u8; #struct_size], [u8; #size_sum]>;
+    let _ = ::core::mem::transmute::<[u8; #struct_size], [u8; #size_sum]>;
   };})
 }
 
