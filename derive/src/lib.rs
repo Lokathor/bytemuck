@@ -1,4 +1,4 @@
-//! Derive macros for [bytemuck](https://docs.rs/bytemuck) traits
+//! Derive macros for [bytemuck](https://docs.rs/bytemuck) traits.
 
 mod traits;
 
