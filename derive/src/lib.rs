@@ -78,7 +78,7 @@ pub fn derive_zeroable(
 ///
 /// The following constraints need to be satisfied for the macro to succeed
 ///
-/// - The struct must be `#[repr(transparent)]
+/// - The struct must be `#[repr(transparent)]`
 /// - The struct must contain the `Wrapped` type
 ///
 /// If the struct only contains a single field, the `Wrapped` type will
