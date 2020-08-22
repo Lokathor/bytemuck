@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use bytemuck_derive::{Pod, TransparentWrapper, Zeroable};
+use bytemuck_derive::{Contiguous, Pod, TransparentWrapper, Zeroable};
 use std::marker::PhantomData;
 
 #[derive(Copy, Clone, Pod, Zeroable)]
@@ -27,4 +27,24 @@ struct TransparentSingle {
 struct TransparentWithZeroSized<T> {
   a: u16,
   b: PhantomData<T>,
+}
+
+#[repr(u8)]
+#[derive(Clone, Copy, Contiguous)]
+enum ContiguousWithValues {
+  A = 0,
+  B = 1,
+  C = 2,
+  D = 3,
+  E = 4,
+}
+
+#[repr(i8)]
+#[derive(Clone, Copy, Contiguous)]
+enum ContiguousWithImplicitValues {
+  A = -10,
+  B,
+  C,
+  D,
+  E,
 }
