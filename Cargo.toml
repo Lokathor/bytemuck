@@ -19,7 +19,7 @@ zeroable_maybe_uninit = []
 derive = ["bytemuck_derive"]
 
 [dependencies]
-bytemuck_derive = { version = "1.0.0-alpha.2", path = "derive", optional = true }
+bytemuck_derive = { version = "1", path = "derive", optional = true }
 
 [package.metadata.docs.rs]
 all-features = true
