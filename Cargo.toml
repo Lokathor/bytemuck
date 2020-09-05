@@ -25,3 +25,6 @@ bytemuck_derive = { version = "1", optional = true }
 
 [package.metadata.docs.rs]
 all-features = true
+
+[package.metadata.playground]
+all-features = true
