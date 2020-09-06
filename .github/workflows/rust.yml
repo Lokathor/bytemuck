@@ -4,35 +4,85 @@ on:
   push: {}
   pull_request: {}
 
+env:
+  RUST_BACKTRACE: 1
+
 jobs:
-  build_test_no_features:
-    runs-on: ubuntu-latest
+  test:
+    name: Test Rust ${{ matrix.rust }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        rust:
-        # 1.34 doesn't support the alloc feature! (1.36 or later)
-        - { toolchain: 1.34.0, extra_args: "" }
-        # Stable and later support all of our features.
-        - { toolchain: stable, extra_args: "" }
-        - { toolchain: stable, extra_args: "--all-features" }
-        - { toolchain: beta, extra_args: "" }
-        - { toolchain: beta, extra_args: "--all-features" }
-        - { toolchain: nightly, extra_args: "" }
-        - { toolchain: nightly, extra_args: "--all-features" }
+        include:
+        # versions (all on linux-x86_64)
+        - { rust: '1.34.0', os: ubuntu-latest }
+        - { rust: stable, os: ubuntu-latest }
+        - { rust: beta, os: ubuntu-latest }
+        - { rust: nightly, os: ubuntu-latest }
+        # non-linux platforms (ones which don't require `cross`)
+        - { rust: stable, os: macos-latest }
+        - { rust: stable, os: windows-latest }
+        - { rust: stable-x86_64-gnu, os: windows-latest }
+        - { rust: stable-i686-msvc, os: windows-latest }
+        - { rust: stable-i686-gnu, os: windows-latest }
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
-        rust-version: ${{ matrix.rust.toolchain }}
-    - uses: actions/checkout@v1
-    - uses: actions-rs/cargo@v1
+        rust-version: ${{ matrix.rust }}
+    - uses: actions/checkout@v2
+    - run: cargo test --verbose --no-default-features
+    - run: cargo test --verbose --all-features
+    - run: cargo test --verbose --manifest-path=derive/Cargo.toml --all-features
+
+  cross-test:
+    name: Test on ${{ matrix.target }} with cross
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # note: the mips targets are here so that we have big-endian coverage (both 32bit and 64bit)
+        target: [i686-unknown-linux-gnu, mips-unknown-linux-gnu, mips64-unknown-linux-gnuabi64]
+    steps:
+    - uses: hecrj/setup-rust-action@v1
+    - uses: actions/checkout@v2
+    - run: cargo install cross
+    - run: cross test --verbose --target=${{ matrix.target }} --no-default-features
+    - run: cross test --verbose --target=${{ matrix.target }} --all-features
+    - run: cross test --verbose --target=${{ matrix.target }} --manifest-path=derive/Cargo.toml --all-features
+
+  miri-test:
+    name: Test with miri
+    runs-on: ubuntu-latest
+    steps:
+    - uses: hecrj/setup-rust-action@v1
       with:
-        toolchain: ${{ matrix.rust.toolchain }}
-        command: test
-        args: ${{ matrix.rust.extra_args }}
-    - name: Switch to Derive Folder
-      run: cd derive
-    - uses: actions-rs/cargo@v1
+        rust-version: nightly
+        components: miri
+    - run: cargo miri test --verbose --no-default-features
+    - run: cargo miri test --verbose --all-features
+    - run: cargo miri test --verbose --manifest-path=derive/Cargo.toml --all-features
+
+  sanitizer-test:
+    name: Test with -Zsanitizer=${{ matrix.sanitizer }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [address, memory, leak]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: hecrj/setup-rust-action@v1
       with:
-        toolchain: ${{ matrix.rust.toolchain }}
-        command: test
-        args: ${{ matrix.rust.extra_args }}
+        rust-version: nightly
+        components: rust-src
+    - name: Test with sanitizer
+      env:
+        RUSTFLAGS: -Zsanitizer=${{ matrix.sanitizer }}
+        RUSTDOCFLAGS: -Zsanitizer=${{ matrix.sanitizer }}
+        ASAN_OPTIONS: detect_stack_use_after_return=1
+        # Asan's leak detection occasionally complains about some small leaks if
+        # backtraces are captured.
+        RUST_BACKTRACE: 0
+      run: |
+        cargo test -Zbuild-std --verbose --target=x86_64-unknown-linux-gnu --no-default-features
+        cargo test -Zbuild-std --verbose --target=x86_64-unknown-linux-gnu --all-features
+        cargo test -Zbuild-std --verbose --target=x86_64-unknown-linux-gnu --manifest-path=derive/Cargo.toml --all-features
