@@ -63,6 +63,7 @@ jobs:
       with:
         rust-version: nightly
         components: miri
+    - uses: actions/checkout@v2
     - run: cargo miri test --verbose --no-default-features
     - run: cargo miri test --verbose --all-features
     - run: cargo miri test --verbose --manifest-path=derive/Cargo.toml --all-features
@@ -88,7 +89,15 @@ jobs:
         # Asan's leak detection occasionally complains about some small leaks if
         # backtraces are captured.
         RUST_BACKTRACE: 0
+      # We don't run `derive`'s unit tests here the way we do elsewhere (for
+      # example, in `miri-test` above), as at the moment we can't easily build
+      # the `proc_macro` runtime with sanitizers on. IIUC doing this would
+      # require a custom rustc build, and... lol nope.
+      #
+      # This would mean only part of the code running under the sanitizer would
+      # actually include the sanitizer's checks, which is a recipe for false
+      # positives, so we just skip it, the generated code is what we care
+      # about anyway.
       run: |
         cargo test -Zbuild-std --verbose --target=x86_64-unknown-linux-gnu --no-default-features
         cargo test -Zbuild-std --verbose --target=x86_64-unknown-linux-gnu --all-features
-        cargo test -Zbuild-std --verbose --target=x86_64-unknown-linux-gnu --manifest-path=derive/Cargo.toml --all-features
