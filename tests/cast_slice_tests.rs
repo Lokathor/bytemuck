@@ -88,3 +88,78 @@ fn test_types() {
   let _: Result<&[i32], PodCastError> = try_cast_slice(&[1.0_f32]);
   let _: Result<&mut [i32], PodCastError> = try_cast_slice_mut(&mut [1.0_f32]);
 }
+
+#[test]
+fn test_bytes_of() {
+  assert_eq!(bytes_of(&0xaabbccdd_u32), &0xaabbccdd_u32.to_ne_bytes());
+  assert_eq!(bytes_of_mut(&mut 0xaabbccdd_u32), &mut 0xaabbccdd_u32.to_ne_bytes());
+  let mut a = 0xaabbccdd_u32;
+  let a_addr = &a as *const _ as usize;
+  // ensure addresses match.
+  assert_eq!(bytes_of(&a).as_ptr() as usize, a_addr);
+  assert_eq!(bytes_of_mut(&mut a).as_ptr() as usize, a_addr);
+}
+
+#[test]
+fn test_try_from_bytes() {
+  let u32s = [0xaabbccdd, 0x11223344_u32];
+  let bytes = bytemuck::cast_slice::<u32, u8>(&u32s);
+  assert_eq!(try_from_bytes::<u32>(&bytes[..4]), Ok(&u32s[0]));
+  assert_eq!(try_from_bytes::<u32>(&bytes[..5]), Err(PodCastError::SizeMismatch));
+  assert_eq!(try_from_bytes::<u32>(&bytes[..3]), Err(PodCastError::SizeMismatch));
+  assert_eq!(try_from_bytes::<u32>(&bytes[1..5]), Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned));
+}
+
+#[test]
+fn test_try_from_bytes_mut() {
+  let mut abcd = 0xaabbccdd;
+  let mut u32s = [abcd, 0x11223344_u32];
+  let bytes = bytemuck::cast_slice_mut::<u32, u8>(&mut u32s);
+  assert_eq!(try_from_bytes_mut::<u32>(&mut bytes[..4]), Ok(&mut abcd));
+  assert_eq!(try_from_bytes_mut::<u32>(&mut bytes[..4]), Ok(&mut abcd));
+  assert_eq!(try_from_bytes_mut::<u32>(&mut bytes[..5]), Err(PodCastError::SizeMismatch));
+  assert_eq!(try_from_bytes_mut::<u32>(&mut bytes[..3]), Err(PodCastError::SizeMismatch));
+  assert_eq!(try_from_bytes::<u32>(&mut bytes[1..5]), Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned));
+}
+
+#[test]
+fn test_from_bytes() {
+  let abcd = 0xaabbccdd_u32;
+  let aligned_bytes = bytemuck::bytes_of(&abcd);
+  assert_eq!(from_bytes::<u32>(aligned_bytes), &abcd);
+  assert!(core::ptr::eq(from_bytes(aligned_bytes), &abcd));
+}
+
+#[test]
+fn test_from_bytes_mut() {
+  let mut a = 0xaabbccdd_u32;
+  let a_addr = &a as *const _ as usize;
+  let aligned_bytes = bytemuck::bytes_of_mut(&mut a);
+  assert_eq!(*from_bytes_mut::<u32>(aligned_bytes), 0xaabbccdd_u32);
+  assert_eq!(from_bytes_mut::<u32>(aligned_bytes) as *const u32 as usize, a_addr);
+}
+
+// like #[should_panic], but can be a part of another test, instead of requiring
+// it to be it's own test.
+macro_rules! should_panic {
+  ($ex:expr) => {
+    assert!(
+      std::panic::catch_unwind(|| { let _ = $ex; }).is_err(),
+      concat!("should have panicked: `", stringify!($ex), "`")
+    );
+  };
+}
+
+#[test]
+fn test_panics() {
+  should_panic!(cast_slice::<u8, u32>(&[1u8, 2u8]));
+  should_panic!(cast_slice_mut::<u8, u32>(&mut [1u8, 2u8]));
+  should_panic!(from_bytes::<u32>(&[1u8, 2]));
+  should_panic!(from_bytes::<u32>(&[1u8, 2, 3, 4, 5]));
+  should_panic!(from_bytes_mut::<u32>(&mut [1u8, 2]));
+  should_panic!(from_bytes_mut::<u32>(&mut [1u8, 2, 3, 4, 5]));
+  // use cast_slice on some u32s to get some align>=4 bytes, so we can know
+  // we'll give from_bytes unaligned ones.
+  let aligned_bytes = bytemuck::cast_slice::<u32, u8>(&[0, 0]);
+  should_panic!(from_bytes::<u32>(&aligned_bytes[1..5]));
+}

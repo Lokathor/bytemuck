@@ -278,7 +278,7 @@ pub fn cast_ref<A: Pod, B: Pod>(a: &A) -> &B {
   }
 }
 
-/// Cast `&[T]` into `&[U]`.
+/// Cast `&[A]` into `&[B]`.
 ///
 /// ## Panics
 ///
@@ -376,7 +376,7 @@ pub fn try_cast_mut<A: Pod, B: Pod>(a: &mut A) -> Result<&mut B, PodCastError> {
   }
 }
 
-/// Try to convert `&[T]` into `&[U]` (possibly with a change in length).
+/// Try to convert `&[A]` into `&[B]` (possibly with a change in length).
 ///
 /// * `input.as_ptr() as usize == output.as_ptr() as usize`
 /// * `input.len() * size_of::<A>() == output.len() * size_of::<B>()`
@@ -411,7 +411,7 @@ pub fn try_cast_slice<A: Pod, B: Pod>(a: &[A]) -> Result<&[B], PodCastError> {
   }
 }
 
-/// Try to convert `&mut [T]` into `&mut [U]` (possibly with a change in
+/// Try to convert `&mut [A]` into `&mut [B]` (possibly with a change in
 /// length).
 ///
 /// As [`try_cast_slice`], but `&mut`.
