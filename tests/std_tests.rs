@@ -27,3 +27,10 @@ fn test_transparent_vtabled() {
   let s = format!("{}", v_mut);
   assert_eq!(s, "100");
 }
+
+#[test]
+#[cfg(feature = "extern_crate_alloc")]
+fn test_large_box_alloc() {
+  type SuperPage = [[u8; 4096]; 4096];
+  let _: Box<SuperPage> = try_zeroed_box().unwrap();
+}
