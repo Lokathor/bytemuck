@@ -1,5 +1,7 @@
 //! Derive macros for [bytemuck](https://docs.rs/bytemuck) traits.
 
+extern crate proc_macro;
+
 mod traits;
 
 use proc_macro2::TokenStream;
