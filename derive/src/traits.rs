@@ -213,9 +213,16 @@ fn generate_assert_no_padding(
   let span = input.ident.span();
   let fields = get_struct_fields(input)?;
 
-  let field_types = get_field_types(&fields);
-  let size_sum =
-    quote_spanned!(span => 0 #( + ::core::mem::size_of::<#field_types>() )*);
+  let mut field_types = get_field_types(&fields);
+  let size_sum = if let Some(first) = field_types.next() {
+    let size_first = quote_spanned!(span => ::core::mem::size_of::<#first>());
+    let size_rest =
+      quote_spanned!(span => #( + ::core::mem::size_of::<#field_types>() )*);
+
+    quote_spanned!(span => #size_first#size_rest)
+  } else {
+    quote_spanned!(span => 0)
+  };
 
   Ok(quote_spanned! {span => const _: fn() = || {
     struct TypeWithoutPadding([u8; #size_sum]);
