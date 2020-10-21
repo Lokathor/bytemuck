@@ -11,6 +11,7 @@ use alloc::{
   boxed::Box,
   vec::Vec,
 };
+use core::convert::TryInto;
 
 /// As [`try_cast_box`](try_cast_box), but unwraps for you.
 #[inline]
@@ -55,7 +56,20 @@ pub fn try_cast_box<A: Pod, B: Pod>(
 #[inline]
 pub fn try_zeroed_box<T: Zeroable>() -> Result<Box<T>, ()> {
   if size_of::<T>() == 0 {
-    return Ok(Box::new(T::zeroed()));
+    // This will not allocate but simple create a dangling slice pointer.
+    // NB: We go the way via a push to `Vec<T>` to ensure the compiler
+    // does not allocate space for T on the stack even if the branch
+    // would not be taken.
+    let mut vec = Vec::with_capacity(1);
+    vec.resize_with(1, || T::zeroed());
+    let ptr: Box<[T; 1]> = vec.into_boxed_slice().try_into().ok().unwrap();
+    debug_assert!(
+      align_of::<[T; 1]>() == align_of::<T>()
+        && size_of::<[T; 1]>() == size_of::<T>()
+    );
+    // NB: We basically do the same as in try_cast_box here:
+    let ptr: Box<T> = unsafe { Box::from_raw(Box::into_raw(ptr) as *mut _) };
+    return Ok(ptr);
   }
   let layout =
     Layout::from_size_align(size_of::<T>(), align_of::<T>()).unwrap();
