@@ -64,6 +64,7 @@ jobs:
         rust-version: nightly
         components: miri
     - uses: actions/checkout@v2
+    - run: cargo clean
     - run: cargo miri test --verbose --no-default-features
     - run: cargo miri test --verbose --all-features
     - run: cargo miri test --verbose --manifest-path=derive/Cargo.toml --all-features
