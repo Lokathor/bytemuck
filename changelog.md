@@ -5,9 +5,6 @@
 * [Kimundi](https://github.com/Kimundi) fixed an issue that could make `try_zeroed_box` stack overflow for large values at low optimization levels.
 [PR 43](https://github.com/Lokathor/bytemuck/pull/43)
 
-* [yanchith](https://github.com/yanchith) fixed the derive checks code to make clippy more happy.
-[PR 45](https://github.com/Lokathor/bytemuck/pull/45)
-
 ## 1.4.1
 
 * [thomcc](https://github.com/thomcc) fixed up the CI and patched over a soundness hole in `offset_of!`.
