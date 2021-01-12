@@ -9,6 +9,7 @@ use super::*;
 use alloc::{
   alloc::{alloc_zeroed, Layout},
   boxed::Box,
+  vec,
   vec::Vec,
 };
 use core::convert::TryInto;
@@ -112,7 +113,8 @@ pub fn try_zeroed_slice_box<T: Zeroable>(
     // This will also not allocate.
     return Ok(Vec::new().into_boxed_slice());
   }
-  // For Pod types, the layout of the array/slice is equivalent to repeating the type.
+  // For Pod types, the layout of the array/slice is equivalent to repeating the
+  // type.
   let layout_length = size_of::<T>().checked_mul(length).ok_or(())?;
   assert!(layout_length != 0);
   let layout =
@@ -177,4 +179,34 @@ pub fn try_cast_vec<A: Pod, B: Pod>(
     let ptr: *mut B = vec_ptr as *mut B;
     Ok(unsafe { Vec::from_raw_parts(ptr, length, capacity) })
   }
+}
+
+/// This "collects" a slice of pod data into a vec of a different pod type.
+///
+/// Unlike with [`cast_slice`] and [`cast_slice_mut`], this will always work.
+///
+/// The output vec will be of a minimal size/capacity to hold the slice given.
+///
+/// ```rust
+/// # use bytemuck::*;
+/// let halfwords: [u16; 4] = [5, 6, 7, 8];
+/// let vec_of_words: Vec<u32> = pod_collect_to_vec(&halfwords);
+/// if cfg!(target_endian = "little") {
+///   assert_eq!(&vec_of_words[..], &[0x0006_0005, 0x0008_0007][..])
+/// } else {
+///   assert_eq!(&vec_of_words[..], &[0x0005_0006, 0x0007_0008][..])
+/// }
+/// ```
+pub fn pod_collect_to_vec<A: Pod, B: Pod>(src: &[A]) -> Vec<B> {
+  let src_size = size_of_val(src);
+  // Note(Lokathor): dst_count is rounded up so that the dest will always be at
+  // least as many bytes as the src.
+  let dst_count = src_size / size_of::<B>()
+    + if src_size % size_of::<B>() != 0 { 1 } else { 0 };
+  let mut dst = vec![B::zeroed(); dst_count];
+
+  let src_bytes: &[u8] = cast_slice(src);
+  let dst_bytes: &mut [u8] = cast_slice_mut(&mut dst[..]);
+  dst_bytes[..src_size].copy_from_slice(src_bytes);
+  dst
 }
