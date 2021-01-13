@@ -65,10 +65,10 @@ jobs:
         components: miri
     - uses: actions/checkout@v2
     # Note(Lokathor): We got some cached json errors, and so we cargo clean for this run.
-    - run: cargo clean
+    - run: rm -fr target
     - run: cargo miri test --verbose --no-default-features
     - run: cargo miri test --verbose --all-features
-    - run: cd derive && cargo clean && cargo miri test --verbose --all-features
+    - run: cd derive && rm -fr target && cargo miri test --verbose --all-features
 
   sanitizer-test:
     name: Test with -Zsanitizer=${{ matrix.sanitizer }}
