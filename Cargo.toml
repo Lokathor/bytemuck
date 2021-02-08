@@ -23,6 +23,9 @@ derive = ["bytemuck_derive"]
 #bytemuck_derive = { version = "1.0.1-alpha.0", path = "derive", optional = true }
 bytemuck_derive = { version = "1", optional = true }
 
+[dev-dependencies]
+trybuild = "1.0.40"
+
 [package.metadata.docs.rs]
 all-features = true
 
