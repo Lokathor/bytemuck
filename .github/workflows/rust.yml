@@ -84,7 +84,6 @@ jobs:
         components: rust-src
     - name: Test with sanitizer
       env:
-        TRYBUILD: overwrite
         RUSTFLAGS: -Zsanitizer=${{ matrix.sanitizer }}
         RUSTDOCFLAGS: -Zsanitizer=${{ matrix.sanitizer }}
         ASAN_OPTIONS: detect_stack_use_after_return=1
