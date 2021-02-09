@@ -1,0 +1,13 @@
+error: cannot find derive macro `Zeroable` in this scope
+ --> $DIR/nonzeroable_fields.rs:3:10
+  |
+3 | #[derive(Zeroable)]
+  |          ^^^^^^^^
+
+warning: unused import: `bytemuck::Zeroable`
+ --> $DIR/nonzeroable_fields.rs:1:5
+  |
+1 | use bytemuck::Zeroable;
+  |     ^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default

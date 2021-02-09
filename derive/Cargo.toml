@@ -21,3 +21,4 @@ proc-macro2 = "1"
 
 [dev-dependencies]
 bytemuck = "1.2"
+trybuild = "1.0.40"

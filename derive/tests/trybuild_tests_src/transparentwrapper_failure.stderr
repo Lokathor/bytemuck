@@ -1,0 +1,31 @@
+error: cannot find derive macro `TransparentWrapper` in this scope
+ --> $DIR/transparentwrapper_failure.rs:7:10
+  |
+7 | #[derive(TransparentWrapper)]
+  |          ^^^^^^^^^^^^^^^^^^
+
+error: cannot find attribute `transparent` in this scope
+ --> $DIR/transparentwrapper_failure.rs:8:3
+  |
+8 | #[transparent(u8)]
+  |   ^^^^^^^^^^^
+
+error: cannot find derive macro `TransparentWrapper` in this scope
+ --> $DIR/transparentwrapper_failure.rs:3:10
+  |
+3 | #[derive(TransparentWrapper)]
+  |          ^^^^^^^^^^^^^^^^^^
+
+error: cannot find attribute `transparent` in this scope
+ --> $DIR/transparentwrapper_failure.rs:4:3
+  |
+4 | #[transparent(u8)]
+  |   ^^^^^^^^^^^
+
+warning: unused import: `bytemuck::TransparentWrapper`
+ --> $DIR/transparentwrapper_failure.rs:1:5
+  |
+1 | use bytemuck::TransparentWrapper;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default

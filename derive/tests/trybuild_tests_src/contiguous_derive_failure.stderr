@@ -1,0 +1,19 @@
+error: cannot find derive macro `Contiguous` in this scope
+ --> $DIR/contiguous_derive_failure.rs:9:10
+  |
+9 | #[derive(Contiguous, Copy, Clone)]
+  |          ^^^^^^^^^^
+
+error: cannot find derive macro `Contiguous` in this scope
+ --> $DIR/contiguous_derive_failure.rs:3:10
+  |
+3 | #[derive(Contiguous, Copy, Clone)]
+  |          ^^^^^^^^^^
+
+warning: unused import: `bytemuck::Contiguous`
+ --> $DIR/contiguous_derive_failure.rs:1:5
+  |
+1 | use bytemuck::Contiguous;
+  |     ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default

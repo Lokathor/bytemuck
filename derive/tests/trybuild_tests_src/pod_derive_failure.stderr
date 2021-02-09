@@ -1,0 +1,37 @@
+error: cannot find derive macro `Zeroable` in this scope
+  --> $DIR/pod_derive_failure.rs:14:10
+   |
+14 | #[derive(Zeroable, Pod)]
+   |          ^^^^^^^^
+
+error: cannot find derive macro `Pod` in this scope
+  --> $DIR/pod_derive_failure.rs:14:20
+   |
+14 | #[derive(Zeroable, Pod)]
+   |                    ^^^
+
+error: cannot find derive macro `Zeroable` in this scope
+  --> $DIR/pod_derive_failure.rs:10:10
+   |
+10 | #[derive(Zeroable, Pod)]
+   |          ^^^^^^^^
+
+error: cannot find derive macro `Pod` in this scope
+  --> $DIR/pod_derive_failure.rs:10:20
+   |
+10 | #[derive(Zeroable, Pod)]
+   |                    ^^^
+
+error: cannot find derive macro `Pod` in this scope
+ --> $DIR/pod_derive_failure.rs:4:10
+  |
+4 | #[derive(Pod)]
+  |          ^^^
+
+warning: unused import: `bytemuck::Pod`
+ --> $DIR/pod_derive_failure.rs:1:5
+  |
+1 | use bytemuck::Pod;
+  |     ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
