@@ -179,7 +179,7 @@ fn derive_marker_trait_inner<Trait: Derivable>(
 }
 
 #[test]
-fn test_derve_output() {
+fn test_derive_output() {
   let input = quote!(
     #[repr(C)]
     #[derive(Copy, Clone, Contiguous)]
@@ -189,22 +189,8 @@ fn test_derve_output() {
   );
   let input = syn::parse_str::<DeriveInput>(&input.to_string()[..])
     .expect("syntax error");
-  /* let input = DeriveInput {
-    attrs: vec![],
-    vis: syn::Visibility::Public(syn::VisPublic {
-      pub_token: syn::token::Pub { ..Default::default() },
-    }),
-    ident: syn::Ident::new("foo", proc_macro2::Span::call_site()),
-    data: syn::Data::Struct(syn::DataStruct {
-      fields: syn::Fields::Unit,
-      semi_token: None,
-      struct_token: syn::token::Struct { ..Default::default() },
-    }),
-    generics: syn::Generics { ..Default::default() },
-  }; */
   let result = derive_marker_trait::<Pod>(input);
-  println!("result:\n {}", result.to_string());
   assert!(result
     .to_string()
-    .contains("unsafe impl bytemuck :: Pod for Foo { }"));
+    .contains("unsafe impl :: bytemuck :: Pod for Foo { }"));
 }
