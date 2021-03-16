@@ -26,7 +26,13 @@ pub struct Pod;
 
 impl Derivable for Pod {
   fn ident() -> TokenStream {
-    quote!(::bytemuck::Pod)
+    let bytemuck_name = get_bytemuck_crate_name();
+    /* println!(
+      "old: {}\n new: {}",
+      quote!(::bytemuck::Pod),
+      quote!(#bytemuck_name::Pod)
+    ); */
+    quote!(#bytemuck_name::Pod)
   }
 
   fn struct_asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
@@ -60,7 +66,8 @@ pub struct Zeroable;
 
 impl Derivable for Zeroable {
   fn ident() -> TokenStream {
-    quote!(::bytemuck::Zeroable)
+    let bytemuck_name = get_bytemuck_crate_name();
+    quote!(#bytemuck_name::Zeroable)
   }
 
   fn struct_asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
@@ -90,7 +97,8 @@ impl TransparentWrapper {
 
 impl Derivable for TransparentWrapper {
   fn ident() -> TokenStream {
-    quote!(::bytemuck::TransparentWrapper)
+    let bytemuck_name = get_bytemuck_crate_name();
+    quote!(#bytemuck_name::TransparentWrapper)
   }
 
   fn generic_params(input: &DeriveInput) -> Result<TokenStream, &'static str> {
@@ -324,5 +332,29 @@ fn parse_int_expr(expr: &Expr) -> Result<i64, &'static str> {
       int.base10_parse().map_err(|_| "Invalid integer expression")
     }
     _ => Err("Not an integer expression"),
+  }
+}
+
+fn get_bytemuck_crate_name() -> TokenStream {
+  use proc_macro2::Span;
+  use proc_macro_crate::{crate_name, FoundCrate};
+
+  // check for bytemuck in Cargo.toml
+  let crate_name = crate_name("bytemuck");
+  match crate_name {
+    // if found
+    Ok(found_name) => match found_name {
+      // if macro is being used inside bytemuck codebase
+      FoundCrate::Itself => quote!(crate),
+      // if found in toml (possibly renamed)
+      FoundCrate::Name(name) => {
+        let ident = Ident::new(&name, Span::call_site());
+        quote!(::#ident)
+      }
+    },
+    // if not found
+    Err(_) => {
+      quote_spanned!(Span::call_site() => self::bytemuck)
+    }
   }
 }

@@ -11,6 +11,9 @@ edition = "2018"
 license = "Zlib OR Apache-2.0 OR MIT"
 exclude = ["/pedantic.bat"]
 
+[workspace]
+members = ["derive"]
+
 [features]
 # Note: Yeah these names are non-standard, we'll fix it in v2 some day maybe
 extern_crate_alloc = []
@@ -20,8 +23,8 @@ derive = ["bytemuck_derive"]
 
 [dependencies]
 # use the upper line for testing against bytemuck_derive changes, if any
-#bytemuck_derive = { version = "1.0.1-alpha.0", path = "derive", optional = true }
-bytemuck_derive = { version = "1", optional = true }
+bytemuck_derive = { version = "1.0.2-alpha.0", path = "derive", optional = true }
+# bytemuck_derive = { version = "1", optional = true }
 
 [package.metadata.docs.rs]
 all-features = true
