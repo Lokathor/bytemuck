@@ -190,7 +190,12 @@ fn test_derive_output() {
   let input = syn::parse_str::<DeriveInput>(&input.to_string()[..])
     .expect("syntax error");
   let result = derive_marker_trait::<Pod>(input);
-  assert!(result
-    .to_string()
+
+  #[cfg(not(feature = "proc-macro-crate"))]
+  assert!(dbg!(result.to_string())
     .contains("unsafe impl bytemuck :: Pod for Foo { }"));
+
+  #[cfg(feature = "proc-macro-crate")]
+  assert!(dbg!(result.to_string())
+    .contains("unsafe impl :: bytemuck :: Pod for Foo { }"));
 }
