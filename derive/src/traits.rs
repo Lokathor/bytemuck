@@ -332,7 +332,8 @@ fn parse_int_expr(expr: &Expr) -> Result<i64, &'static str> {
 
 #[cfg(not(feature = "proc-macro-crate"))]
 fn get_bytemuck_crate_name() -> TokenStream {
-    quote_spanned!(Span::mixed_site() => bytemuck)
+  use proc_macro2::Span;
+  quote_spanned!(Span::mixed_site() => bytemuck)
 }
 
 #[cfg(feature = "proc-macro-crate")]

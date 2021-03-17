@@ -192,5 +192,5 @@ fn test_derive_output() {
   let result = derive_marker_trait::<Pod>(input);
   assert!(result
     .to_string()
-    .contains("unsafe impl :: bytemuck :: Pod for Foo { }"));
+    .contains("unsafe impl bytemuck :: Pod for Foo { }"));
 }

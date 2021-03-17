@@ -20,6 +20,7 @@ extern_crate_alloc = []
 extern_crate_std = ["extern_crate_alloc"]
 zeroable_maybe_uninit = []
 derive = ["bytemuck_derive"]
+proc-macro-crate = ["bytemuck_derive/proc-macro-crate"]
 
 [dependencies]
 # use the upper line for testing against bytemuck_derive changes, if any
