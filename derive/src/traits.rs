@@ -27,11 +27,6 @@ pub struct Pod;
 impl Derivable for Pod {
   fn ident() -> TokenStream {
     let bytemuck_name = get_bytemuck_crate_name();
-    /* println!(
-      "old: {}\n new: {}",
-      quote!(::bytemuck::Pod),
-      quote!(#bytemuck_name::Pod)
-    ); */
     quote!(#bytemuck_name::Pod)
   }
 
@@ -335,6 +330,12 @@ fn parse_int_expr(expr: &Expr) -> Result<i64, &'static str> {
   }
 }
 
+#[cfg(not(feature = "proc-macro-crate"))]
+fn get_bytemuck_crate_name() -> TokenStream {
+    quote_spanned!(Span::mixed_site() => bytemuck)
+}
+
+#[cfg(feature = "proc-macro-crate")]
 fn get_bytemuck_crate_name() -> TokenStream {
   use proc_macro2::Span;
   use proc_macro_crate::{crate_name, FoundCrate};
@@ -354,7 +355,7 @@ fn get_bytemuck_crate_name() -> TokenStream {
     },
     // if not found
     Err(_) => {
-      quote_spanned!(Span::call_site() => self::bytemuck)
+      quote_spanned!(Span::mixed_site() => bytemuck)
     }
   }
 }

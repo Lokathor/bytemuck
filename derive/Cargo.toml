@@ -18,7 +18,8 @@ proc-macro = true
 syn = "1"
 quote = "1"
 proc-macro2 = "1"
-proc-macro-crate = "1"
+proc-macro-crate.version = "1"
+proc-macro-crate.optional = true
 
 [dev-dependencies]
 bytemuck = "1.2"
