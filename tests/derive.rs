@@ -1,7 +1,7 @@
 #![cfg(feature = "derive")]
 #![allow(dead_code)]
 
-use bytemuck::{Zeroable, Pod, TransparentWrapper};
+use bytemuck::{Pod, TransparentWrapper, Zeroable};
 
 #[derive(Copy, Clone, Pod, Zeroable)]
 #[repr(C)]
@@ -21,5 +21,5 @@ struct TransparentSingle {
 #[transparent(u16)]
 struct TransparentWithZeroSized {
   a: u16,
-  b: ()
+  b: (),
 }

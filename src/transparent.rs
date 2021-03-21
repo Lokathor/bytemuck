@@ -91,10 +91,10 @@ pub unsafe trait TransparentWrapper<Wrapped: ?Sized> {
   fn wrap_ref(s: &Wrapped) -> &Self {
     unsafe {
       assert!(size_of::<*const Wrapped>() == size_of::<*const Self>());
-      // Using a pointer cast doesn't work here because rustc can't tell that the
-      // vtables match (if we lifted the ?Sized restriction, this would go away),
-      // and transmute doesn't work for the usual reasons it doesn't work inside
-      // generic functions.
+      // Using a pointer cast doesn't work here because rustc can't tell that
+      // the vtables match (if we lifted the ?Sized restriction, this
+      // would go away), and transmute doesn't work for the usual reasons
+      // it doesn't work inside generic functions.
       //
       // SAFETY: The unsafe contract requires that these have identical
       // representations. Using this transmute_copy instead of transmute here is
@@ -110,16 +110,17 @@ pub unsafe trait TransparentWrapper<Wrapped: ?Sized> {
   /// wrapper.
   ///
   /// This is a trait method so that you can write `MyType::wrap_mut(...)` in
-  /// your code. It is part of the safety contract for this trait that if you implement
-  /// `TransparentWrapper<_>` for your type you **must not** override this method.
+  /// your code. It is part of the safety contract for this trait that if you
+  /// implement `TransparentWrapper<_>` for your type you **must not**
+  /// override this method.
   #[inline]
   fn wrap_mut(s: &mut Wrapped) -> &mut Self {
     unsafe {
       assert!(size_of::<*mut Wrapped>() == size_of::<*mut Self>());
-      // Using a pointer cast doesn't work here because rustc can't tell that the
-      // vtables match (if we lifted the ?Sized restriction, this would go away),
-      // and transmute doesn't work for the usual reasons it doesn't work inside
-      // generic functions.
+      // Using a pointer cast doesn't work here because rustc can't tell that
+      // the vtables match (if we lifted the ?Sized restriction, this
+      // would go away), and transmute doesn't work for the usual reasons
+      // it doesn't work inside generic functions.
       //
       // SAFETY: The unsafe contract requires that these have identical
       // representations. Using this transmute_copy instead of transmute here is
