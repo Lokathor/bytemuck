@@ -6,7 +6,8 @@ use super::*;
 /// This allows safely transmuting between the `Inner` type and the
 /// `TransparentWrapper` type.  
 /// Functions like `wrap_{}` convert from the inner
-/// type to the wrapper type.
+/// type to the wrapper type and `unwrap_{}` functions do the inverse conversion
+/// from the wrapper type to the inner type.
 ///
 /// # Safety
 ///
@@ -162,6 +163,85 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
       // SAFETY: The unsafe contract requires that these two have
       // identical representations (size and alignment).
       core::slice::from_raw_parts_mut(s.as_mut_ptr() as *mut Self, s.len())
+    }
+  }
+
+  /// Convert the wrapper type into the inner type.
+  #[inline]
+  fn unwrap(self) -> Inner
+  where
+    Self: Sized,
+    Inner: Sized,
+  {
+    unsafe { transmute_copy(&self) }
+  }
+
+  /// Convert a reference to the wrapper type into a reference to the inner
+  /// type.
+  #[inline]
+  fn unwrap_ref(&self) -> &Inner {
+    unsafe {
+      assert!(size_of::<*const Inner>() == size_of::<*const Self>());
+      // A pointer cast does't work here because rustc can't tell that
+      // the vtables match (because of the `?Sized` restriction relaxation).
+      // A `transmute` doesn't work because the sizes are unspecified.
+      //
+      // SAFETY: The unsafe contract requires that these two have
+      // identical representations.
+      let wrapper_ptr = self as *const Self;
+      let inner_ptr: *const Inner = transmute_copy(&wrapper_ptr);
+      &*inner_ptr
+    }
+  }
+
+  /// Convert a mutable reference to the wrapper type into a mutable reference
+  /// to the inner type.
+  #[inline]
+  fn unwrap_mut(&mut self) -> &mut Inner {
+    unsafe {
+      assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
+      // A pointer cast does't work here because rustc can't tell that
+      // the vtables match (because of the `?Sized` restriction relaxation).
+      // A `transmute` doesn't work because the sizes are unspecified.
+      //
+      // SAFETY: The unsafe contract requires that these two have
+      // identical representations.
+      let wrapper_ptr = self as *mut Self;
+      let inner_ptr: *mut Inner = transmute_copy(&wrapper_ptr);
+      &mut *inner_ptr
+    }
+  }
+
+  /// Convert a slice to the wrapped type into a slice to the inner type.
+  #[inline]
+  fn unwrap_slice(s: &[Self]) -> &[Inner]
+  where
+    Self: Sized,
+    Inner: Sized,
+  {
+    unsafe {
+      assert!(size_of::<*const Inner>() == size_of::<*const Self>());
+      assert!(align_of::<*const Inner>() == align_of::<*const Self>());
+      // SAFETY: The unsafe contract requires that these two have
+      // identical representations (size and alignment).
+      core::slice::from_raw_parts(s.as_ptr() as *const Inner, s.len())
+    }
+  }
+
+  /// Convert a mutable slice to the wrapped type into a mutable slice to the
+  /// inner type.
+  #[inline]
+  fn unwrap_slice_mut(s: &mut [Self]) -> &mut [Inner]
+  where
+    Self: Sized,
+    Inner: Sized,
+  {
+    unsafe {
+      assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
+      assert!(align_of::<*mut Inner>() == align_of::<*mut Self>());
+      // SAFETY: The unsafe contract requires that these two have
+      // identical representations (size and alignment).
+      core::slice::from_raw_parts_mut(s.as_mut_ptr() as *mut Inner, s.len())
     }
   }
 }
