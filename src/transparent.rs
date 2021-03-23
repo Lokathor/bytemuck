@@ -1,38 +1,41 @@
 use super::*;
 
 /// A trait which indicates that a type is a `repr(transparent)` wrapper around
-/// the `Wrapped` value.
+/// the `Inner` value.
 ///
-/// This allows safely creating references to `T` from those to the `Wrapped`
-/// type, using the `wrap_ref` and `wrap_mut` functions.
+/// This allows safely transmuting between the `Inner` type and the
+/// `TransparentWrapper` type.  
+/// Functions like `wrap_{}` convert from the inner
+/// type to the wrapper type.
 ///
 /// # Safety
 ///
 /// The safety contract of `TransparentWrapper` is relatively simple:
 ///
-/// For a given `Wrapper` which implements `TransparentWrapper<Wrapped>`:
+/// For a given `Wrapper` which implements `TransparentWrapper<Inner>`:
 ///
-/// 1. Wrapper must be a `#[repr(transparent)]` wrapper around `Wrapped`. This
-///    either means that it must be a `#[repr(transparent)]` struct which
-///    contains a either a field of type `Wrapped` (or a field of some other
-///    transparent wrapper for `Wrapped`) as the only non-ZST field.
+/// 1. `Wrapper` must be a wrapper around `Inner` with an identical data
+/// representations. This    either means that it must be a
+/// `#[repr(transparent)]` struct which    contains a either a field of type
+/// `Inner` (or a field of some other    transparent wrapper for `Inner`) as the
+/// only non-ZST field.
 ///
-/// 2. Any fields *other* than the `Wrapped` field must be trivially
+/// 2. Any fields *other* than the `Inner` field must be trivially
 ///    constructable ZSTs, for example `PhantomData`, `PhantomPinned`, etc.
 ///
 /// 3. The `Wrapper` may not impose additional alignment requirements over
-///    `Wrapped`.
+///    `Inner`.
 ///     - Note: this is currently guaranteed by `repr(transparent)`, but there
 ///       have been discussions of lifting it, so it's stated here explicitly.
 ///
-/// 4. The `wrap_ref` and `wrap_mut` functions on `TransparentWrapper` may not
-///    be overridden.
+/// 4. All functions on
+///    `TransparentWrapper` **may not** be overridden.
 ///
 /// ## Caveats
 ///
-/// If the wrapper imposes additional constraints upon the wrapped type which
+/// If the wrapper imposes additional constraints upon the inner type which
 /// are required for safety, it's responsible for ensuring those still hold --
-/// this generally requires preventing access to instances of the wrapped type,
+/// this generally requires preventing access to instances of the inner type,
 /// as implementing `TransparentWrapper<U> for T` means anybody can call
 /// `T::cast_ref(any_instance_of_u)`.
 ///
@@ -55,13 +58,13 @@ use super::*;
 ///
 /// // interpret a reference to &SomeStruct as a &MyWrapper
 /// let thing = SomeStruct::default();
-/// let wrapped_ref: &MyWrapper = MyWrapper::wrap_ref(&thing);
+/// let inner_ref: &MyWrapper = MyWrapper::wrap_ref(&thing);
 ///
 /// // Works with &mut too.
 /// let mut mut_thing = SomeStruct::default();
-/// let wrapped_mut: &mut MyWrapper = MyWrapper::wrap_mut(&mut mut_thing);
+/// let inner_mut: &mut MyWrapper = MyWrapper::wrap_mut(&mut mut_thing);
 ///
-/// # let _ = (wrapped_ref, wrapped_mut); // silence warnings
+/// # let _ = (inner_ref, inner_mut); // silence warnings
 /// ```
 ///
 /// ## Use with dynamically sized types
@@ -80,54 +83,41 @@ use super::*;
 /// let mut buf = [1, 2, 3u8];
 /// let sm = Slice::wrap_mut(&mut buf);
 /// ```
-pub unsafe trait TransparentWrapper<Wrapped: ?Sized> {
-  /// Convert a reference to a wrapped type into a reference to the wrapper.
-  ///
-  /// This is a trait method so that you can write `MyType::wrap_ref(...)` in
-  /// your code. It is part of the safety contract for this trait that if you
-  /// implement `TransparentWrapper<_>` for your type you **must not** override
-  /// this method.
+pub unsafe trait TransparentWrapper<Inner: ?Sized> {
+  /// Convert the inner type into the wrapper type.
   #[inline]
-  fn wrap_ref(s: &Wrapped) -> &Self {
+  /// Convert a reference to the inner type into a reference to the wrapper
+  /// type.
+  #[inline]
+  fn wrap_ref(s: &Inner) -> &Self {
     unsafe {
-      assert!(size_of::<*const Wrapped>() == size_of::<*const Self>());
-      // Using a pointer cast doesn't work here because rustc can't tell that
-      // the vtables match (if we lifted the ?Sized restriction, this
-      // would go away), and transmute doesn't work for the usual reasons
-      // it doesn't work inside generic functions.
+      assert!(size_of::<*const Inner>() == size_of::<*const Self>());
+      // A pointer cast does't work here because rustc can't tell that
+      // the vtables match (because of the `?Sized` restriction relaxation).
+      // A `transmute` doesn't work because the sizes are unspecified.
       //
-      // SAFETY: The unsafe contract requires that these have identical
-      // representations. Using this transmute_copy instead of transmute here is
-      // annoying, but is required as `Self` and `Wrapped` have unspecified
-      // sizes still.
-      let wrapped_ptr = s as *const Wrapped;
-      let wrapper_ptr: *const Self = transmute_copy(&wrapped_ptr);
+      // SAFETY: The unsafe contract requires that these two have
+      // identical representations.
+      let inner_ptr = s as *const Inner;
+      let wrapper_ptr: *const Self = transmute_copy(&inner_ptr);
       &*wrapper_ptr
     }
   }
 
-  /// Convert a mut reference to a wrapped type into a mut reference to the
-  /// wrapper.
-  ///
-  /// This is a trait method so that you can write `MyType::wrap_mut(...)` in
-  /// your code. It is part of the safety contract for this trait that if you
-  /// implement `TransparentWrapper<_>` for your type you **must not**
-  /// override this method.
+  /// Convert a mutable reference to the inner type into a mutable reference to
+  /// the wrapper type.
   #[inline]
-  fn wrap_mut(s: &mut Wrapped) -> &mut Self {
+  fn wrap_mut(s: &mut Inner) -> &mut Self {
     unsafe {
-      assert!(size_of::<*mut Wrapped>() == size_of::<*mut Self>());
-      // Using a pointer cast doesn't work here because rustc can't tell that
-      // the vtables match (if we lifted the ?Sized restriction, this
-      // would go away), and transmute doesn't work for the usual reasons
-      // it doesn't work inside generic functions.
+      assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
+      // A pointer cast does't work here because rustc can't tell that
+      // the vtables match (because of the `?Sized` restriction relaxation).
+      // A `transmute` doesn't work because the sizes are unspecified.
       //
-      // SAFETY: The unsafe contract requires that these have identical
-      // representations. Using this transmute_copy instead of transmute here is
-      // annoying, but is required as `Self` and `Wrapped` have unspecified
-      // sizes still.
-      let wrapped_ptr = s as *mut Wrapped;
-      let wrapper_ptr: *mut Self = transmute_copy(&wrapped_ptr);
+      // SAFETY: The unsafe contract requires that these two have
+      // identical representations.
+      let inner_ptr = s as *mut Inner;
+      let wrapper_ptr: *mut Self = transmute_copy(&inner_ptr);
       &mut *wrapper_ptr
     }
   }
