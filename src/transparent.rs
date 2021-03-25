@@ -1,9 +1,9 @@
 use super::*;
 
-/// A trait which indicates that a type is a `repr(transparent)` wrapper around
-/// the `Inner` value.
+/// A trait which indicates that a type is a `#[repr(transparent)]` wrapper
+/// around the `Inner` value.
 ///
-/// This allows safely transmuting between the `Inner` type and the
+/// This allows safely copy transmuting between the `Inner` type and the
 /// `TransparentWrapper` type.  
 /// Functions like `wrap_{}` convert from the inner
 /// type to the wrapper type and `unwrap_{}` functions do the inverse conversion
