@@ -168,18 +168,18 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
 
   /// Convert the wrapper type into the inner type.
   #[inline]
-  fn unwrap(self) -> Inner
+  fn unwrap(s: Self) -> Inner
   where
     Self: Sized,
     Inner: Sized,
   {
-    unsafe { transmute_copy(&self) }
+    unsafe { transmute_copy(&s) }
   }
 
   /// Convert a reference to the wrapper type into a reference to the inner
   /// type.
   #[inline]
-  fn unwrap_ref(&self) -> &Inner {
+  fn unwrap_ref(s: &Self) -> &Inner {
     unsafe {
       assert!(size_of::<*const Inner>() == size_of::<*const Self>());
       // A pointer cast does't work here because rustc can't tell that
@@ -188,7 +188,7 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
       //
       // SAFETY: The unsafe contract requires that these two have
       // identical representations.
-      let wrapper_ptr = self as *const Self;
+      let wrapper_ptr = s as *const Self;
       let inner_ptr: *const Inner = transmute_copy(&wrapper_ptr);
       &*inner_ptr
     }
@@ -197,7 +197,7 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
   /// Convert a mutable reference to the wrapper type into a mutable reference
   /// to the inner type.
   #[inline]
-  fn unwrap_mut(&mut self) -> &mut Inner {
+  fn unwrap_mut(s: &mut Self) -> &mut Inner {
     unsafe {
       assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
       // A pointer cast does't work here because rustc can't tell that
@@ -206,7 +206,7 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
       //
       // SAFETY: The unsafe contract requires that these two have
       // identical representations.
-      let wrapper_ptr = self as *mut Self;
+      let wrapper_ptr = s as *mut Self;
       let inner_ptr: *mut Inner = transmute_copy(&wrapper_ptr);
       &mut *inner_ptr
     }
