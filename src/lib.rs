@@ -50,6 +50,7 @@ use core::{marker::*, mem::*, num::*, ptr::*};
 #[doc(hidden)]
 pub use ::core as __core;
 
+#[cfg(not(generic_const))]
 macro_rules! impl_unsafe_marker_for_array {
   ( $marker:ident , $( $n:expr ),* ) => {
     $(unsafe impl<T> $marker for [T; $n] where T: $marker {})*
