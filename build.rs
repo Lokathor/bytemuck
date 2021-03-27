@@ -11,7 +11,7 @@ fn main() {
   };
 
   if minor >= 51 {
-    println!("cargo:rustc-cfg=const_generics_mvp");
+    println!("cargo:rustc-cfg=min_const_generics");
   }
 }
 
