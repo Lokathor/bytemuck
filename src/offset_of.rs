@@ -25,7 +25,9 @@
 /// # use bytemuck::offset_of;
 /// // enums can't derive default, and for this example we don't pick one
 /// enum MyExampleEnum {
-///   A, B, C,
+///   A,
+///   B,
+///   C,
 /// }
 ///
 /// // so now our struct here doesn't have Default
@@ -65,11 +67,11 @@
 /// [rust-lang/rust#27060]: https://github.com/rust-lang/rust/issues/27060
 ///
 /// <p style="background:rgba(255,181,77,0.16);padding:0.75em;">
-/// <strong>Warning:</strong> This is only true for versions of bytemuck > 1.4.0.
-/// Previous versions of
+/// <strong>Warning:</strong> This is only true for versions of bytemuck >
+/// 1.4.0. Previous versions of
 /// <code style="background:rgba(41,24,0,0.1);">bytemuck::offset_of!</code>
-/// will only emit a warning when used on the field of a packed struct in safe code,
-/// which can lead to unsoundness.
+/// will only emit a warning when used on the field of a packed struct in safe
+/// code, which can lead to unsoundness.
 /// </p>
 ///
 /// For example, the following will fail to compile:
@@ -91,7 +93,8 @@
 /// ```compile_fail
 /// # #[repr(C, packed)] #[derive(Default)] struct Example { field: u32 }
 /// // Still doesn't compile:
-/// #[allow(safe_packed_borrows)] {
+/// #[allow(safe_packed_borrows)]
+/// {
 ///   let _offset = bytemuck::offset_of!(Example, field);
 /// }
 /// ```

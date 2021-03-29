@@ -85,8 +85,8 @@ pub unsafe trait Contiguous: Copy + 'static {
   /// `#[repr(Int)]` or `#[repr(C)]` attribute, (if it does not, it is
   /// *unsound* to implement `Contiguous`!).
   ///
-  /// - For `#[repr(Int)]`, use the listed `Int`. e.g. `#[repr(u8)]` should
-  ///   use `type Int = u8`.
+  /// - For `#[repr(Int)]`, use the listed `Int`. e.g. `#[repr(u8)]` should use
+  ///   `type Int = u8`.
   ///
   /// - For `#[repr(C)]`, use whichever type the C compiler will use to
   ///   represent the given enum. This is usually `c_int` (from `std::os::raw`
