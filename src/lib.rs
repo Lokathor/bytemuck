@@ -1,5 +1,6 @@
 #![no_std]
 #![warn(missing_docs)]
+#![doc(html_root_url = "https://docs.rs/bytemuck/1.5.1")]
 
 //! This crate gives small utilities for casting between plain data types.
 //!
