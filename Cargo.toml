@@ -17,6 +17,7 @@ extern_crate_alloc = []
 extern_crate_std = ["extern_crate_alloc"]
 zeroable_maybe_uninit = []
 derive = ["bytemuck_derive"]
+min_const_generics = []
 
 [dependencies]
 # use the upper line for testing against bytemuck_derive changes, if any
