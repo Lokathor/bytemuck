@@ -50,7 +50,7 @@ use core::{marker::*, mem::*, num::*, ptr::*};
 #[doc(hidden)]
 pub use ::core as __core;
 
-#[cfg(not(any(min_const_generics, feature = "min_const_generics")))]
+#[cfg(not(feature = "min_const_generics"))]
 macro_rules! impl_unsafe_marker_for_array {
   ( $marker:ident , $( $n:expr ),* ) => {
     $(unsafe impl<T> $marker for [T; $n] where T: $marker {})*

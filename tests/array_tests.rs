@@ -4,7 +4,7 @@ pub fn test_cast_array() {
   let _: [u16; 6] = bytemuck::cast(x);
 }
 
-#[cfg(any(min_const_generics, feature = "min_const_generics"))]
+#[cfg(feature = "min_const_generics")]
 #[test]
 pub fn test_cast_long_array() {
   let x = [0u32; 65];
