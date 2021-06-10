@@ -1,5 +1,32 @@
 # `bytemuck` changelog
 
+## 1.7
+
+* In response to [Unsafe Code Guidelines Issue
+  #286](https://github.com/rust-lang/unsafe-code-guidelines/issues/286), this
+  version of Bytemuck has a ***Soundness-Required Breaking Change***. This is
+  "allowed" under Rust's backwards-compatibility guidelines, but it's still
+  annoying of course so we're trying to keep the damage minimal.
+  * **The Reason:** It turns out that pointer values should not have been `Pod`. More
+    specifically, `ptr as usize` is *not* the same operation as calling
+    `transmute::<_, usize>(ptr)`.
+  * LLVM has yet to fully sort out their story, but until they do, transmuting
+    pointers can cause miscompilations. They may fix things up in the future,
+    but we're not gonna just wait and have broken code in the mean time.
+  * **The Fix:** The breaking change is that the `Pod` impls for `*const T`,
+    `*mut T`, and `Option<NonNull<T>` are now gated behind the
+    `unsound_ptr_pod_impl` feature, which is off by default.
+  * You are *strongly discouraged* from using this feature, but if a dependency
+    of yours doesn't work when you upgrade to 1.7 because it relied on pointer
+    casting, then you might wish to temporarily enable the feature just to get
+    that dependency to build. Enabled features are global across all users of a
+    given semver compatible version, so if you enable the feature in your own
+    crate, your dependency will also end up getting the feature too, and then
+    it'll be able to compile.
+  * Please move away from using this feature as soon as you can. Consider it to
+    *already* be deprecated.
+  * [PR 65](https://github.com/Lokathor/bytemuck/pull/65)
+
 ## 1.6
 
 * The `TransparentWrapper` trait now has more methods. More ways to wrap, and
