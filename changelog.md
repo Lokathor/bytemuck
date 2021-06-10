@@ -1,5 +1,19 @@
 # `bytemuck` changelog
 
+## 1.6
+
+* The `TransparentWrapper` trait now has more methods. More ways to wrap, and
+  now you can "peel" too! Note that we don't call it "unwrap" because that name
+  is too strongly associated with the Option/Result methods.
+  Thanks to [LU15W1R7H](https://github.com/LU15W1R7H) for doing
+  [PR 58](https://github.com/Lokathor/bytemuck/pull/58)
+* Min Const Generics! Now there's Pod and Zeroable for arrays of any size when
+  you turn on the `min_const_generics` crate feature.
+  [zakarumych](https://github.com/zakarumych) got the work started in
+  [PR 59](https://github.com/Lokathor/bytemuck/pull/59),
+  and [chorman0773](https://github.com/chorman0773) finished off the task in
+  [PR 63](https://github.com/Lokathor/bytemuck/pull/63)
+
 ## 1.5.1
 
 * Fix `bytes_of` failing on zero sized types.
