@@ -4,10 +4,11 @@ use super::*;
 /// around the `Inner` value.
 ///
 /// This allows safely copy transmuting between the `Inner` type and the
-/// `TransparentWrapper` type.  
-/// Functions like `wrap_{}` convert from the inner
-/// type to the wrapper type and `unwrap_{}` functions do the inverse conversion
-/// from the wrapper type to the inner type.
+/// `TransparentWrapper` type. Functions like `wrap_{}` convert from the inner
+/// type to the wrapper type and `peel_{}` functions do the inverse conversion
+/// from the wrapper type to the inner type. We deliberately do not call the
+/// wrapper-removing methods "unwrap" because at this point that word is too
+/// strongly tied to the Option/ Result methods.
 ///
 /// # Safety
 ///
@@ -16,28 +17,27 @@ use super::*;
 /// For a given `Wrapper` which implements `TransparentWrapper<Inner>`:
 ///
 /// 1. `Wrapper` must be a wrapper around `Inner` with an identical data
-/// representations. This    either means that it must be a
-/// `#[repr(transparent)]` struct which    contains a either a field of type
-/// `Inner` (or a field of some other    transparent wrapper for `Inner`) as the
-/// only non-ZST field.
+///    representations. This    either means that it must be a
+///    `#[repr(transparent)]` struct which    contains a either a field of type
+///    `Inner` (or a field of some other    transparent wrapper for `Inner`) as
+///    the only non-ZST field.
 ///
-/// 2. Any fields *other* than the `Inner` field must be trivially
-///    constructable ZSTs, for example `PhantomData`, `PhantomPinned`, etc.
+/// 2. Any fields *other* than the `Inner` field must be trivially constructable
+///    ZSTs, for example `PhantomData`, `PhantomPinned`, etc.
 ///
 /// 3. The `Wrapper` may not impose additional alignment requirements over
 ///    `Inner`.
 ///     - Note: this is currently guaranteed by `repr(transparent)`, but there
 ///       have been discussions of lifting it, so it's stated here explicitly.
 ///
-/// 4. All functions on
-///    `TransparentWrapper` **may not** be overridden.
+/// 4. All functions on `TransparentWrapper` **may not** be overridden.
 ///
 /// ## Caveats
 ///
-/// If the wrapper imposes additional constraints upon the inner type which
-/// are required for safety, it's responsible for ensuring those still hold --
-/// this generally requires preventing access to instances of the inner type,
-/// as implementing `TransparentWrapper<U> for T` means anybody can call
+/// If the wrapper imposes additional constraints upon the inner type which are
+/// required for safety, it's responsible for ensuring those still hold -- this
+/// generally requires preventing access to instances of the inner type, as
+/// implementing `TransparentWrapper<U> for T` means anybody can call
 /// `T::cast_ref(any_instance_of_u)`.
 ///
 /// For example, it would be invalid to implement TransparentWrapper for `str`
@@ -103,7 +103,7 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
   fn wrap_ref(s: &Inner) -> &Self {
     unsafe {
       assert!(size_of::<*const Inner>() == size_of::<*const Self>());
-      // A pointer cast does't work here because rustc can't tell that
+      // A pointer cast doesn't work here because rustc can't tell that
       // the vtables match (because of the `?Sized` restriction relaxation).
       // A `transmute` doesn't work because the sizes are unspecified.
       //
@@ -121,7 +121,7 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
   fn wrap_mut(s: &mut Inner) -> &mut Self {
     unsafe {
       assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
-      // A pointer cast does't work here because rustc can't tell that
+      // A pointer cast doesn't work here because rustc can't tell that
       // the vtables match (because of the `?Sized` restriction relaxation).
       // A `transmute` doesn't work because the sizes are unspecified.
       //
@@ -168,7 +168,7 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
 
   /// Convert the wrapper type into the inner type.
   #[inline]
-  fn unwrap(s: Self) -> Inner
+  fn peel(s: Self) -> Inner
   where
     Self: Sized,
     Inner: Sized,
@@ -179,10 +179,10 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
   /// Convert a reference to the wrapper type into a reference to the inner
   /// type.
   #[inline]
-  fn unwrap_ref(s: &Self) -> &Inner {
+  fn peel_ref(s: &Self) -> &Inner {
     unsafe {
       assert!(size_of::<*const Inner>() == size_of::<*const Self>());
-      // A pointer cast does't work here because rustc can't tell that
+      // A pointer cast doesn't work here because rustc can't tell that
       // the vtables match (because of the `?Sized` restriction relaxation).
       // A `transmute` doesn't work because the sizes are unspecified.
       //
@@ -197,10 +197,10 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
   /// Convert a mutable reference to the wrapper type into a mutable reference
   /// to the inner type.
   #[inline]
-  fn unwrap_mut(s: &mut Self) -> &mut Inner {
+  fn peel_mut(s: &mut Self) -> &mut Inner {
     unsafe {
       assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
-      // A pointer cast does't work here because rustc can't tell that
+      // A pointer cast doesn't work here because rustc can't tell that
       // the vtables match (because of the `?Sized` restriction relaxation).
       // A `transmute` doesn't work because the sizes are unspecified.
       //
@@ -214,7 +214,7 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
 
   /// Convert a slice to the wrapped type into a slice to the inner type.
   #[inline]
-  fn unwrap_slice(s: &[Self]) -> &[Inner]
+  fn peel_slice(s: &[Self]) -> &[Inner]
   where
     Self: Sized,
     Inner: Sized,
@@ -231,7 +231,7 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
   /// Convert a mutable slice to the wrapped type into a mutable slice to the
   /// inner type.
   #[inline]
-  fn unwrap_slice_mut(s: &mut [Self]) -> &mut [Inner]
+  fn peel_slice_mut(s: &mut [Self]) -> &mut [Inner]
   where
     Self: Sized,
     Inner: Sized,
