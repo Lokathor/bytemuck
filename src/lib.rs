@@ -100,11 +100,19 @@ possibility code branch.
 /// Immediately panics.
 #[cold]
 #[inline(never)]
-fn something_went_wrong(src: &str, err: PodCastError) -> ! {
+fn something_went_wrong(_src: &str, _err: PodCastError) -> ! {
   // Note(Lokathor): Keeping the panic here makes the panic _formatting_ go
   // here too, which helps assembly readability and also helps keep down
   // the inline pressure.
-  panic!("{src}>{err:?}", src = src, err = err)
+  #[cfg(not(target_arch = "spirv"))]
+  panic!("{src}>{err:?}", src = _src, err = _err);
+  // Note: On the spirv targets from [rust-gpu](https://github.com/EmbarkStudios/rust-gpu)
+  // panic formatting cannot be used. We we just give a generic error message
+  // The chance that the panicing version of these functions will ever get called
+  // on spir-v targets with invalid inputs is small, but giving a simple error
+  // message is better than no error message at all.
+  #[cfg(target_arch = "spirv")]
+  panic!("Called a panicing helper from bytemuck which paniced");
 }
 
 /// Re-interprets `&T` as `&[u8]`.
@@ -225,6 +233,10 @@ pub enum PodCastError {
 }
 impl core::fmt::Display for PodCastError {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+    // Currently, this is unlikely to work for the spirv targets
+    #[cfg(target_arch = "spirv")]
+    write!(f, "PodCastError");
+    #[cfg(not(target_arch = "spirv"))]
     write!(f, "{:?}", self)
   }
 }
