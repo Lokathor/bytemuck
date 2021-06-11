@@ -235,7 +235,7 @@ impl core::fmt::Display for PodCastError {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     // Currently, this is unlikely to work for the spirv targets
     #[cfg(target_arch = "spirv")]
-    write!(f, "PodCastError", self);
+    write!(f, "PodCastError");
     #[cfg(not(target_arch = "spirv"))]
     write!(f, "{:?}", self)
   }
