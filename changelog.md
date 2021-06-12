@@ -1,5 +1,10 @@
 # `bytemuck` changelog
 
+## 1.6.1
+
+* [DJMcNab](https://github.com/DJMcNab) did a fix so that the crate can build for SPIRV
+  [PR 67](https://github.com/Lokathor/bytemuck/pull/67)
+
 ## 1.6
 
 * The `TransparentWrapper` trait now has more methods. More ways to wrap, and
