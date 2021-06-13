@@ -1,9 +1,13 @@
 # `bytemuck` changelog
 
-## 1.6.2
+## 1.6.3
 
 * Small goof with an errant `;`, so [PR 69](https://github.com/Lokathor/bytemuck/pull/69)
   *actually* got things working on SPIR-V.
+
+## 1.6.2
+
+cargo upload goof! ignore this one.
 
 ## 1.6.1
 
