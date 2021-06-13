@@ -1,8 +1,13 @@
 # `bytemuck` changelog
 
+## 1.6.2
+
+* Small goof with an errant `;`, so [PR 69](https://github.com/Lokathor/bytemuck/pull/69)
+  *actually* got things working on SPIR-V.
+
 ## 1.6.1
 
-* [DJMcNab](https://github.com/DJMcNab) did a fix so that the crate can build for SPIRV
+* [DJMcNab](https://github.com/DJMcNab) did a fix so that the crate can build for SPIR-V
   [PR 67](https://github.com/Lokathor/bytemuck/pull/67)
 
 ## 1.6
