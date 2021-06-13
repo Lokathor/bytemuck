@@ -58,9 +58,13 @@ unsafe impl Pod for Option<NonZeroU64> {}
 unsafe impl Pod for Option<NonZeroU128> {}
 unsafe impl Pod for Option<NonZeroUsize> {}
 
+#[cfg(feature = "unsound_ptr_pod_impl")]
 unsafe impl<T: 'static> Pod for *mut T {}
+#[cfg(feature = "unsound_ptr_pod_impl")]
 unsafe impl<T: 'static> Pod for *const T {}
+#[cfg(feature = "unsound_ptr_pod_impl")]
 unsafe impl<T: 'static> Pod for Option<NonNull<T>> {}
+
 unsafe impl<T: Pod> Pod for PhantomData<T> {}
 unsafe impl<T: Pod> Pod for ManuallyDrop<T> {}
 
