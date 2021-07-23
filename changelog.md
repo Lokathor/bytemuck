@@ -1,5 +1,11 @@
 # `bytemuck` changelog
 
+## 1.7.2
+
+* Why does this repo keep being hit with publishing problems? What did I do to
+  deserve this curse, Ferris? This doesn't ever happen with tinyvec or fermium,
+  only bytemuck.
+
 ## 1.7.1
 
 * **Soundness Fix:** The wrap/peel methods for owned value conversion, added to
