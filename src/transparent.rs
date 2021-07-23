@@ -94,7 +94,7 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
   {
     // SAFETY: The unsafe contract requires that `Self` and `Inner` have
     // identical representations.
-    unsafe { transmute_copy(&s) }
+    unsafe { transmute!(s) }
   }
 
   /// Convert a reference to the inner type into a reference to the wrapper
@@ -110,7 +110,7 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
       // SAFETY: The unsafe contract requires that these two have
       // identical representations.
       let inner_ptr = s as *const Inner;
-      let wrapper_ptr: *const Self = transmute_copy(&inner_ptr);
+      let wrapper_ptr: *const Self = transmute!(inner_ptr);
       &*wrapper_ptr
     }
   }
@@ -128,7 +128,7 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
       // SAFETY: The unsafe contract requires that these two have
       // identical representations.
       let inner_ptr = s as *mut Inner;
-      let wrapper_ptr: *mut Self = transmute_copy(&inner_ptr);
+      let wrapper_ptr: *mut Self = transmute!(inner_ptr);
       &mut *wrapper_ptr
     }
   }
@@ -173,7 +173,7 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
     Self: Sized,
     Inner: Sized,
   {
-    unsafe { transmute_copy(&s) }
+    unsafe { transmute!(s) }
   }
 
   /// Convert a reference to the wrapper type into a reference to the inner
@@ -189,7 +189,7 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
       // SAFETY: The unsafe contract requires that these two have
       // identical representations.
       let wrapper_ptr = s as *const Self;
-      let inner_ptr: *const Inner = transmute_copy(&wrapper_ptr);
+      let inner_ptr: *const Inner = transmute!(wrapper_ptr);
       &*inner_ptr
     }
   }
@@ -207,7 +207,7 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
       // SAFETY: The unsafe contract requires that these two have
       // identical representations.
       let wrapper_ptr = s as *mut Self;
-      let inner_ptr: *mut Inner = transmute_copy(&wrapper_ptr);
+      let inner_ptr: *mut Inner = transmute!(wrapper_ptr);
       &mut *inner_ptr
     }
   }
