@@ -57,6 +57,13 @@ macro_rules! impl_unsafe_marker_for_array {
   }
 }
 
+/// A macro to transmute between two types without requiring knowing size statically.
+macro_rules! transmute {
+  ($val:expr) => {
+    transmute_copy(&ManuallyDrop::new($val))
+  };
+}
+
 #[cfg(feature = "extern_crate_std")]
 extern crate std;
 
@@ -248,7 +255,7 @@ impl std::error::Error for PodCastError {}
 #[inline]
 pub fn cast<A: Pod, B: Pod>(a: A) -> B {
   if size_of::<A>() == size_of::<B>() {
-    unsafe { core::mem::transmute_copy(&a) }
+    unsafe { transmute!(a) }
   } else {
     something_went_wrong("cast", PodCastError::SizeMismatch)
   }
@@ -349,7 +356,7 @@ pub fn pod_align_to_mut<T: Pod, U: Pod>(
 #[inline]
 pub fn try_cast<A: Pod, B: Pod>(a: A) -> Result<B, PodCastError> {
   if size_of::<A>() == size_of::<B>() {
-    Ok(unsafe { core::mem::transmute_copy(&a) })
+    Ok(unsafe { transmute!(a) })
   } else {
     Err(PodCastError::SizeMismatch)
   }
