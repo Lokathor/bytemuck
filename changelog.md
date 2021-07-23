@@ -1,5 +1,14 @@
 # `bytemuck` changelog
 
+## 1.7.1
+
+* **Soundness Fix:** The wrap/peel methods for owned value conversion, added to
+  `TransparentWrapper` in 1.6, can cause a double-drop if used with types that
+  impl `Drop`. The fix was simply to add a `ManuallyDrop` layer around the value
+  before doing the `transmute_copy` that is used to wrap/peel. While this fix
+  could technically be backported to the 1.6 series, since 1.7 is semver
+  compatible anyway the 1.6 series has simply been yanked.
+
 ## 1.7
 
 * In response to [Unsafe Code Guidelines Issue
