@@ -1,5 +1,4 @@
 use super::*;
-use core::mem::{size_of, transmute_copy};
 
 /// A trait indicating that:
 ///
@@ -127,10 +126,10 @@ pub unsafe trait Contiguous: Copy + 'static {
       // they've sworn under the Oath Of Unsafe Rust that that already
       // matched) so this is allowed by `Contiguous`'s unsafe contract.
       //
-      // So, the `transmute_copy`. ideally we'd use transmute here, which
+      // So, the `transmute!`. ideally we'd use transmute here, which
       // is more obviously safe. Sadly, we can't, as these types still
       // have unspecified sizes.
-      Some(unsafe { transmute_copy::<Self::Int, Self>(&value) })
+      Some(unsafe { transmute!(value) })
     } else {
       None
     }
@@ -161,9 +160,9 @@ pub unsafe trait Contiguous: Copy + 'static {
 
     // SAFETY: The unsafe contract requires that these have identical
     // representations, and that the range be entirely valid. Using
-    // transmute_copy instead of transmute here is annoying, but is required
+    // transmute! instead of transmute here is annoying, but is required
     // as `Self` and `Self::Int` have unspecified sizes still.
-    unsafe { transmute_copy::<Self, Self::Int>(&self) }
+    unsafe { transmute!(self) }
   }
 }
 
