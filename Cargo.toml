@@ -18,6 +18,7 @@ extern_crate_alloc = []
 extern_crate_std = ["extern_crate_alloc"]
 zeroable_maybe_uninit = []
 min_const_generics = []
+wasm_simd = [] # Until >= 1.54.0 is MSRV this is an off-by-default feature.
 
 # Do not use if you can avoid it, because this is unsound.
 unsound_ptr_pod_impl = []
@@ -35,6 +36,7 @@ features = [
   "extern_crate_std",
   "zeroable_maybe_uninit",
   "min_const_generics",
+  "wasm_simd",
 ]
 
 [package.metadata.playground]
@@ -45,4 +47,5 @@ features = [
   "extern_crate_std",
   "zeroable_maybe_uninit",
   "min_const_generics",
+  "wasm_simd",
 ]

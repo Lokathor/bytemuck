@@ -119,6 +119,9 @@ impl_unsafe_marker_for_array!(
   512, 1024, 2048, 4096
 );
 
+#[cfg(all(target_arch = "wasm32", feature = "wasm_simd"))]
+unsafe impl Zeroable for wasm32::v128 {}
+
 #[cfg(target_arch = "x86")]
 unsafe impl Zeroable for x86::__m128i {}
 #[cfg(target_arch = "x86")]
