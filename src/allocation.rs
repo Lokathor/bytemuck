@@ -3,7 +3,10 @@
 //! Stuff to boost things in the `alloc` crate.
 //!
 //! * You must enable the `extern_crate_alloc` feature of `bytemuck` or you will
-//!   not be able to use this module!
+//!   not be able to use this module! This is generally done by adding the
+//!   feature to the dependency in Cargo.toml like so: 
+//!   `bytemuck = { version = "VERSION_YOU_ARE_USING", features = ["extern_crate_alloc"]}`
+
 
 use super::*;
 use alloc::{
