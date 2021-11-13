@@ -13,14 +13,13 @@ use crate::traits::{Contiguous, Derivable, Pod, TransparentWrapper, Zeroable};
 /// Derive the `Pod` trait for a struct
 ///
 /// The macro ensures that the struct follows all the the safety requirements
-/// for the `Pod` trait.
+/// for the `Pod` trait which implies that the types of all struct fields have
+/// to implement `Pod`.
 ///
-/// The following constraints need to be satisfied for the macro to succeed
-///
-/// - All fields in the struct must implement `Pod`
-/// - The struct must be `#[repr(C)]` or `#[repr(transparent)]`
-/// - The struct must not contain any padding bytes
-/// - The struct contains no generic parameters
+/// Generally, a struct with generic types is not allowed by this macro as the
+/// struct's padding cannot be checked then. However, there is one special
+/// case: if all struct fields have the same generic type, the macro suceeds
+/// and the generated `impl` will have a `T: Pod` bound.
 ///
 /// ## Example
 ///

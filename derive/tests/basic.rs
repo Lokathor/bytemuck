@@ -54,3 +54,12 @@ struct Generic<T> {
   x: T,
   y: T,
 }
+
+// See https://github.com/Lokathor/bytemuck/issues/75
+#[derive(Clone, Copy, Zeroable, Pod)]
+#[repr(C)]
+struct GenericAllSameType<T> {
+  a: T,
+  b: T,
+  c: T,
+}

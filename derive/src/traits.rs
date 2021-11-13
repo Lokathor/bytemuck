@@ -33,11 +33,26 @@ impl Derivable for Pod {
   }
 
   fn struct_asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
-    if !input.generics.params.is_empty() {
-      return Err("Pod requires cannot be derived for structs containing generic parameters because the padding requirements can't be verified for generic structs");
-    }
+    if input.generics.params.is_empty() {
+      generate_assert_no_padding(input)
+    } else {
+      // We only allow generic parameters if all fields of the struct have the
+      // same type. Rust's definition of `repr(C)` guarantees that there is no
+      // padding in that case. This can be inferred from this:
+      //
+      // https://doc.rust-lang.org/reference/type-layout.html#reprc-structs
+      let field_types = get_struct_fields(input)?;
+      let all_fields_same_type = field_types.iter()
+        .zip(field_types.iter().skip(1))
+        .all(|(f0, f1)| f0.ty == f1.ty);
 
-    generate_assert_no_padding(input)
+      if !all_fields_same_type {
+        return Err("Pod requires cannot be derived for structs containing generic parameters \
+          because the padding requirements can't be verified for generic structs");
+      }
+
+      return Ok(quote! {})
+    }
   }
 
   fn check_attributes(attributes: &[Attribute]) -> Result<(), &'static str> {
