@@ -37,14 +37,7 @@ impl Derivable for Pod {
       return Err("Pod requires cannot be derived for structs containing generic parameters because the padding requirements can't be verified for generic structs");
     }
 
-    let assert_no_padding = generate_assert_no_padding(input)?;
-    let assert_fields_are_pod =
-      generate_fields_are_trait(input, Self::ident())?;
-
-    Ok(quote!(
-      #assert_no_padding
-      #assert_fields_are_pod
-    ))
+    generate_assert_no_padding(input)
   }
 
   fn check_attributes(attributes: &[Attribute]) -> Result<(), &'static str> {
@@ -57,6 +50,10 @@ impl Derivable for Pod {
       }
     }
   }
+
+  fn extra_where_bounds(input: &DeriveInput) -> Result<TokenStream, &'static str> {
+    trait_bounds_for_all_fields(input, Self::ident())
+  }
 }
 
 pub struct Zeroable;
@@ -67,10 +64,7 @@ impl Derivable for Zeroable {
   }
 
   fn extra_where_bounds(input: &DeriveInput) -> Result<TokenStream, &'static str> {
-    let fields = get_struct_fields(input)?;
-    let field_types = get_field_types(&fields);
-    let trait_ = Self::ident();
-    Ok(quote! { #( #field_types: #trait_ , )* })
+    trait_bounds_for_all_fields(input, Self::ident())
   }
 }
 
@@ -236,22 +230,24 @@ fn generate_assert_no_padding(
   };})
 }
 
-/// Check that all fields implement a given trait
-fn generate_fields_are_trait(
-  input: &DeriveInput, trait_: TokenStream,
+fn trait_bounds_for_all_fields(
+  input: &DeriveInput,
+  trait_: TokenStream,
 ) -> Result<TokenStream, &'static str> {
-  let (impl_generics, _ty_generics, where_clause) =
-    input.generics.split_for_impl();
   let fields = get_struct_fields(input)?;
-  let span = input.span();
-  let field_types = get_field_types(&fields);
-  Ok(quote_spanned! {span => #(const _: fn() = || {
-      fn check #impl_generics () #where_clause {
-        fn assert_impl<T: #trait_>() {}
-        assert_impl::<#field_types>();
-      }
-    };)*
-  })
+  let out = fields.iter()
+    .map(|f| {
+      let ty = &f.ty;
+      let span = ty.span();
+
+      let spanned_trait = trait_.clone().into_iter()
+        .map(|mut tt| { tt.set_span(span); tt })
+        .collect::<TokenStream>();
+
+      quote_spanned! { span=> #ty: #spanned_trait, }
+    })
+    .collect();
+  Ok(out)
 }
 
 fn get_ident_from_stream(tokens: TokenStream) -> Option<Ident> {
