@@ -42,14 +42,12 @@ pub fn derive_pod(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
   proc_macro::TokenStream::from(expanded)
 }
 
-/// Derive the `Zeroable` trait for a struct
+/// Derive the `Zeroable` trait for a struct.
 ///
-/// The macro ensures that the struct follows all the the safety requirements
-/// for the `Zeroable` trait.
-///
-/// The following constraints need to be satisfied for the macro to succeed
-///
-/// - All fields ind the struct must to implement `Zeroable`
+/// The macro ensures that the struct follows all the safety requirements for
+/// the `Zeroable` trait. If your struct has generic fields, the generated
+/// `impl` will have a `T: Zeroable` bound for each generic type `T` of your
+/// struct.
 ///
 /// ## Example
 ///
@@ -160,7 +158,7 @@ fn derive_marker_trait_inner<Trait: Derivable>(
 ) -> Result<TokenStream, &'static str> {
   let name = &input.ident;
 
-  let (impl_generics, ty_generics, where_clause) =
+  let (impl_generics, ty_generics, original_where_clause) =
     input.generics.split_for_impl();
 
   let trait_ = Trait::ident();
@@ -168,6 +166,13 @@ fn derive_marker_trait_inner<Trait: Derivable>(
   let asserts = Trait::struct_asserts(&input)?;
   let trait_params = Trait::generic_params(&input)?;
   let trait_impl = Trait::trait_impl(&input)?;
+  let extra_bounds = Trait::extra_where_bounds(&input)?;
+
+  // Merge existing bounds with our bounds.
+  let mut where_clause = original_where_clause
+    .map(|w| if w.predicates.trailing_punct() { quote! { #w } } else { quote! { #w, }})
+    .unwrap_or(quote! { where });
+  where_clause.extend(extra_bounds);
 
   Ok(quote! {
     #asserts

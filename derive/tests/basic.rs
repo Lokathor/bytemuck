@@ -48,3 +48,9 @@ enum ContiguousWithImplicitValues {
   D,
   E,
 }
+
+#[derive(Zeroable)]
+struct Generic<T> {
+  x: T,
+  y: T,
+}

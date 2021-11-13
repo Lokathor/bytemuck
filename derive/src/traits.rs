@@ -20,6 +20,9 @@ pub trait Derivable {
   fn trait_impl(_input: &DeriveInput) -> Result<TokenStream, &'static str> {
     Ok(quote!())
   }
+  fn extra_where_bounds(_input: &DeriveInput) -> Result<TokenStream, &'static str> {
+    Ok(quote!())
+  }
 }
 
 pub struct Pod;
@@ -63,8 +66,11 @@ impl Derivable for Zeroable {
     quote!(::bytemuck::Zeroable)
   }
 
-  fn struct_asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
-    generate_fields_are_trait(input, Self::ident())
+  fn extra_where_bounds(input: &DeriveInput) -> Result<TokenStream, &'static str> {
+    let fields = get_struct_fields(input)?;
+    let field_types = get_field_types(&fields);
+    let trait_ = Self::ident();
+    Ok(quote! { #( #field_types: #trait_ , )* })
   }
 }
 
