@@ -7,14 +7,6 @@
 
 A crate for mucking around with piles of bytes.
 
-## Extensions
-
-There is experimental support for the `Zeroable` trait being derived through a
-proc-macro. I'm not the author of that crate, please file bugs with that crate
-in the other repo.
-
-* https://github.com/rodrimati1992/zeroable_crates
-
 ## Stability
 
 The goal is to stay at 1.y.z until _at least_ the next edition of Rust.
