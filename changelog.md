@@ -1,5 +1,12 @@
 # `bytemuck` changelog
 
+## 1.7.3
+
+* Experimental support for the `portable_simd` language extension under the
+  `nightly_portable_simd` cargo feature. As the name implies, this is an
+  experimental crate feature and it's **not** part of the semver contract. All
+  it does is add the appropriate `Zeroable` and `Pod` impls.
+
 ## 1.7.2
 
 * Why does this repo keep being hit with publishing problems? What did I do to
