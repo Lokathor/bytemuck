@@ -108,3 +108,11 @@ unsafe impl Pod for x86_64::__m256i {}
 unsafe impl Pod for x86_64::__m256 {}
 #[cfg(target_arch = "x86_64")]
 unsafe impl Pod for x86_64::__m256d {}
+
+#[cfg(feature = "nightly_portable_simd")]
+unsafe impl<T, const N: usize> Pod for core::simd::Simd<T, N>
+where
+  T: core::simd::SimdElement + Pod,
+  core::simd::LaneCount<N>: core::simd::SupportedLaneCount,
+{
+}

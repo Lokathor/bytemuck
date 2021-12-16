@@ -23,6 +23,9 @@ wasm_simd = [] # Until >= 1.54.0 is MSRV this is an off-by-default feature.
 # Do not use if you can avoid it, because this is unsound.
 unsound_ptr_pod_impl = []
 
+# NOT SEMVER SUPPORTED! TEMPORARY ONLY!
+nightly_portable_simd = []
+
 [dependencies]
 # use the upper line for testing against bytemuck_derive changes, if any
 #bytemuck_derive = { version = "1.0.1-alpha.0", path = "derive", optional = true }

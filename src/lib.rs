@@ -1,5 +1,6 @@
 #![no_std]
 #![warn(missing_docs)]
+#![cfg_attr(feature = "nightly_portable_simd", feature(portable_simd))]
 
 //! This crate gives small utilities for casting between plain data types.
 //!
@@ -59,7 +60,8 @@ macro_rules! impl_unsafe_marker_for_array {
   }
 }
 
-/// A macro to transmute between two types without requiring knowing size statically.
+/// A macro to transmute between two types without requiring knowing size
+/// statically.
 macro_rules! transmute {
   ($val:expr) => {
     transmute_copy(&ManuallyDrop::new($val))
@@ -117,9 +119,9 @@ fn something_went_wrong(_src: &str, _err: PodCastError) -> ! {
   panic!("{src}>{err:?}", src = _src, err = _err);
   // Note: On the spirv targets from [rust-gpu](https://github.com/EmbarkStudios/rust-gpu)
   // panic formatting cannot be used. We we just give a generic error message
-  // The chance that the panicking version of these functions will ever get called
-  // on spir-v targets with invalid inputs is small, but giving a simple error
-  // message is better than no error message at all.
+  // The chance that the panicking version of these functions will ever get
+  // called on spir-v targets with invalid inputs is small, but giving a
+  // simple error message is better than no error message at all.
   #[cfg(target_arch = "spirv")]
   panic!("Called a panicing helper from bytemuck which paniced");
 }

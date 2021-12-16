@@ -147,3 +147,11 @@ unsafe impl Zeroable for x86_64::__m256i {}
 unsafe impl Zeroable for x86_64::__m256 {}
 #[cfg(target_arch = "x86_64")]
 unsafe impl Zeroable for x86_64::__m256d {}
+
+#[cfg(feature = "nightly_portable_simd")]
+unsafe impl<T, const N: usize> Zeroable for core::simd::Simd<T, N>
+where
+  T: core::simd::SimdElement + Zeroable,
+  core::simd::LaneCount<N>: core::simd::SupportedLaneCount,
+{
+}
