@@ -59,6 +59,7 @@ unsafe impl<T> Zeroable for *mut T {}
 unsafe impl<T> Zeroable for *const T {}
 unsafe impl<T> Zeroable for Option<NonNull<T>> {}
 unsafe impl<T: Zeroable> Zeroable for PhantomData<T> {}
+unsafe impl Zeroable for PhantomPinned {}
 unsafe impl<T: Zeroable> Zeroable for ManuallyDrop<T> {}
 
 #[cfg(feature = "zeroable_maybe_uninit")]

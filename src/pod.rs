@@ -66,6 +66,7 @@ unsafe impl<T: 'static> Pod for *const T {}
 unsafe impl<T: 'static> Pod for Option<NonNull<T>> {}
 
 unsafe impl<T: Pod> Pod for PhantomData<T> {}
+unsafe impl Pod for PhantomPinned {}
 unsafe impl<T: Pod> Pod for ManuallyDrop<T> {}
 
 // Note(Lokathor): MaybeUninit can NEVER be Pod.
