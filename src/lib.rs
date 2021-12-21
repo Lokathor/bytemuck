@@ -38,6 +38,8 @@
 //!   methods related to `Box` and `Vec`. Note that the `docs.rs` documentation
 //!   is always built with `extern_crate_alloc` cargo feature enabled.
 
+#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
+use core::arch::aarch64;
 #[cfg(all(target_arch = "wasm32", feature = "wasm_simd"))]
 use core::arch::wasm32;
 #[cfg(target_arch = "x86")]
