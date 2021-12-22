@@ -36,9 +36,9 @@ jobs:
     - run: cargo test --verbose
     - run: cargo test --verbose --no-default-features
     - run: cargo test --verbose --all-features
-      if: matrix.rust != '1.34.0'
+      if: matrix.rust == 'nightly'
     - run: cargo test --verbose --manifest-path=derive/Cargo.toml --all-features
-      if: matrix.rust != '1.34.0'
+      if: matrix.rust == 'nightly'
 
   cross-test:
     name: Test on ${{ matrix.target }} with cross
@@ -49,6 +49,8 @@ jobs:
         target: [i686-unknown-linux-gnu, mips-unknown-linux-gnu, mips64-unknown-linux-gnuabi64]
     steps:
     - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: nightly
     - uses: actions/checkout@v2
     - run: cargo install cross
     - run: cross test --verbose --target=${{ matrix.target }} --no-default-features
