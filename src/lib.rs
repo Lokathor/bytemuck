@@ -23,15 +23,30 @@
 //! ## Using Your Own Types
 //!
 //! All the functions here are guarded by the [`Pod`] trait, which is a
-//! sub-trait of the [`Zeroable`] trait.
+//! sub-trait of the [`Zeroable`] trait. To implement these traits for your own
+//! types, you have two options: using the provided derive macros or
+//! implementing them manually.
 //!
-//! If you're very sure that your type is eligible, you can implement those
-//! traits for your type and then they'll have full casting support. However,
-//! these traits are `unsafe`, and you should carefully read the requirements
-//! before adding the them to your own types.
+//! The derive macros are usually the preferred option as they will cause a
+//! compiler error if they cannot verify that your type is allowed to implement
+//! a specific trait. Thus, they are safe to use and you can avoid having
+//! `unsafe` in your code. To use derives, enable the `derive` crate feature!
+//!
+//! However, the derive macros only work for a subset of types that could
+//! implement the traits in this crate. For the remaining cases (or if you want
+//! to avoid the extra dependencies), you can implement these traits manually.
+//! But since these are `unsafe` traits, please take great care to verify your
+//! type actually satisfies the requirements of each trait! Failing to do so
+//! will very likely result in undefined behavior.
 //!
 //! ## Features
 //!
+//! * `derive`: enables derive macros.
+//! * `zeroable_maybe_uninit`: Implements `Zeroable` for `std::mem::MaybeUninit`
+//!   (Requires Rust 1.36).
+//! * `min_const_generics`: if enabled, arrays of any size implement `Pod` and
+//!   `Zeroable`. If disabled, only some sizes (0–32 and some powers of two)
+//!   implement the traits. (Requires Rust 1.51)
 //! * This crate is core only by default, but if you're using Rust 1.36 or later
 //!   you can enable the `extern_crate_alloc` cargo feature for some additional
 //!   methods related to `Box` and `Vec`. Note that the `docs.rs` documentation
