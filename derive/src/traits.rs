@@ -223,10 +223,12 @@ fn generate_assert_no_padding(
   } else {
     quote_spanned!(span => 0)
   };
-
-  Ok(quote_spanned! {span => const _: fn() = || {
-    struct TypeWithoutPadding([u8; #size_sum]);
-    let _ = ::core::mem::transmute::<#struct_type, TypeWithoutPadding>;
+  let no_coverage = no_coverage();
+  Ok(quote_spanned! {span => const _: () = {
+    #no_coverage fn check_type_padding() {
+      struct TypeWithoutPadding([u8; #size_sum]);
+      let _ = ::core::mem::transmute::<#struct_type, TypeWithoutPadding>;
+    }
   };})
 }
 
@@ -239,9 +241,10 @@ fn generate_fields_are_trait(
   let fields = get_struct_fields(input)?;
   let span = input.span();
   let field_types = get_field_types(&fields);
-  Ok(quote_spanned! {span => #(const _: fn() = || {
-      fn check #impl_generics () #where_clause {
-        fn assert_impl<T: #trait_>() {}
+  let no_coverage = no_coverage();
+  Ok(quote_spanned! {span => #(const _: () = {
+      #no_coverage fn check #impl_generics () #where_clause {
+        #no_coverage fn assert_impl<T: #trait_>() {}
         assert_impl::<#field_types>();
       }
     };)*
@@ -271,6 +274,16 @@ fn get_simple_attr(attributes: &[Attribute], attr_name: &str) -> Option<Ident> {
   }
 
   None
+}
+
+/// Use `#[no_coverage]` to prevent never-executed compile time assertions from cluttering up code coverage results
+/// See: https://github.com/rust-lang/rust/issues/84605
+fn no_coverage() -> TokenStream {
+  if cfg!(feature = "nightly_no_coverage") {
+    quote!(#[no_coverage])
+  } else {
+    quote!()
+  }
 }
 
 fn get_repr(attributes: &[Attribute]) -> Option<String> {

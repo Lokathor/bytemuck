@@ -26,11 +26,12 @@ unsound_ptr_pod_impl = []
 
 # NOT SEMVER SUPPORTED! TEMPORARY ONLY!
 nightly_portable_simd = []
+nightly_no_coverage = ["bytemuck_derive/nightly_no_coverage"]
 
 [dependencies]
 # use the upper line for testing against bytemuck_derive changes, if any
-#bytemuck_derive = { version = "1.0.1-alpha.0", path = "derive", optional = true }
-bytemuck_derive = { version = "1", optional = true }
+bytemuck_derive = { version = "1.0.2-alpha.0", path = "derive", optional = true }
+#bytemuck_derive = { version = "1.0.2-alpha.0", optional = true }
 
 [package.metadata.docs.rs]
 # Note(Lokathor): Don't use all-feautures or it would use `unsound_ptr_pod_impl` too.

@@ -10,6 +10,10 @@ categories = ["encoding", "no-std"]
 edition = "2018"
 license = "Zlib OR Apache-2.0 OR MIT"
 
+[features]
+# NOT SEMVER SUPPORTED! TEMPORARY ONLY!
+nightly_no_coverage = [] # https://github.com/rust-lang/rust/issues/84605
+
 [lib]
 name = "bytemuck_derive"
 proc-macro = true
