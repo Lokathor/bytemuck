@@ -58,11 +58,18 @@ use crate::{Pod, NoPadding};
 /// ```rust
 /// # use bytemuck::{MaybePod, NoPadding};
 /// # #[repr(u32)]
-/// # #[derive(Copy, Clone, PartialEq, Eq, Debug, MaybePod, NoPadding)]
+/// # #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 /// # enum MyEnum {
 /// #     Variant0 = 0,
 /// #     Variant1 = 1,
 /// #     Variant2 = 2,
+/// # }
+/// # unsafe impl NoPadding for MyEnum {}
+/// # unsafe impl MaybePod for MyEnum {
+/// #     type PodTy = u32;
+/// #     fn cast_is_valid(pod: &u32) -> bool {
+/// #         matches!(*pod, 0 | 1 | 2)
+/// #     }
 /// # }
 /// use bytemuck::{bytes_of, try_from_bytes};
 ///

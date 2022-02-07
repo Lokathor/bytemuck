@@ -95,7 +95,7 @@ struct MaybePodStruct {
 
 #[test]
 fn fails_cast_contiguous() {
-    let can_cast = MaybePodEnumWithValues::cast_is_valid(&24);
+    let can_cast = MaybePodEnumWithValues::cast_is_valid(&5);
     assert!(!can_cast);
 }
 
@@ -107,7 +107,7 @@ fn passes_cast_contiguous() {
 
 #[test]
 fn fails_cast_noncontiguous() {
-    let can_cast = MaybePodEnumNonContiguous::cast_is_valid(&24);
+    let can_cast = MaybePodEnumNonContiguous::cast_is_valid(&4);
     assert!(!can_cast);
 }
 
