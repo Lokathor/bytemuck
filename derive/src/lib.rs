@@ -8,7 +8,9 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput};
 
-use crate::traits::{Contiguous, Derivable, Pod, TransparentWrapper, Zeroable, NoPadding, MaybePod};
+use crate::traits::{
+  Contiguous, Derivable, MaybePod, NoPadding, Pod, TransparentWrapper, Zeroable,
+};
 
 /// Derive the `Pod` trait for a struct
 ///
@@ -93,11 +95,13 @@ pub fn derive_zeroable(
 /// - All variants must be fieldless
 /// - The enum must contain no generic parameters
 #[proc_macro_derive(NoPadding)]
-pub fn derive_no_padding(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let expanded =
+pub fn derive_no_padding(
+  input: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+  let expanded =
     derive_marker_trait::<NoPadding>(parse_macro_input!(input as DeriveInput));
 
-    proc_macro::TokenStream::from(expanded)
+  proc_macro::TokenStream::from(expanded)
 }
 
 /// Derive the `MaybePod` trait for a struct or enum.
@@ -118,12 +122,12 @@ pub fn derive_no_padding(input: proc_macro::TokenStream) -> proc_macro::TokenStr
 /// - All requirements already checked by `NoPadding`, just impls the trait
 #[proc_macro_derive(MaybePod)]
 pub fn derive_maybe_pod(
-    input: proc_macro::TokenStream,
+  input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-    let expanded =
+  let expanded =
     derive_marker_trait::<MaybePod>(parse_macro_input!(input as DeriveInput));
 
-    proc_macro::TokenStream::from(expanded)
+  proc_macro::TokenStream::from(expanded)
 }
 
 /// Derive the `TransparentWrapper` trait for a struct

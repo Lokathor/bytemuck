@@ -102,7 +102,9 @@ mod transparent;
 pub use transparent::*;
 
 #[cfg(feature = "derive")]
-pub use bytemuck_derive::{Contiguous, MaybePod, NoPadding, Pod, TransparentWrapper, Zeroable};
+pub use bytemuck_derive::{
+  Contiguous, MaybePod, NoPadding, Pod, TransparentWrapper, Zeroable,
+};
 
 /*
 
@@ -373,7 +375,7 @@ pub fn try_cast<A: NoPadding, B: MaybePod>(a: A) -> Result<B, PodCastError> {
     let pod: <B as MaybePod>::PodTy = unsafe { transmute!(a) };
 
     if <B as MaybePod>::cast_is_valid(&pod) {
-      Ok( unsafe { transmute!(pod) })
+      Ok(unsafe { transmute!(pod) })
     } else {
       Err(PodCastError::InvalidBitPattern)
     }
@@ -390,7 +392,9 @@ pub fn try_cast<A: NoPadding, B: MaybePod>(a: A) -> Result<B, PodCastError> {
 /// * If the source type and target type aren't the same size.
 /// * If `a` contains an illegal bit pattern for `B`, this fails.
 #[inline]
-pub fn try_cast_ref<A: NoPadding, B: MaybePod>(a: &A) -> Result<&B, PodCastError> {
+pub fn try_cast_ref<A: NoPadding, B: MaybePod>(
+  a: &A,
+) -> Result<&B, PodCastError> {
   // Note(Lokathor): everything with `align_of` and `size_of` will optimize away
   // after monomorphization.
   if align_of::<B>() > align_of::<A>()
@@ -414,7 +418,9 @@ pub fn try_cast_ref<A: NoPadding, B: MaybePod>(a: &A) -> Result<&B, PodCastError
 ///
 /// As [`try_cast_ref`], but `mut`.
 #[inline]
-pub fn try_cast_mut<A: Pod, B: MaybePod>(a: &mut A) -> Result<&mut B, PodCastError> {
+pub fn try_cast_mut<A: Pod, B: MaybePod>(
+  a: &mut A,
+) -> Result<&mut B, PodCastError> {
   // Note(Lokathor): everything with `align_of` and `size_of` will optimize away
   // after monomorphization.
   if align_of::<B>() > align_of::<A>()
@@ -422,7 +428,7 @@ pub fn try_cast_mut<A: Pod, B: MaybePod>(a: &mut A) -> Result<&mut B, PodCastErr
   {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else if size_of::<B>() == size_of::<A>() {
-    let pod = unsafe { &mut *(a as *mut  A as *mut <B as MaybePod>::PodTy) };
+    let pod = unsafe { &mut *(a as *mut A as *mut <B as MaybePod>::PodTy) };
 
     if <B as MaybePod>::cast_is_valid(pod) {
       Ok(unsafe { &mut *(pod as *mut <B as MaybePod>::PodTy as *mut B) })
@@ -450,7 +456,9 @@ pub fn try_cast_mut<A: Pod, B: MaybePod>(a: &mut A) -> Result<&mut B, PodCastErr
 /// * Similarly, you can't convert between a [ZST](https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
 ///   and a non-ZST.
 #[inline]
-pub fn try_cast_slice<A: NoPadding, B: MaybePod>(a: &[A]) -> Result<&[B], PodCastError> {
+pub fn try_cast_slice<A: NoPadding, B: MaybePod>(
+  a: &[A],
+) -> Result<&[B], PodCastError> {
   // Note(Lokathor): everything with `align_of` and `size_of` will optimize away
   // after monomorphization.
   if align_of::<B>() > align_of::<A>()
@@ -458,10 +466,17 @@ pub fn try_cast_slice<A: NoPadding, B: MaybePod>(a: &[A]) -> Result<&[B], PodCas
   {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else if size_of::<B>() == size_of::<A>() {
-    let pod = unsafe { core::slice::from_raw_parts(a.as_ptr() as *const <B as MaybePod>::PodTy, a.len()) };
+    let pod = unsafe {
+      core::slice::from_raw_parts(
+        a.as_ptr() as *const <B as MaybePod>::PodTy,
+        a.len(),
+      )
+    };
 
     if pod.iter().all(|pod| <B as MaybePod>::cast_is_valid(pod)) {
-      Ok(unsafe { core::slice::from_raw_parts(pod.as_ptr() as *const B, pod.len()) })
+      Ok(unsafe {
+        core::slice::from_raw_parts(pod.as_ptr() as *const B, pod.len())
+      })
     } else {
       Err(PodCastError::InvalidBitPattern)
     }
@@ -469,10 +484,17 @@ pub fn try_cast_slice<A: NoPadding, B: MaybePod>(a: &[A]) -> Result<&[B], PodCas
     Err(PodCastError::SizeMismatch)
   } else if core::mem::size_of_val(a) % size_of::<B>() == 0 {
     let new_len = core::mem::size_of_val(a) / size_of::<B>();
-    let pod = unsafe { core::slice::from_raw_parts(a.as_ptr() as *const <B as MaybePod>::PodTy, new_len) };
+    let pod = unsafe {
+      core::slice::from_raw_parts(
+        a.as_ptr() as *const <B as MaybePod>::PodTy,
+        new_len,
+      )
+    };
 
     if pod.iter().all(|pod| <B as MaybePod>::cast_is_valid(pod)) {
-      Ok(unsafe { core::slice::from_raw_parts(pod.as_ptr() as *const B, new_len) })
+      Ok(unsafe {
+        core::slice::from_raw_parts(pod.as_ptr() as *const B, new_len)
+      })
     } else {
       Err(PodCastError::InvalidBitPattern)
     }
@@ -496,10 +518,17 @@ pub fn try_cast_slice_mut<A: Pod, B: MaybePod>(
   {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else if size_of::<B>() == size_of::<A>() {
-    let pod = unsafe { core::slice::from_raw_parts_mut(a.as_ptr() as *mut <B as MaybePod>::PodTy, a.len()) };
+    let pod = unsafe {
+      core::slice::from_raw_parts_mut(
+        a.as_ptr() as *mut <B as MaybePod>::PodTy,
+        a.len(),
+      )
+    };
 
     if pod.iter().all(|pod| <B as MaybePod>::cast_is_valid(pod)) {
-      Ok(unsafe { core::slice::from_raw_parts_mut(pod.as_ptr() as *mut B, pod.len()) })
+      Ok(unsafe {
+        core::slice::from_raw_parts_mut(pod.as_ptr() as *mut B, pod.len())
+      })
     } else {
       Err(PodCastError::InvalidBitPattern)
     }
@@ -507,10 +536,17 @@ pub fn try_cast_slice_mut<A: Pod, B: MaybePod>(
     Err(PodCastError::SizeMismatch)
   } else if core::mem::size_of_val(a) % size_of::<B>() == 0 {
     let new_len = core::mem::size_of_val(a) / size_of::<B>();
-    let pod = unsafe { core::slice::from_raw_parts_mut(a.as_ptr() as *mut <B as MaybePod>::PodTy, new_len) };
+    let pod = unsafe {
+      core::slice::from_raw_parts_mut(
+        a.as_ptr() as *mut <B as MaybePod>::PodTy,
+        new_len,
+      )
+    };
 
     if pod.iter().all(|pod| <B as MaybePod>::cast_is_valid(pod)) {
-      Ok(unsafe { core::slice::from_raw_parts_mut(pod.as_ptr() as *mut B, new_len) })
+      Ok(unsafe {
+        core::slice::from_raw_parts_mut(pod.as_ptr() as *mut B, new_len)
+      })
     } else {
       Err(PodCastError::InvalidBitPattern)
     }

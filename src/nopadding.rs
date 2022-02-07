@@ -1,7 +1,7 @@
 use crate::Pod;
 
 /// Marker trait for "plain old data" types with no padding.
-/// 
+///
 /// The requirements for this is very similar to [`Pod`],
 /// except that it doesn't require that all bit patterns of the type are valid, i.e.
 /// it does not require the type to be [`Zeroable`][crate::Zeroable].

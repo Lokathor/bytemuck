@@ -1,11 +1,11 @@
-use crate::{Pod, NoPadding};
+use crate::{NoPadding, Pod};
 
 /// Marker trait for a type that is [`Pod`] for *at least some* bit patterns
 /// of its underlying data.
-/// 
+///
 /// [`Pod`] is a superset of [`MaybePod`], meaning that any `T: Pod` is also [`MaybePod`]. If it's possible,
 /// prefer implementing [`Pod`] for your type directly instead of [`MaybePod`] as it gives greater flexibility.
-/// 
+///
 /// The point of this trait is to allow some of the benefits of the [`Pod`] trait for
 /// types that are [`NoPadding`] but not [`Zeroable`]. This is particularly
 /// useful for types like fieldless ('C-style') enums, [`char`], and structs containing them.
@@ -93,30 +93,30 @@ use crate::{Pod, NoPadding};
 /// [`Zeroable`]: crate::Zeroable
 /// [`cast_is_valid`]: MaybePod::cast_is_valid
 pub unsafe trait MaybePod: NoPadding {
-    /// `Self` *must* have the same layout as the specified `PodTy` except for
-    /// the possible invalid bit patterns being checked during [`cast_is_valid`].
-    /// 
-    /// [`cast_is_valid`]: MaybePod::cast_is_valid
-    type PodTy: Pod;
+  /// `Self` *must* have the same layout as the specified `PodTy` except for
+  /// the possible invalid bit patterns being checked during [`cast_is_valid`].
+  ///
+  /// [`cast_is_valid`]: MaybePod::cast_is_valid
+  type PodTy: Pod;
 
-    /// If this function returns true, then it must be valid to reinterpret `pod` as `&Self`.
-    fn cast_is_valid(pod: &Self::PodTy) -> bool;
+  /// If this function returns true, then it must be valid to reinterpret `pod` as `&Self`.
+  fn cast_is_valid(pod: &Self::PodTy) -> bool;
 }
 
 unsafe impl<T: Pod> MaybePod for T {
-    type PodTy = T;
+  type PodTy = T;
 
-    #[inline(always)]
-    fn cast_is_valid(_pod: &T) -> bool {
-        true
-    }
+  #[inline(always)]
+  fn cast_is_valid(_pod: &T) -> bool {
+    true
+  }
 }
 
 unsafe impl MaybePod for char {
-    type PodTy = u32;
+  type PodTy = u32;
 
-    #[inline]
-    fn cast_is_valid(pod: &Self::PodTy) -> bool {
-        char::from_u32(*pod).is_some()
-    }
+  #[inline]
+  fn cast_is_valid(pod: &Self::PodTy) -> bool {
+    char::from_u32(*pod).is_some()
+  }
 }
