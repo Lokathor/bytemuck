@@ -11,14 +11,14 @@ pub trait Derivable {
   fn generic_params(_input: &DeriveInput) -> Result<TokenStream, &'static str> {
     Ok(quote!())
   }
-  fn struct_asserts(_input: &DeriveInput) -> Result<TokenStream, &'static str> {
+  fn asserts(_input: &DeriveInput) -> Result<TokenStream, &'static str> {
     Ok(quote!())
   }
-  fn check_attributes(_attributes: &[Attribute]) -> Result<(), &'static str> {
+  fn check_attributes(_ty: &Data, _attributes: &[Attribute]) -> Result<(), &'static str> {
     Ok(())
   }
-  fn trait_impl(_input: &DeriveInput) -> Result<TokenStream, &'static str> {
-    Ok(quote!())
+  fn trait_impl(_input: &DeriveInput) -> Result<(TokenStream, TokenStream), &'static str> {
+    Ok((quote!(), quote!()))
   }
 }
 
@@ -29,7 +29,7 @@ impl Derivable for Pod {
     quote!(::bytemuck::Pod)
   }
 
-  fn struct_asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
+  fn asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
     if !input.generics.params.is_empty() {
       return Err("Pod requires cannot be derived for structs containing generic parameters because the padding requirements can't be verified for generic structs");
     }
@@ -44,7 +44,7 @@ impl Derivable for Pod {
     ))
   }
 
-  fn check_attributes(attributes: &[Attribute]) -> Result<(), &'static str> {
+  fn check_attributes(_ty: &Data, attributes: &[Attribute]) -> Result<(), &'static str> {
     let repr = get_repr(attributes);
     match repr.as_ref().map(|repr| repr.as_str()) {
       Some("C") => Ok(()),
@@ -63,9 +63,100 @@ impl Derivable for Zeroable {
     quote!(::bytemuck::Zeroable)
   }
 
-  fn struct_asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
+  fn asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
     generate_fields_are_trait(input, Self::ident())
   }
+}
+
+pub struct NoPadding;
+
+impl Derivable for NoPadding {
+    fn ident() -> TokenStream {
+        quote!(::bytemuck::NoPadding)
+    }
+
+    fn check_attributes(ty: &Data, attributes: &[Attribute]) -> Result<(), &'static str> {
+        let repr = get_repr(attributes);
+        match ty {
+            Data::Struct(_) => match repr.as_deref() {
+                Some("C" | "transparent") => Ok(()),
+                _ => Err("NoPadding requires the struct to be #[repr(C)] or #[repr(transparent)]"),
+            },
+            Data::Enum(_) => if repr.map(|repr| repr.starts_with('u') || repr.starts_with('i')) == Some(true) {
+                Ok(())
+            } else {
+                Err("NoPadding requires the enum to be an explicit #[repr(Int)]")
+            },
+            Data::Union(_) => Err("NoPadding can only be derived on enums and structs")
+        }
+    }
+
+    fn asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
+        if !input.generics.params.is_empty() {
+            return Err("NoPadding cannot be derived for structs containing generic parameters because the padding requirements can't be verified for generic structs");
+        }
+
+        match &input.data {
+            Data::Struct(DataStruct { .. }) => {
+                let assert_no_padding = generate_assert_no_padding(&input)?;
+                let assert_fields_are_no_padding = generate_fields_are_trait(&input, Self::ident())?;
+
+                Ok(quote!(
+                    #assert_no_padding
+                    #assert_fields_are_no_padding
+                ))
+            }
+            Data::Enum(DataEnum { variants, .. }) => {
+                if variants.iter().any(|variant| !variant.fields.is_empty()) {
+                    Err("Only fieldless enums are supported for NoPadding")
+                } else {
+                    Ok(quote!())
+                }
+            }
+            Data::Union(_) => Err("Internal error in NoPadding derive"), // shouldn't be possible since we already error in attribute check for this case
+        }
+    }
+
+    fn trait_impl(_input: &DeriveInput) -> Result<(TokenStream, TokenStream), &'static str> {
+        Ok((quote!(), quote!()))
+    }
+}
+
+pub struct MaybePod;
+
+impl Derivable for MaybePod {
+    fn ident() -> TokenStream {
+        quote!(::bytemuck::MaybePod)
+    }
+
+    fn check_attributes(_ty: &Data, _attributes: &[Attribute]) -> Result<(), &'static str> {
+        Ok(()) // No need to check here because MaybePod requires NoPadding and the attr requirements are the same
+    }
+
+    fn asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
+        if !input.generics.params.is_empty() {
+            return Err("MaybePod cannot be derived for structs containing generic parameters because the padding requirements can't be verified for generic structs");
+        }
+
+        match &input.data {
+            Data::Struct(DataStruct { .. }) => {
+                let assert_fields_are_maybe_pod = generate_fields_are_trait(&input, Self::ident())?;
+
+                Ok(assert_fields_are_maybe_pod)
+            }
+            Data::Enum(_) => Ok(quote!()), // nothing needed, already guaranteed OK by NoPadding
+            Data::Union(_) => Err("Internal error in MaybePod derive"), // shouldn't be possible since we already error in attribute check for this case
+        }
+    }
+
+
+    fn trait_impl(input: &DeriveInput) -> Result<(TokenStream, TokenStream), &'static str> {
+        match &input.data {
+            Data::Struct(DataStruct { fields, .. }) => Ok(generate_maybe_pod_impl_struct(&input.ident, fields, &input.attrs)),
+            Data::Enum(_) => generate_maybe_pod_impl_enum(input),
+            Data::Union(_) => Err("Internal error in MaybePod derive"), // shouldn't be possible since we already error in attribute check for this case
+        }
+    }
 }
 
 pub struct TransparentWrapper;
@@ -100,7 +191,7 @@ impl Derivable for TransparentWrapper {
             .ok_or("when deriving TransparentWrapper for a struct with more than one field you need to specify the transparent field using #[transparent(T)]")
   }
 
-  fn struct_asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
+  fn asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
     let fields = get_struct_fields(input)?;
     let wrapped_type = match Self::get_wrapper_type(&input.attrs, fields) {
       Some(wrapped_type) => wrapped_type.to_string(),
@@ -119,7 +210,7 @@ impl Derivable for TransparentWrapper {
     }
   }
 
-  fn check_attributes(attributes: &[Attribute]) -> Result<(), &'static str> {
+  fn check_attributes(_ty: &Data, attributes: &[Attribute]) -> Result<(), &'static str> {
     let repr = get_repr(attributes);
 
     match repr.as_ref().map(|repr| repr.as_str()) {
@@ -138,7 +229,7 @@ impl Derivable for Contiguous {
     quote!(::bytemuck::Contiguous)
   }
 
-  fn trait_impl(input: &DeriveInput) -> Result<TokenStream, &'static str> {
+  fn trait_impl(input: &DeriveInput) -> Result<(TokenStream, TokenStream), &'static str> {
     let repr = get_repr(&input.attrs)
       .ok_or("Contiguous requires the enum to be #[repr(Int)]")?;
 
@@ -172,11 +263,11 @@ impl Derivable for Contiguous {
     let min_lit = LitInt::new(&format!("{}", min), input.span());
     let max_lit = LitInt::new(&format!("{}", max), input.span());
 
-    Ok(quote! {
+    Ok((quote!(), quote! {
         type Int = #repr_ident;
         const MIN_VALUE: #repr_ident = #min_lit;
         const MAX_VALUE: #repr_ident = #max_lit;
-    })
+    }))
   }
 }
 
@@ -202,6 +293,87 @@ fn get_field_types<'a>(
   fields: &'a Fields,
 ) -> impl Iterator<Item = &'a Type> + 'a {
   fields.iter().map(|field| &field.ty)
+}
+
+fn generate_maybe_pod_impl_struct(input_ident: &Ident, fields: &Fields, attrs: &[Attribute]) -> (TokenStream, TokenStream) {
+    let pod_ty = Ident::new(&format!("{}Bits", input_ident), input_ident.span());
+
+    let repr = get_simple_attr(attrs, "repr").unwrap(); // should be checked in attr check already
+
+    let field_names = fields.iter().enumerate().map(|(i, field)| {
+        field.ident.clone().unwrap_or_else(|| Ident::new(&format!("field{}", i), input_ident.span()))
+    }).collect::<Vec<_>>();
+    let field_tys = fields.iter().map(|field| &field.ty).collect::<Vec<_>>();
+
+    let field_name = &field_names[..];
+    let field_ty = &field_tys[..];
+
+    (quote! {
+        #[repr(#repr)]
+        #[derive(Clone, Copy, ::bytemuck::Pod, ::bytemuck::Zeroable)]
+        struct #pod_ty {
+            #(#field_name: <#field_ty as ::bytemuck::MaybePod>::PodTy,)*
+        }
+    },
+    quote! {
+        type PodTy = #pod_ty;
+
+        #[inline]
+        fn cast_is_valid(pod: &#pod_ty) -> bool {
+            #(<#field_ty as ::bytemuck::MaybePod>::cast_is_valid(&pod.#field_name) &&)* true
+        }
+    })
+}
+
+fn generate_maybe_pod_impl_enum(input: &DeriveInput) -> Result<(TokenStream, TokenStream), &'static str> {
+    let span = input.span();
+    let mut variants_with_discriminant = VariantDiscriminantIterator::new(get_enum_variants(input)?);
+
+    let (min, max, count) = variants_with_discriminant.try_fold(
+        (i64::max_value(), i64::min_value(), 0),
+        |(min, max, count), res| {
+            let discriminant = res?;
+            Ok((
+                i64::min(min, discriminant),
+                i64::max(max, discriminant),
+                count + 1,
+            ))
+        },
+    )?;
+
+    let check = if count == 0 {
+        quote_spanned!(span => false)
+    } else if max - min == count - 1 {
+        // contiguous range
+        let min_lit = LitInt::new(&format!("{}", min), span);
+        let max_lit = LitInt::new(&format!("{}", max), span);
+
+        quote!(*bits >= #min_lit && *bits <= #max_lit)
+    } else {
+        // not contiguous range, check for each
+        let variant_lits = VariantDiscriminantIterator::new(get_enum_variants(input)?)
+            .map(|res| {
+                let variant = res?;
+                Ok(LitInt::new(&format!("{}", variant), span))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        // count is at least 1
+        let first = &variant_lits[0];
+        let rest = &variant_lits[1..];
+
+        quote!(matches!(*bits, #first #(| #rest )*))
+    };
+
+    let repr = get_simple_attr(&input.attrs, "repr").unwrap(); // should be checked in attr check already
+    Ok((quote!(), quote! {
+        type PodTy = #repr;
+
+        #[inline]
+        fn cast_is_valid(bits: &Self::PodTy) -> bool {
+            #check
+        }
+    }))
 }
 
 /// Check that a struct has no padding by asserting that the size of the struct

@@ -102,7 +102,7 @@ mod transparent;
 pub use transparent::*;
 
 #[cfg(feature = "derive")]
-pub use bytemuck_derive::{Contiguous, Pod, TransparentWrapper, Zeroable};
+pub use bytemuck_derive::{Contiguous, MaybePod, NoPadding, Pod, TransparentWrapper, Zeroable};
 
 /*
 

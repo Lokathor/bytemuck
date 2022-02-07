@@ -20,4 +20,4 @@ quote = "1"
 proc-macro2 = "1"
 
 [dev-dependencies]
-bytemuck = "1.2"
+bytemuck = { path = "../", features = ["derive"] }
