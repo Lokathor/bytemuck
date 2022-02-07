@@ -26,7 +26,7 @@ use crate::Pod;
 /// # Safety
 ///
 /// The same as [`Pod`] except we disregard the rule about it must
-/// allow any bit pattern (i.e. it does not need to be [`Zeroable`][bytemuck::Zeroable]).
+/// allow any bit pattern (i.e. it does not need to be [`Zeroable`][crate::Zeroable]).
 /// Still, this is a quite strong guarantee about a type, so *be careful* whem
 /// implementing it manually.
 ///
