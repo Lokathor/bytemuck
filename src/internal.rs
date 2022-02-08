@@ -4,8 +4,8 @@
 //! the crate root, `checked`, and `relaxed` modules.
 #![allow(unused_unsafe)]
 
-use core::{marker::*, mem::*};
 use crate::PodCastError;
+use core::{marker::*, mem::*};
 
 /*
 
@@ -18,7 +18,6 @@ particular type combinations, and then it doesn't fully eliminated the panic
 possibility code branch.
 
 */
-
 
 /// Immediately panics.
 #[cold]
@@ -103,7 +102,9 @@ pub(crate) unsafe fn from_bytes_mut<T: Copy>(s: &mut [u8]) -> &mut T {
 /// * If the slice isn't aligned for the new type
 /// * If the slice's length isn’t exactly the size of the new type
 #[inline]
-pub(crate) unsafe fn try_from_bytes<T: Copy>(s: &[u8]) -> Result<&T, PodCastError> {
+pub(crate) unsafe fn try_from_bytes<T: Copy>(
+  s: &[u8],
+) -> Result<&T, PodCastError> {
   if s.len() != size_of::<T>() {
     Err(PodCastError::SizeMismatch)
   } else if (s.as_ptr() as usize) % align_of::<T>() != 0 {
@@ -131,7 +132,6 @@ pub(crate) unsafe fn try_from_bytes_mut<T: Copy>(
     Ok(unsafe { &mut *(s.as_mut_ptr() as *mut T) })
   }
 }
-
 
 /// Cast `T` into `U`
 ///
@@ -226,7 +226,9 @@ pub(crate) unsafe fn cast_slice_mut<A: Copy, B: Copy>(a: &mut [A]) -> &mut [B] {
 ///
 /// * If the types don't have the same size this fails.
 #[inline]
-pub(crate) unsafe fn try_cast<A: Copy, B: Copy>(a: A) -> Result<B, PodCastError> {
+pub(crate) unsafe fn try_cast<A: Copy, B: Copy>(
+  a: A,
+) -> Result<B, PodCastError> {
   if size_of::<A>() == size_of::<B>() {
     Ok(unsafe { transmute!(a) })
   } else {
@@ -241,7 +243,9 @@ pub(crate) unsafe fn try_cast<A: Copy, B: Copy>(a: A) -> Result<B, PodCastError>
 /// * If the reference isn't aligned in the new type
 /// * If the source type and target type aren't the same size.
 #[inline]
-pub(crate) unsafe fn try_cast_ref<A: Copy, B: Copy>(a: &A) -> Result<&B, PodCastError> {
+pub(crate) unsafe fn try_cast_ref<A: Copy, B: Copy>(
+  a: &A,
+) -> Result<&B, PodCastError> {
   // Note(Lokathor): everything with `align_of` and `size_of` will optimize away
   // after monomorphization.
   if align_of::<B>() > align_of::<A>()
@@ -259,7 +263,9 @@ pub(crate) unsafe fn try_cast_ref<A: Copy, B: Copy>(a: &A) -> Result<&B, PodCast
 ///
 /// As [`try_cast_ref`], but `mut`.
 #[inline]
-pub(crate) unsafe fn try_cast_mut<A: Copy, B: Copy>(a: &mut A) -> Result<&mut B, PodCastError> {
+pub(crate) unsafe fn try_cast_mut<A: Copy, B: Copy>(
+  a: &mut A,
+) -> Result<&mut B, PodCastError> {
   // Note(Lokathor): everything with `align_of` and `size_of` will optimize away
   // after monomorphization.
   if align_of::<B>() > align_of::<A>()
@@ -289,7 +295,9 @@ pub(crate) unsafe fn try_cast_mut<A: Copy, B: Copy>(a: &mut A) -> Result<&mut B,
 /// * Similarly, you can't convert between a [ZST](https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
 ///   and a non-ZST.
 #[inline]
-pub(crate) unsafe fn try_cast_slice<A: Copy, B: Copy>(a: &[A]) -> Result<&[B], PodCastError> {
+pub(crate) unsafe fn try_cast_slice<A: Copy, B: Copy>(
+  a: &[A],
+) -> Result<&[B], PodCastError> {
   // Note(Lokathor): everything with `align_of` and `size_of` will optimize away
   // after monomorphization.
   if align_of::<B>() > align_of::<A>()

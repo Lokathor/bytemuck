@@ -1,7 +1,7 @@
 //! Checked versions of the casting functions exposed in crate root
 //! that support [`MaybePod`] types.
 
-use crate::{internal, Pod, MaybePod, NoPadding};
+use crate::{internal, MaybePod, NoPadding, Pod};
 
 /// The things that can go wrong when casting between [`MaybePod`] data forms.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -38,7 +38,9 @@ impl From<crate::PodCastError> for CheckedCastError {
 /// * If the slice's length isn’t exactly the size of the new type
 /// * If the slice contains an invalid bit pattern for `T`
 #[inline]
-pub fn checked_from_bytes<T: MaybePod>(s: &[u8]) -> Result<&T, CheckedCastError> {
+pub fn checked_from_bytes<T: MaybePod>(
+  s: &[u8],
+) -> Result<&T, CheckedCastError> {
   let pod = unsafe { internal::try_from_bytes(s)? };
 
   if <T as MaybePod>::cast_is_valid(pod) {
@@ -80,7 +82,9 @@ pub fn try_from_bytes_mut<T: MaybePod>(
 /// * If the types don't have the same size this fails.
 /// * If `a` contains an invalid bit pattern for `B` this fails.
 #[inline]
-pub fn try_cast<A: NoPadding, B: MaybePod>(a: A) -> Result<B, CheckedCastError> {
+pub fn try_cast<A: NoPadding, B: MaybePod>(
+  a: A,
+) -> Result<B, CheckedCastError> {
   let pod = unsafe { internal::try_cast(a) }?;
 
   if <B as MaybePod>::cast_is_valid(&pod) {
@@ -98,7 +102,9 @@ pub fn try_cast<A: NoPadding, B: MaybePod>(a: A) -> Result<B, CheckedCastError> 
 /// * If the source type and target type aren't the same size.
 /// * If `a` contains an invalid bit pattern for `B` this fails.
 #[inline]
-pub fn try_cast_ref<A: NoPadding, B: MaybePod>(a: &A) -> Result<&B, CheckedCastError> {
+pub fn try_cast_ref<A: NoPadding, B: MaybePod>(
+  a: &A,
+) -> Result<&B, CheckedCastError> {
   let pod = unsafe { internal::try_cast_ref(a) }?;
 
   if <B as MaybePod>::cast_is_valid(pod) {
@@ -112,7 +118,9 @@ pub fn try_cast_ref<A: NoPadding, B: MaybePod>(a: &A) -> Result<&B, CheckedCastE
 ///
 /// As [`try_cast_ref`], but `mut`.
 #[inline]
-pub fn try_cast_mut<A: Pod, B: MaybePod>(a: &mut A) -> Result<&mut B, CheckedCastError> {
+pub fn try_cast_mut<A: Pod, B: MaybePod>(
+  a: &mut A,
+) -> Result<&mut B, CheckedCastError> {
   let pod = unsafe { internal::try_cast_mut(a) }?;
 
   if <B as MaybePod>::cast_is_valid(pod) {
@@ -139,11 +147,15 @@ pub fn try_cast_mut<A: Pod, B: MaybePod>(a: &mut A) -> Result<&mut B, CheckedCas
 ///   and a non-ZST.
 /// * If any element of the converted slice would contain an invalid bit pattern for `B` this fails.
 #[inline]
-pub fn try_cast_slice<A: NoPadding, B: MaybePod>(a: &[A]) -> Result<&[B], CheckedCastError> {
+pub fn try_cast_slice<A: NoPadding, B: MaybePod>(
+  a: &[A],
+) -> Result<&[B], CheckedCastError> {
   let pod = unsafe { internal::try_cast_slice(a) }?;
 
   if pod.iter().all(|pod| <B as MaybePod>::cast_is_valid(pod)) {
-    Ok(unsafe { core::slice::from_raw_parts(pod.as_ptr() as *const B, pod.len()) })
+    Ok(unsafe {
+      core::slice::from_raw_parts(pod.as_ptr() as *const B, pod.len())
+    })
   } else {
     Err(CheckedCastError::InvalidBitPattern)
   }
@@ -160,7 +172,9 @@ pub fn try_cast_slice_mut<A: Pod, B: MaybePod>(
   let pod = unsafe { internal::try_cast_slice_mut(a) }?;
 
   if pod.iter().all(|pod| <B as MaybePod>::cast_is_valid(pod)) {
-    Ok(unsafe { core::slice::from_raw_parts_mut(pod.as_ptr() as *mut B, pod.len()) })
+    Ok(unsafe {
+      core::slice::from_raw_parts_mut(pod.as_ptr() as *mut B, pod.len())
+    })
   } else {
     Err(CheckedCastError::InvalidBitPattern)
   }

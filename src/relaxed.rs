@@ -1,7 +1,7 @@
 //! Versions of the casting functions exposed in crate root
 //! with slightly relaxed requirements, allowing use of the [`NoPadding`]
 //! trait.
-//! 
+//!
 //! The functions exposed here are entirely equivalent to the ones exposed
 //! in crate main and *should* work in any case that those functions work
 //! since [`NoPadding`] is a superset of [`Pod`]. However, we haven't found
