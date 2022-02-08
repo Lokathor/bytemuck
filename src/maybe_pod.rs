@@ -71,7 +71,8 @@ use crate::{NoPadding, Pod};
 /// #         matches!(*pod, 0 | 1 | 2)
 /// #     }
 /// # }
-/// use bytemuck::{bytes_of, try_from_bytes};
+/// use bytemuck::bytes_of;
+/// use bytemuck::checked::try_from_bytes;
 ///
 /// let bytes = bytes_of(&2u32);
 /// let result = try_from_bytes::<MyEnum>(bytes);

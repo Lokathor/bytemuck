@@ -38,7 +38,7 @@ impl From<crate::PodCastError> for CheckedCastError {
 /// * If the slice's length isn’t exactly the size of the new type
 /// * If the slice contains an invalid bit pattern for `T`
 #[inline]
-pub fn checked_from_bytes<T: MaybePod>(
+pub fn try_from_bytes<T: MaybePod>(
   s: &[u8],
 ) -> Result<&T, CheckedCastError> {
   let pod = unsafe { internal::try_from_bytes(s)? };

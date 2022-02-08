@@ -103,7 +103,7 @@ fn fails_cast_contiguous() {
 
 #[test]
 fn passes_cast_contiguous() {
-  let res = bytemuck::try_from_bytes::<MaybePodEnumWithValues>(&[2u8]).unwrap();
+  let res = bytemuck::checked::try_from_bytes::<MaybePodEnumWithValues>(&[2u8]).unwrap();
   assert_eq!(*res, MaybePodEnumWithValues::C);
 }
 
@@ -116,20 +116,20 @@ fn fails_cast_noncontiguous() {
 #[test]
 fn passes_cast_noncontiguous() {
   let res =
-    bytemuck::try_from_bytes::<MaybePodEnumNonContiguous>(&[56u8]).unwrap();
+    bytemuck::checked::try_from_bytes::<MaybePodEnumNonContiguous>(&[56u8]).unwrap();
   assert_eq!(*res, MaybePodEnumNonContiguous::E);
 }
 
 #[test]
 fn fails_cast_struct() {
   let pod = [0u8, 24u8];
-  let res = bytemuck::try_from_bytes::<MaybePodStruct>(&pod);
+  let res = bytemuck::checked::try_from_bytes::<MaybePodStruct>(&pod);
   assert!(res.is_err());
 }
 
 #[test]
 fn passes_cast_struct() {
   let pod = [0u8, 8u8];
-  let res = bytemuck::try_from_bytes::<MaybePodStruct>(&pod).unwrap();
+  let res = bytemuck::checked::try_from_bytes::<MaybePodStruct>(&pod).unwrap();
   assert_eq!(*res, MaybePodStruct { a: 0, b: MaybePodEnumNonContiguous::B });
 }
