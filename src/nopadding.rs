@@ -47,3 +47,5 @@ pub unsafe trait NoPadding: Sized + Copy + 'static {}
 unsafe impl<T: Pod> NoPadding for T {}
 
 unsafe impl NoPadding for char {}
+
+unsafe impl NoPadding for bool {}
