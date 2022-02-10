@@ -160,7 +160,7 @@ impl From<crate::PodCastError> for CheckedCastError {
 /// * If the slice's length isn’t exactly the size of the new type
 /// * If the slice contains an invalid bit pattern for `T`
 #[inline]
-pub fn try_from_bytes<T: CheckedCastFromPod>(
+pub fn checked_from_bytes<T: CheckedCastFromPod>(
   s: &[u8],
 ) -> Result<&T, CheckedCastError> {
   let pod = unsafe { internal::try_from_bytes(s)? };
@@ -180,7 +180,7 @@ pub fn try_from_bytes<T: CheckedCastFromPod>(
 /// * If the slice's length isn’t exactly the size of the new type
 /// * If the slice contains an invalid bit pattern for `T`
 #[inline]
-pub fn try_from_bytes_mut<T: CheckedCastFromPod>(
+pub fn checked_from_bytes_mut<T: CheckedCastFromPod>(
   s: &mut [u8],
 ) -> Result<&mut T, CheckedCastError> {
   let pod = unsafe { internal::try_from_bytes_mut(s)? };
@@ -204,7 +204,7 @@ pub fn try_from_bytes_mut<T: CheckedCastFromPod>(
 /// * If the types don't have the same size this fails.
 /// * If `a` contains an invalid bit pattern for `B` this fails.
 #[inline]
-pub fn try_cast<A: NoPadding, B: CheckedCastFromPod>(
+pub fn checked_cast<A: NoPadding, B: CheckedCastFromPod>(
   a: A,
 ) -> Result<B, CheckedCastError> {
   let pod = unsafe { internal::try_cast(a) }?;
@@ -224,7 +224,7 @@ pub fn try_cast<A: NoPadding, B: CheckedCastFromPod>(
 /// * If the source type and target type aren't the same size.
 /// * If `a` contains an invalid bit pattern for `B` this fails.
 #[inline]
-pub fn try_cast_ref<A: NoPadding, B: CheckedCastFromPod>(
+pub fn checked_cast_ref<A: NoPadding, B: CheckedCastFromPod>(
   a: &A,
 ) -> Result<&B, CheckedCastError> {
   let pod = unsafe { internal::try_cast_ref(a) }?;
@@ -238,9 +238,9 @@ pub fn try_cast_ref<A: NoPadding, B: CheckedCastFromPod>(
 
 /// Try to convert a `&mut T` into `&mut U`.
 ///
-/// As [`try_cast_ref`], but `mut`.
+/// As [`checked_cast_ref`], but `mut`.
 #[inline]
-pub fn try_cast_mut<A: Pod, B: CheckedCastFromPod>(
+pub fn checked_cast_mut<A: Pod, B: CheckedCastFromPod>(
   a: &mut A,
 ) -> Result<&mut B, CheckedCastError> {
   let pod = unsafe { internal::try_cast_mut(a) }?;
@@ -269,7 +269,7 @@ pub fn try_cast_mut<A: Pod, B: CheckedCastFromPod>(
 ///   and a non-ZST.
 /// * If any element of the converted slice would contain an invalid bit pattern for `B` this fails.
 #[inline]
-pub fn try_cast_slice<A: NoPadding, B: CheckedCastFromPod>(
+pub fn checked_cast_slice<A: NoPadding, B: CheckedCastFromPod>(
   a: &[A],
 ) -> Result<&[B], CheckedCastError> {
   let pod = unsafe { internal::try_cast_slice(a) }?;
@@ -286,9 +286,9 @@ pub fn try_cast_slice<A: NoPadding, B: CheckedCastFromPod>(
 /// Try to convert `&mut [A]` into `&mut [B]` (possibly with a change in
 /// length).
 ///
-/// As [`try_cast_slice`], but `&mut`.
+/// As [`checked_cast_slice`], but `&mut`.
 #[inline]
-pub fn try_cast_slice_mut<A: Pod, B: CheckedCastFromPod>(
+pub fn checked_cast_slice_mut<A: Pod, B: CheckedCastFromPod>(
   a: &mut [A],
 ) -> Result<&mut [B], CheckedCastError> {
   let pod = unsafe { internal::try_cast_slice_mut(a) }?;
