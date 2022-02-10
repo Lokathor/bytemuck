@@ -62,6 +62,18 @@ impl Derivable for Pod {
   }
 }
 
+pub struct AnyBitPattern;
+
+impl Derivable for AnyBitPattern {
+  fn ident() -> TokenStream {
+    quote!(::bytemuck::AnyBitPattern)
+  }
+
+  fn asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
+    generate_fields_are_trait(input, Self::ident())
+  }
+}
+
 pub struct Zeroable;
 
 impl Derivable for Zeroable {
@@ -86,17 +98,17 @@ impl Derivable for NoPadding {
   ) -> Result<(), &'static str> {
     let repr = get_repr(attributes);
     match ty {
-            Data::Struct(_) => match repr.as_deref() {
-                Some("C" | "transparent") => Ok(()),
-                _ => Err("NoPadding requires the struct to be #[repr(C)] or #[repr(transparent)]"),
-            },
-            Data::Enum(_) => if repr.map(|repr| repr.starts_with('u') || repr.starts_with('i')) == Some(true) {
-                Ok(())
-            } else {
-                Err("NoPadding requires the enum to be an explicit #[repr(Int)]")
-            },
-            Data::Union(_) => Err("NoPadding can only be derived on enums and structs")
-        }
+      Data::Struct(_) => match repr.as_deref() {
+        Some("C" | "transparent") => Ok(()),
+        _ => Err("NoPadding requires the struct to be #[repr(C)] or #[repr(transparent)]"),
+      },
+      Data::Enum(_) => if repr.map(|repr| repr.starts_with('u') || repr.starts_with('i')) == Some(true) {
+        Ok(())
+      } else {
+        Err("NoPadding requires the enum to be an explicit #[repr(Int)]")
+      },
+      Data::Union(_) => Err("NoPadding can only be derived on enums and structs")
+    }
   }
 
   fn asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
@@ -141,14 +153,26 @@ impl Derivable for CheckedBitPattern {
   }
 
   fn check_attributes(
-    _ty: &Data, _attributes: &[Attribute],
+    ty: &Data, attributes: &[Attribute],
   ) -> Result<(), &'static str> {
-    Ok(()) // No need to check here because CheckedBitPattern requires NoPadding and the attr requirements are the same
+    let repr = get_repr(attributes);
+    match ty {
+      Data::Struct(_) => match repr.as_deref() {
+        Some("C" | "transparent") => Ok(()),
+        _ => Err("CheckedBitPattern derive requires the struct to be #[repr(C)] or #[repr(transparent)]"),
+      },
+      Data::Enum(_) => if repr.map(|repr| repr.starts_with('u') || repr.starts_with('i')) == Some(true) {
+        Ok(())
+      } else {
+        Err("CheckedBitPattern requires the enum to be an explicit #[repr(Int)]")
+      },
+      Data::Union(_) => Err("CheckedBitPattern can only be derived on enums and structs")
+    }
   }
 
   fn asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
     if !input.generics.params.is_empty() {
-      return Err("CheckedBitPattern cannot be derived for structs containing generic parameters because the padding requirements can't be verified for generic structs");
+      return Err("CheckedBitPattern cannot be derived for structs containing generic parameters");
     }
 
     match &input.data {
@@ -168,9 +192,9 @@ impl Derivable for CheckedBitPattern {
   ) -> Result<(TokenStream, TokenStream), &'static str> {
     match &input.data {
       Data::Struct(DataStruct { fields, .. }) => {
-        Ok(generate_maybe_pod_impl_struct(&input.ident, fields, &input.attrs))
+        Ok(generate_checked_bit_pattern_struct(&input.ident, fields, &input.attrs))
       }
-      Data::Enum(_) => generate_maybe_pod_impl_enum(input),
+      Data::Enum(_) => generate_checked_bit_pattern_enum(input),
       Data::Union(_) => Err("Internal error in CheckedBitPattern derive"), // shouldn't be possible since we already error in attribute check for this case
     }
   }
@@ -319,10 +343,10 @@ fn get_field_types<'a>(
   fields.iter().map(|field| &field.ty)
 }
 
-fn generate_maybe_pod_impl_struct(
+fn generate_checked_bit_pattern_struct(
   input_ident: &Ident, fields: &Fields, attrs: &[Attribute],
 ) -> (TokenStream, TokenStream) {
-  let pod_ty = Ident::new(&format!("{}Bits", input_ident), input_ident.span());
+  let bits_ty = Ident::new(&format!("{}Bits", input_ident), input_ident.span());
 
   let repr = get_simple_attr(attrs, "repr").unwrap(); // should be checked in attr check already
 
@@ -344,22 +368,22 @@ fn generate_maybe_pod_impl_struct(
     quote! {
         #[repr(#repr)]
         #[derive(Clone, Copy, ::bytemuck::Pod, ::bytemuck::Zeroable)]
-        struct #pod_ty {
+        struct #bits_ty {
             #(#field_name: <#field_ty as ::bytemuck::CheckedBitPattern>::Bits,)*
         }
     },
     quote! {
-        type Bits = #pod_ty;
+        type Bits = #bits_ty;
 
         #[inline]
-        fn is_valid_bit_pattern(pod: &#pod_ty) -> bool {
-            #(<#field_ty as ::bytemuck::CheckedBitPattern>::is_valid_bit_pattern(&pod.#field_name) &&)* true
+        fn is_valid_bit_pattern(bits: &#bits_ty) -> bool {
+            #(<#field_ty as ::bytemuck::CheckedBitPattern>::is_valid_bit_pattern(&bits.#field_name) && )* true
         }
     },
   )
 }
 
-fn generate_maybe_pod_impl_enum(
+fn generate_checked_bit_pattern_enum(
   input: &DeriveInput,
 ) -> Result<(TokenStream, TokenStream), &'static str> {
   let span = input.span();
