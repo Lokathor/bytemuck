@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use bytemuck::{
-  Contiguous, CheckedCastFromPod, NoPadding, Pod, TransparentWrapper, Zeroable,
+  Contiguous, CheckedBitPattern, NoPadding, Pod, TransparentWrapper, Zeroable,
 };
 use std::marker::PhantomData;
 
@@ -59,8 +59,8 @@ struct NoPaddingTest {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, NoPadding, CheckedCastFromPod, PartialEq, Eq)]
-enum CheckedCastFromPodEnumWithValues {
+#[derive(Debug, Clone, Copy, NoPadding, CheckedBitPattern, PartialEq, Eq)]
+enum CheckedBitPatternEnumWithValues {
   A = 0,
   B = 1,
   C = 2,
@@ -69,8 +69,8 @@ enum CheckedCastFromPodEnumWithValues {
 }
 
 #[repr(i8)]
-#[derive(Clone, Copy, NoPadding, CheckedCastFromPod)]
-enum CheckedCastFromPodEnumWithImplicitValues {
+#[derive(Clone, Copy, NoPadding, CheckedBitPattern)]
+enum CheckedBitPatternEnumWithImplicitValues {
   A = -10,
   B,
   C,
@@ -79,8 +79,8 @@ enum CheckedCastFromPodEnumWithImplicitValues {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, NoPadding, CheckedCastFromPod, PartialEq, Eq)]
-enum CheckedCastFromPodEnumNonContiguous {
+#[derive(Debug, Clone, Copy, NoPadding, CheckedBitPattern, PartialEq, Eq)]
+enum CheckedBitPatternEnumNonContiguous {
   A = 1,
   B = 8,
   C = 2,
@@ -88,48 +88,48 @@ enum CheckedCastFromPodEnumNonContiguous {
   E = 56,
 }
 
-#[derive(Debug, Copy, Clone, NoPadding, CheckedCastFromPod, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, NoPadding, CheckedBitPattern, PartialEq, Eq)]
 #[repr(C)]
-struct CheckedCastFromPodStruct {
+struct CheckedBitPatternStruct {
   a: u8,
-  b: CheckedCastFromPodEnumNonContiguous,
+  b: CheckedBitPatternEnumNonContiguous,
 }
 
 #[test]
 fn fails_cast_contiguous() {
-  let can_cast = CheckedCastFromPodEnumWithValues::cast_is_valid(&5);
+  let can_cast = CheckedBitPatternEnumWithValues::is_valid_bit_pattern(&5);
   assert!(!can_cast);
 }
 
 #[test]
 fn passes_cast_contiguous() {
-  let res = bytemuck::checked::try_from_bytes::<CheckedCastFromPodEnumWithValues>(&[2u8]).unwrap();
-  assert_eq!(*res, CheckedCastFromPodEnumWithValues::C);
+  let res = bytemuck::checked::try_from_bytes::<CheckedBitPatternEnumWithValues>(&[2u8]).unwrap();
+  assert_eq!(*res, CheckedBitPatternEnumWithValues::C);
 }
 
 #[test]
 fn fails_cast_noncontiguous() {
-  let can_cast = CheckedCastFromPodEnumNonContiguous::cast_is_valid(&4);
+  let can_cast = CheckedBitPatternEnumNonContiguous::is_valid_bit_pattern(&4);
   assert!(!can_cast);
 }
 
 #[test]
 fn passes_cast_noncontiguous() {
   let res =
-    bytemuck::checked::try_from_bytes::<CheckedCastFromPodEnumNonContiguous>(&[56u8]).unwrap();
-  assert_eq!(*res, CheckedCastFromPodEnumNonContiguous::E);
+    bytemuck::checked::try_from_bytes::<CheckedBitPatternEnumNonContiguous>(&[56u8]).unwrap();
+  assert_eq!(*res, CheckedBitPatternEnumNonContiguous::E);
 }
 
 #[test]
 fn fails_cast_struct() {
   let pod = [0u8, 24u8];
-  let res = bytemuck::checked::try_from_bytes::<CheckedCastFromPodStruct>(&pod);
+  let res = bytemuck::checked::try_from_bytes::<CheckedBitPatternStruct>(&pod);
   assert!(res.is_err());
 }
 
 #[test]
 fn passes_cast_struct() {
   let pod = [0u8, 8u8];
-  let res = bytemuck::checked::try_from_bytes::<CheckedCastFromPodStruct>(&pod).unwrap();
-  assert_eq!(*res, CheckedCastFromPodStruct { a: 0, b: CheckedCastFromPodEnumNonContiguous::B });
+  let res = bytemuck::checked::try_from_bytes::<CheckedBitPatternStruct>(&pod).unwrap();
+  assert_eq!(*res, CheckedBitPatternStruct { a: 0, b: CheckedBitPatternEnumNonContiguous::B });
 }

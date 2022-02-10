@@ -1,29 +1,29 @@
 //! Checked versions of the casting functions exposed in crate root
-//! that support [`CheckedCastFromPod`] types.
+//! that support [`CheckedBitPattern`] types.
 
-use crate::{internal, NoPadding, Pod};
+use crate::{internal, NoPadding, Pod, AnyBitPattern};
 
-/// Marker trait for a type that is [`Pod`] for *at least some* bit patterns
-/// of its underlying data.
+/// A marker trait that allows types that have some invalid bit patterns to be used
+/// in places that otherwise require [`AnyBitPattern`] or [`Pod`] types by performing
+/// a runtime check on a perticular set of bits. This is particularly
+/// useful for types like fieldless ('C-style') enums, [`char`], bool, and structs containing them.
 ///
-/// [`Pod`] is a superset of [`CheckedCastFromPod`], meaning that any `T: Pod` is also [`CheckedCastFromPod`]. If it's possible,
-/// prefer implementing [`Pod`] for your type directly instead of [`CheckedCastFromPod`] as it gives greater flexibility.
-///
-/// The point of this trait is to allow some of the benefits of the [`Pod`] trait for
-/// types that are [`NoPadding`] but not [`Zeroable`]. This is particularly
-/// useful for types like fieldless ('C-style') enums, [`char`], and structs containing them.
-///
-/// To do this, we define a `PodTy` which is a type with equivalent layout
+/// To do this, we define a `Bits` type which is a type with equivalent layout
 /// to `Self` other than the invalid bit patterns which disallow `Self` from
-/// being [`Zeroable`]. This `PodTy` must itself implement [`Pod`] (and therefore
-/// [`Zeroable`]). Then, we implement a function that checks wheter a certain instance
-/// of the `PodTy` is also a valid bit pattern of `Self`. If this check passes, then we
-/// can allow casting from the `PodTy` to `Self` (and therefore also any type which
-/// is able to be cast to `PodTy` is also able to be cast to `Self`).
+/// being [`AnyBitPattern`]. This `Bits` type must itself implement [`AnyBitPattern`].
+/// Then, we implement a function that checks wheter a certain instance
+/// of the `Bits` is also a valid bit pattern of `Self`. If this check passes, then we
+/// can allow casting from the `Bits` to `Self` (and therefore, any type which
+/// is able to be cast to `Bits` is also able to be cast to `Self`).
+///
+/// [`AnyBitPattern`] is a superset of [`CheckedBitPattern`], meaning that any `T: AnyBitPattern` is also
+/// [`CheckedBitPattern`]. This means you can also use any [`AnyBitPattern`] type in the checked versions
+/// of casting functions in this module. If it's possible, prefer implementing [`AnyBitPattern`] for your
+/// type directly instead of [`CheckedBitPattern`] as it gives greater flexibility.
 ///
 /// # Derive
 ///
-/// A `#[derive(CheckedCastFromPod)]` macro is provided under the `derive` feature flag which will
+/// A `#[derive(CheckedBitPattern)]` macro is provided under the `derive` feature flag which will
 /// automatically validate the requirements of this trait and implement the
 /// trait for you for both enums and structs. This is the recommended method for
 /// implementing the trait, however it's also possible to do manually.
@@ -33,7 +33,7 @@ use crate::{internal, NoPadding, Pod};
 /// If manually implementing the trait, we can do something like so:
 ///
 /// ```rust
-/// use bytemuck::{CheckedCastFromPod, NoPadding};
+/// use bytemuck::{CheckedBitPattern, NoPadding};
 ///
 /// #[repr(u32)]
 /// #[derive(Copy, Clone)]
@@ -43,23 +43,24 @@ use crate::{internal, NoPadding, Pod};
 ///     Variant2 = 2,
 /// }
 ///
-/// // Since `CheckedCastFromPod` is a subtrait of `NoPadding`, we must
-/// // also implement it on our type. See the docs of that trait for more.
-/// unsafe impl NoPadding for MyEnum {}
+/// unsafe impl CheckedBitPattern for MyEnum {
+///     type Bits = u32;
 ///
-/// unsafe impl CheckedCastFromPod for MyEnum {
-///     type PodTy = u32;
-///
-///     fn cast_is_valid(pod: &u32) -> bool {
-///         matches!(*pod, 0 | 1 | 2)
+///     fn is_valid_bit_pattern(bits: &u32) -> bool {
+///         matches!(*bits, 0 | 1 | 2)
 ///     }
 /// }
+/// 
+/// // It is often useful to also implement `NoPadding` on our `CheckedBitPattern` types.
+/// // This will allow us to do casting of mutable references (and mutable slices).
+/// // It is not always possible to do so, but in this case we have no padding so it is.
+/// unsafe impl NoPadding for MyEnum {}
 /// ```
 ///
 /// We can now use relevant casting functions. For example,
 ///
 /// ```rust
-/// # use bytemuck::{CheckedCastFromPod, NoPadding};
+/// # use bytemuck::{CheckedBitPattern, NoPadding};
 /// # #[repr(u32)]
 /// # #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 /// # enum MyEnum {
@@ -68,9 +69,9 @@ use crate::{internal, NoPadding, Pod};
 /// #     Variant2 = 2,
 /// # }
 /// # unsafe impl NoPadding for MyEnum {}
-/// # unsafe impl CheckedCastFromPod for MyEnum {
-/// #     type PodTy = u32;
-/// #     fn cast_is_valid(pod: &u32) -> bool {
+/// # unsafe impl CheckedBitPattern for MyEnum {
+/// #     type Bits = u32;
+/// #     fn is_valid_bit_pattern(pod: &u32) -> bool {
 /// #         matches!(*pod, 0 | 1 | 2)
 /// #     }
 /// # }
@@ -89,50 +90,62 @@ use crate::{internal, NoPadding, Pod};
 ///
 /// # Safety
 ///
-/// * `Self` *must* have the same layout as the specified `PodTy` except for
-/// the possible invalid bit patterns being checked during [`cast_is_valid`].
-/// * If [`cast_is_valid`] returns true, then it must be valid to cast `pod`
-/// as `&Self` (i.e. the bit pattern has been checked to be valid)
+/// * `Self` *must* have the same layout as the specified `Bits` except for
+/// the possible invalid bit patterns being checked during [`is_valid_bit_pattern`].
+///   * This almost certainly means your type must be `#[repr(C)]` or a similar
+///   specified repr, but if you think you know better, you probably don't. If you
+///   still think you know better, be careful and have fun. And don't mess it up
+///   (I mean it).
+/// * If [`is_valid_bit_pattern`] returns true, then the bit pattern contained in
+///   `bits` must also be valid for an instance of `Self`.
 ///
-/// [`Zeroable`]: crate::Zeroable
-/// [`cast_is_valid`]: CheckedCastFromPod::cast_is_valid
-pub unsafe trait CheckedCastFromPod: NoPadding {
-  /// `Self` *must* have the same layout as the specified `PodTy` except for
-  /// the possible invalid bit patterns being checked during [`cast_is_valid`].
+/// [`is_valid_bit_pattern`]: CheckedBitPattern::is_valid_bit_pattern
+pub unsafe trait CheckedBitPattern {
+  /// `Self` *must* have the same layout as the specified `Bits` except for
+  /// the possible invalid bit patterns being checked during [`is_valid_bit_pattern`].
   ///
-  /// [`cast_is_valid`]: CheckedCastFromPod::cast_is_valid
-  type PodTy: Pod;
+  /// [`is_valid_bit_pattern`]: CheckedBitPattern::is_valid_bit_pattern
+  type Bits: AnyBitPattern;
 
   /// If this function returns true, then it must be valid to reinterpret `pod` as `&Self`.
-  fn cast_is_valid(pod: &Self::PodTy) -> bool;
+  fn is_valid_bit_pattern(bits: &Self::Bits) -> bool;
 }
 
-unsafe impl<T: Pod> CheckedCastFromPod for T {
-  type PodTy = T;
+unsafe impl<T: AnyBitPattern> CheckedBitPattern for T {
+  type Bits = T;
 
   #[inline(always)]
-  fn cast_is_valid(_pod: &T) -> bool {
+  fn is_valid_bit_pattern(_bits: &T) -> bool {
     true
   }
 }
 
-unsafe impl CheckedCastFromPod for char {
-  type PodTy = u32;
+unsafe impl CheckedBitPattern for char {
+  type Bits = u32;
 
   #[inline]
-  fn cast_is_valid(pod: &Self::PodTy) -> bool {
-    char::from_u32(*pod).is_some()
+  fn is_valid_bit_pattern(bits: &Self::Bits) -> bool {
+    char::from_u32(*bits).is_some()
   }
 }
 
-/// The things that can go wrong when casting between [`CheckedCastFromPod`] data forms.
+unsafe impl CheckedBitPattern for bool {
+  type Bits = u8;
+
+  #[inline]
+  fn is_valid_bit_pattern(bits: &Self::Bits) -> bool {
+    matches!(*bits, 0 | 1)
+  }
+}
+
+/// The things that can go wrong when casting between [`CheckedBitPattern`] data forms.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CheckedCastError {
   /// An error occurred during a true-[`Pod`] cast
   PodCastError(crate::PodCastError),
-  /// When casting to a [`CheckedCastFromPod`] type, it is possible that the original
+  /// When casting to a [`CheckedBitPattern`] type, it is possible that the original
   /// data contains an invalid bit pattern. If so, the cast will fail and
-  /// this error will be returned. Will never happen on casts between always
+  /// this error will be returned. Will never happen on casts between
   /// [`Pod`] types.
   InvalidBitPattern,
 }
@@ -160,13 +173,13 @@ impl From<crate::PodCastError> for CheckedCastError {
 /// * If the slice's length isn’t exactly the size of the new type
 /// * If the slice contains an invalid bit pattern for `T`
 #[inline]
-pub fn checked_from_bytes<T: CheckedCastFromPod>(
+pub fn checked_from_bytes<T: CheckedBitPattern>(
   s: &[u8],
 ) -> Result<&T, CheckedCastError> {
   let pod = unsafe { internal::try_from_bytes(s)? };
 
-  if <T as CheckedCastFromPod>::cast_is_valid(pod) {
-    Ok(unsafe { &*(pod as *const <T as CheckedCastFromPod>::PodTy as *const T) })
+  if <T as CheckedBitPattern>::is_valid_bit_pattern(pod) {
+    Ok(unsafe { &*(pod as *const <T as CheckedBitPattern>::Bits as *const T) })
   } else {
     Err(CheckedCastError::InvalidBitPattern)
   }
@@ -180,13 +193,13 @@ pub fn checked_from_bytes<T: CheckedCastFromPod>(
 /// * If the slice's length isn’t exactly the size of the new type
 /// * If the slice contains an invalid bit pattern for `T`
 #[inline]
-pub fn checked_from_bytes_mut<T: CheckedCastFromPod>(
+pub fn checked_from_bytes_mut<T: CheckedBitPattern + NoPadding>(
   s: &mut [u8],
 ) -> Result<&mut T, CheckedCastError> {
   let pod = unsafe { internal::try_from_bytes_mut(s)? };
 
-  if <T as CheckedCastFromPod>::cast_is_valid(pod) {
-    Ok(unsafe { &mut *(pod as *mut <T as CheckedCastFromPod>::PodTy as *mut T) })
+  if <T as CheckedBitPattern>::is_valid_bit_pattern(pod) {
+    Ok(unsafe { &mut *(pod as *mut <T as CheckedBitPattern>::Bits as *mut T) })
   } else {
     Err(CheckedCastError::InvalidBitPattern)
   }
@@ -204,12 +217,12 @@ pub fn checked_from_bytes_mut<T: CheckedCastFromPod>(
 /// * If the types don't have the same size this fails.
 /// * If `a` contains an invalid bit pattern for `B` this fails.
 #[inline]
-pub fn checked_cast<A: NoPadding, B: CheckedCastFromPod>(
+pub fn checked_cast<A: NoPadding, B: CheckedBitPattern>(
   a: A,
 ) -> Result<B, CheckedCastError> {
   let pod = unsafe { internal::try_cast(a) }?;
 
-  if <B as CheckedCastFromPod>::cast_is_valid(&pod) {
+  if <B as CheckedBitPattern>::is_valid_bit_pattern(&pod) {
     Ok(unsafe { transmute!(pod) })
   } else {
     Err(CheckedCastError::InvalidBitPattern)
@@ -224,13 +237,13 @@ pub fn checked_cast<A: NoPadding, B: CheckedCastFromPod>(
 /// * If the source type and target type aren't the same size.
 /// * If `a` contains an invalid bit pattern for `B` this fails.
 #[inline]
-pub fn checked_cast_ref<A: NoPadding, B: CheckedCastFromPod>(
+pub fn checked_cast_ref<A: NoPadding, B: CheckedBitPattern>(
   a: &A,
 ) -> Result<&B, CheckedCastError> {
   let pod = unsafe { internal::try_cast_ref(a) }?;
 
-  if <B as CheckedCastFromPod>::cast_is_valid(pod) {
-    Ok(unsafe { &*(pod as *const <B as CheckedCastFromPod>::PodTy as *const B) })
+  if <B as CheckedBitPattern>::is_valid_bit_pattern(pod) {
+    Ok(unsafe { &*(pod as *const <B as CheckedBitPattern>::Bits as *const B) })
   } else {
     Err(CheckedCastError::InvalidBitPattern)
   }
@@ -240,13 +253,13 @@ pub fn checked_cast_ref<A: NoPadding, B: CheckedCastFromPod>(
 ///
 /// As [`checked_cast_ref`], but `mut`.
 #[inline]
-pub fn checked_cast_mut<A: Pod, B: CheckedCastFromPod>(
+pub fn checked_cast_mut<A: Pod, B: CheckedBitPattern + NoPadding>(
   a: &mut A,
 ) -> Result<&mut B, CheckedCastError> {
   let pod = unsafe { internal::try_cast_mut(a) }?;
 
-  if <B as CheckedCastFromPod>::cast_is_valid(pod) {
-    Ok(unsafe { &mut *(pod as *mut <B as CheckedCastFromPod>::PodTy as *mut B) })
+  if <B as CheckedBitPattern>::is_valid_bit_pattern(pod) {
+    Ok(unsafe { &mut *(pod as *mut <B as CheckedBitPattern>::Bits as *mut B) })
   } else {
     Err(CheckedCastError::InvalidBitPattern)
   }
@@ -269,12 +282,12 @@ pub fn checked_cast_mut<A: Pod, B: CheckedCastFromPod>(
 ///   and a non-ZST.
 /// * If any element of the converted slice would contain an invalid bit pattern for `B` this fails.
 #[inline]
-pub fn checked_cast_slice<A: NoPadding, B: CheckedCastFromPod>(
+pub fn checked_cast_slice<A: NoPadding, B: CheckedBitPattern>(
   a: &[A],
 ) -> Result<&[B], CheckedCastError> {
   let pod = unsafe { internal::try_cast_slice(a) }?;
 
-  if pod.iter().all(|pod| <B as CheckedCastFromPod>::cast_is_valid(pod)) {
+  if pod.iter().all(|pod| <B as CheckedBitPattern>::is_valid_bit_pattern(pod)) {
     Ok(unsafe {
       core::slice::from_raw_parts(pod.as_ptr() as *const B, pod.len())
     })
@@ -288,12 +301,12 @@ pub fn checked_cast_slice<A: NoPadding, B: CheckedCastFromPod>(
 ///
 /// As [`checked_cast_slice`], but `&mut`.
 #[inline]
-pub fn checked_cast_slice_mut<A: Pod, B: CheckedCastFromPod>(
+pub fn checked_cast_slice_mut<A: Pod, B: CheckedBitPattern + NoPadding>(
   a: &mut [A],
 ) -> Result<&mut [B], CheckedCastError> {
   let pod = unsafe { internal::try_cast_slice_mut(a) }?;
 
-  if pod.iter().all(|pod| <B as CheckedCastFromPod>::cast_is_valid(pod)) {
+  if pod.iter().all(|pod| <B as CheckedBitPattern>::is_valid_bit_pattern(pod)) {
     Ok(unsafe {
       core::slice::from_raw_parts_mut(pod.as_ptr() as *mut B, pod.len())
     })
