@@ -75,17 +75,26 @@ use crate::{internal, NoPadding, Pod, AnyBitPattern};
 /// #         matches!(*pod, 0 | 1 | 2)
 /// #     }
 /// # }
-/// use bytemuck::bytes_of;
-/// use bytemuck::checked::try_from_bytes;
+/// use bytemuck::{bytes_of, bytes_of_mut};
+/// use bytemuck::checked::{checked_from_bytes, checked_from_bytes_mut};
 ///
 /// let bytes = bytes_of(&2u32);
-/// let result = try_from_bytes::<MyEnum>(bytes);
+/// let result = checked_from_bytes::<MyEnum>(bytes);
 /// assert_eq!(result, Ok(&MyEnum::Variant2));
 ///
 /// // Fails for non-valid discriminant
 /// let bytes = bytes_of(&100u32);
-/// let result = try_from_bytes::<MyEnum>(bytes);
+/// let result = checked_from_bytes::<MyEnum>(bytes);
 /// assert!(matches!(result, Err(_)));
+/// 
+/// // Since we implemented NoPadding, we can also cast mutably:
+/// let mut bytes = (2u32).to_ne_bytes();
+/// {
+///   let result_mut = checked_from_bytes_mut::<MyEnum>(&mut bytes).unwrap();
+///   assert_eq!(result_mut, &mut MyEnum::Variant2);
+///   *result_mut = MyEnum::Variant0;
+/// }
+/// assert_eq!(&bytes, &(0u32).to_ne_bytes());
 /// ```
 ///
 /// # Safety
