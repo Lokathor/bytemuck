@@ -133,22 +133,22 @@ impl Derivable for NoPadding {
   }
 }
 
-pub struct MaybePod;
+pub struct CheckedCastFromPod;
 
-impl Derivable for MaybePod {
+impl Derivable for CheckedCastFromPod {
   fn ident() -> TokenStream {
-    quote!(::bytemuck::MaybePod)
+    quote!(::bytemuck::CheckedCastFromPod)
   }
 
   fn check_attributes(
     _ty: &Data, _attributes: &[Attribute],
   ) -> Result<(), &'static str> {
-    Ok(()) // No need to check here because MaybePod requires NoPadding and the attr requirements are the same
+    Ok(()) // No need to check here because CheckedCastFromPod requires NoPadding and the attr requirements are the same
   }
 
   fn asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
     if !input.generics.params.is_empty() {
-      return Err("MaybePod cannot be derived for structs containing generic parameters because the padding requirements can't be verified for generic structs");
+      return Err("CheckedCastFromPod cannot be derived for structs containing generic parameters because the padding requirements can't be verified for generic structs");
     }
 
     match &input.data {
@@ -159,7 +159,7 @@ impl Derivable for MaybePod {
         Ok(assert_fields_are_maybe_pod)
       }
       Data::Enum(_) => Ok(quote!()), // nothing needed, already guaranteed OK by NoPadding
-      Data::Union(_) => Err("Internal error in MaybePod derive"), // shouldn't be possible since we already error in attribute check for this case
+      Data::Union(_) => Err("Internal error in CheckedCastFromPod derive"), // shouldn't be possible since we already error in attribute check for this case
     }
   }
 
@@ -171,7 +171,7 @@ impl Derivable for MaybePod {
         Ok(generate_maybe_pod_impl_struct(&input.ident, fields, &input.attrs))
       }
       Data::Enum(_) => generate_maybe_pod_impl_enum(input),
-      Data::Union(_) => Err("Internal error in MaybePod derive"), // shouldn't be possible since we already error in attribute check for this case
+      Data::Union(_) => Err("Internal error in CheckedCastFromPod derive"), // shouldn't be possible since we already error in attribute check for this case
     }
   }
 }
@@ -345,7 +345,7 @@ fn generate_maybe_pod_impl_struct(
         #[repr(#repr)]
         #[derive(Clone, Copy, ::bytemuck::Pod, ::bytemuck::Zeroable)]
         struct #pod_ty {
-            #(#field_name: <#field_ty as ::bytemuck::MaybePod>::PodTy,)*
+            #(#field_name: <#field_ty as ::bytemuck::CheckedCastFromPod>::PodTy,)*
         }
     },
     quote! {
@@ -353,7 +353,7 @@ fn generate_maybe_pod_impl_struct(
 
         #[inline]
         fn cast_is_valid(pod: &#pod_ty) -> bool {
-            #(<#field_ty as ::bytemuck::MaybePod>::cast_is_valid(&pod.#field_name) &&)* true
+            #(<#field_ty as ::bytemuck::CheckedCastFromPod>::cast_is_valid(&pod.#field_name) &&)* true
         }
     },
   )

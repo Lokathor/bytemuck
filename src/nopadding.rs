@@ -13,7 +13,7 @@ use crate::Pod;
 /// [`Pod`] is a superset of [`NoPadding`], meaning that any `T: Pod` is also
 /// [`NoPadding`] but any `T: NoPadding` is not necessarily [`Pod`]. If possible,
 /// prefer implementing [`Pod`] directly. To get more [`Pod`]-like functionality for
-/// a type that is only [`NoPadding`], consider also implementing [`MaybePod`][crate::MaybePod].
+/// a type that is only [`NoPadding`], consider also implementing [`CheckedCastFromPod`][crate::CheckedCastFromPod].
 ///
 /// # Derive
 ///

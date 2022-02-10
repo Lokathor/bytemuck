@@ -84,7 +84,7 @@ mod anybitpattern;
 pub use anybitpattern::*;
 
 pub mod checked;
-pub use checked::MaybePod;
+pub use checked::CheckedCastFromPod;
 
 mod internal;
 
@@ -108,7 +108,7 @@ pub use transparent::*;
 
 #[cfg(feature = "derive")]
 pub use bytemuck_derive::{
-  Contiguous, MaybePod, NoPadding, Pod, TransparentWrapper, Zeroable,
+  Contiguous, CheckedCastFromPod, NoPadding, Pod, TransparentWrapper, Zeroable,
 };
 
 /// The things that can go wrong when casting between [`Pod`] data forms.

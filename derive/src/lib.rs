@@ -9,7 +9,7 @@ use quote::quote;
 use syn::{parse_macro_input, DeriveInput};
 
 use crate::traits::{
-  Contiguous, Derivable, MaybePod, NoPadding, Pod, TransparentWrapper, Zeroable,
+  Contiguous, Derivable, CheckedCastFromPod, NoPadding, Pod, TransparentWrapper, Zeroable,
 };
 
 /// Derive the `Pod` trait for a struct
@@ -104,28 +104,28 @@ pub fn derive_no_padding(
   proc_macro::TokenStream::from(expanded)
 }
 
-/// Derive the `MaybePod` trait for a struct or enum.
+/// Derive the `CheckedCastFromPod` trait for a struct or enum.
 ///
 /// The macro ensures that the type follows all the the safety requirements
-/// for the `MaybePod` trait and derives the required `PodTy` type
+/// for the `CheckedCastFromPod` trait and derives the required `PodTy` type
 /// definition and `cast_is_valid` method for the type automatically.
 ///
 /// The following constraints need to be satisfied for the macro to succeed
-/// (the rest of the constraints are guaranteed by the `MaybePod` subtrait bounds,
-/// i.e. are guaranteed by the requirements of the `NoPadding` trait which `MaybePod`
+/// (the rest of the constraints are guaranteed by the `CheckedCastFromPod` subtrait bounds,
+/// i.e. are guaranteed by the requirements of the `NoPadding` trait which `CheckedCastFromPod`
 /// is a subtrait of):
 ///
 /// If applied to a struct:
-/// - All fields must implement `MaybePod`
+/// - All fields must implement `CheckedCastFromPod`
 ///
 /// If applied to an enum:
 /// - All requirements already checked by `NoPadding`, just impls the trait
-#[proc_macro_derive(MaybePod)]
+#[proc_macro_derive(CheckedCastFromPod)]
 pub fn derive_maybe_pod(
   input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
   let expanded =
-    derive_marker_trait::<MaybePod>(parse_macro_input!(input as DeriveInput));
+    derive_marker_trait::<CheckedCastFromPod>(parse_macro_input!(input as DeriveInput));
 
   proc_macro::TokenStream::from(expanded)
 }
