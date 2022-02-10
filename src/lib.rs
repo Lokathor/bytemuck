@@ -80,8 +80,11 @@ pub mod allocation;
 #[cfg(feature = "extern_crate_alloc")]
 pub use allocation::*;
 
+mod anybitpattern;
+pub use anybitpattern::*;
+
 pub mod checked;
-pub mod relaxed;
+pub use checked::MaybePod;
 
 mod internal;
 
@@ -90,9 +93,6 @@ pub use zeroable::*;
 
 mod pod;
 pub use pod::*;
-
-mod maybe_pod;
-pub use maybe_pod::*;
 
 mod nopadding;
 pub use nopadding::*;
@@ -142,24 +142,12 @@ impl core::fmt::Display for PodCastError {
 #[cfg(feature = "extern_crate_std")]
 impl std::error::Error for PodCastError {}
 
-/*
-
-Note(Lokathor): We've switched all of the `unwrap` to `match` because there is
-apparently a bug: https://github.com/rust-lang/rust/issues/68667
-and it doesn't seem to show up in simple godbolt examples but has been reported
-as having an impact when there's a cast mixed in with other more complicated
-code around it. Rustc/LLVM ends up missing that the `Err` can't ever happen for
-particular type combinations, and then it doesn't fully eliminated the panic
-possibility code branch.
-
-*/
-
 /// Re-interprets `&T` as `&[u8]`.
 ///
 /// Any ZST becomes an empty slice, and in that case the pointer value of that
 /// empty slice might not match the pointer value of the input reference.
 #[inline]
-pub fn bytes_of<T: Pod>(t: &T) -> &[u8] {
+pub fn bytes_of<T: NoPadding>(t: &T) -> &[u8] {
   unsafe { internal::bytes_of(t) }
 }
 
@@ -178,7 +166,7 @@ pub fn bytes_of_mut<T: Pod>(t: &mut T) -> &mut [u8] {
 ///
 /// This is [`try_from_bytes`] but will panic on error.
 #[inline]
-pub fn from_bytes<T: Pod>(s: &[u8]) -> &T {
+pub fn from_bytes<T: AnyBitPattern>(s: &[u8]) -> &T {
   unsafe { internal::from_bytes(s) }
 }
 
@@ -199,7 +187,7 @@ pub fn from_bytes_mut<T: Pod>(s: &mut [u8]) -> &mut T {
 /// * If the slice isn't aligned for the new type
 /// * If the slice's length isn’t exactly the size of the new type
 #[inline]
-pub fn try_from_bytes<T: Pod>(s: &[u8]) -> Result<&T, PodCastError> {
+pub fn try_from_bytes<T: AnyBitPattern>(s: &[u8]) -> Result<&T, PodCastError> {
   unsafe { internal::try_from_bytes(s) }
 }
 
@@ -222,7 +210,7 @@ pub fn try_from_bytes_mut<T: Pod>(
 ///
 /// * This is like [`try_cast`](try_cast), but will panic on a size mismatch.
 #[inline]
-pub fn cast<A: Pod, B: Pod>(a: A) -> B {
+pub fn cast<A: NoPadding, B: AnyBitPattern>(a: A) -> B {
   unsafe { internal::cast(a) }
 }
 
@@ -242,7 +230,7 @@ pub fn cast_mut<A: Pod, B: Pod>(a: &mut A) -> &mut B {
 ///
 /// This is [`try_cast_ref`] but will panic on error.
 #[inline]
-pub fn cast_ref<A: Pod, B: Pod>(a: &A) -> &B {
+pub fn cast_ref<A: NoPadding, B: AnyBitPattern>(a: &A) -> &B {
   unsafe { internal::cast_ref(a) }
 }
 
@@ -252,7 +240,7 @@ pub fn cast_ref<A: Pod, B: Pod>(a: &A) -> &B {
 ///
 /// This is [`try_cast_slice`] but will panic on error.
 #[inline]
-pub fn cast_slice<A: Pod, B: Pod>(a: &[A]) -> &[B] {
+pub fn cast_slice<A: NoPadding, B: AnyBitPattern>(a: &[A]) -> &[B] {
   unsafe { internal::cast_slice(a) }
 }
 
@@ -268,7 +256,7 @@ pub fn cast_slice_mut<A: Pod, B: Pod>(a: &mut [A]) -> &mut [B] {
 
 /// As `align_to`, but safe because of the [`Pod`] bound.
 #[inline]
-pub fn pod_align_to<T: Pod, U: Pod>(vals: &[T]) -> (&[T], &[U], &[T]) {
+pub fn pod_align_to<T: NoPadding, U: AnyBitPattern>(vals: &[T]) -> (&[T], &[U], &[T]) {
   unsafe { vals.align_to::<U>() }
 }
 
@@ -291,7 +279,7 @@ pub fn pod_align_to_mut<T: Pod, U: Pod>(
 ///
 /// * If the types don't have the same size this fails.
 #[inline]
-pub fn try_cast<A: Pod, B: Pod>(a: A) -> Result<B, PodCastError> {
+pub fn try_cast<A: NoPadding, B: AnyBitPattern>(a: A) -> Result<B, PodCastError> {
   unsafe { internal::try_cast(a) }
 }
 
@@ -302,7 +290,7 @@ pub fn try_cast<A: Pod, B: Pod>(a: A) -> Result<B, PodCastError> {
 /// * If the reference isn't aligned in the new type
 /// * If the source type and target type aren't the same size.
 #[inline]
-pub fn try_cast_ref<A: Pod, B: Pod>(a: &A) -> Result<&B, PodCastError> {
+pub fn try_cast_ref<A: NoPadding, B: AnyBitPattern>(a: &A) -> Result<&B, PodCastError> {
   unsafe { internal::try_cast_ref(a) }
 }
 
@@ -330,7 +318,7 @@ pub fn try_cast_mut<A: Pod, B: Pod>(a: &mut A) -> Result<&mut B, PodCastError> {
 /// * Similarly, you can't convert between a [ZST](https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
 ///   and a non-ZST.
 #[inline]
-pub fn try_cast_slice<A: Pod, B: Pod>(a: &[A]) -> Result<&[B], PodCastError> {
+pub fn try_cast_slice<A: NoPadding, B: AnyBitPattern>(a: &[A]) -> Result<&[B], PodCastError> {
   unsafe { internal::try_cast_slice(a) }
 }
 
