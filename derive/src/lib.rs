@@ -44,6 +44,24 @@ pub fn derive_pod(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
   proc_macro::TokenStream::from(expanded)
 }
 
+/// Derive the `AnyBitPattern` trait for a struct
+///
+/// The macro ensures that the struct follows all the the safety requirements
+/// for the `AnyBitPattern` trait.
+///
+/// The following constraints need to be satisfied for the macro to succeed
+///
+/// - All fields ind the struct must to implement `AnyBitPattern`
+#[proc_macro_derive(AnyBitPattern)]
+pub fn derive_anybitpattern(
+  input: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+  let expanded =
+    derive_marker_trait::<AnyBitPattern>(parse_macro_input!(input as DeriveInput));
+
+  proc_macro::TokenStream::from(expanded)
+}
+
 /// Derive the `Zeroable` trait for a struct
 ///
 /// The macro ensures that the struct follows all the the safety requirements
