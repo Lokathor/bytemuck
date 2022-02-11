@@ -9,7 +9,7 @@ use quote::quote;
 use syn::{parse_macro_input, DeriveInput};
 
 use crate::traits::{
-  Contiguous, Derivable, CheckedBitPattern, NoPadding, Pod, TransparentWrapper, Zeroable,
+  AnyBitPattern, Contiguous, Derivable, CheckedBitPattern, NoPadding, Pod, TransparentWrapper, Zeroable,
 };
 
 /// Derive the `Pod` trait for a struct
