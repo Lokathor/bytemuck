@@ -109,7 +109,7 @@ use crate::{internal, NoPadding, Pod, AnyBitPattern};
 ///   `bits` must also be valid for an instance of `Self`.
 ///
 /// [`is_valid_bit_pattern`]: CheckedBitPattern::is_valid_bit_pattern
-pub unsafe trait CheckedBitPattern {
+pub unsafe trait CheckedBitPattern: Copy {
   /// `Self` *must* have the same layout as the specified `Bits` except for
   /// the possible invalid bit patterns being checked during [`is_valid_bit_pattern`].
   ///
