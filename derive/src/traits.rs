@@ -368,7 +368,7 @@ fn generate_checked_bit_pattern_struct(
     quote! {
         #[repr(#repr)]
         #[derive(Clone, Copy, ::bytemuck::AnyBitPattern)]
-        struct #bits_ty {
+        pub struct #bits_ty {
             #(#field_name: <#field_ty as ::bytemuck::CheckedBitPattern>::Bits,)*
         }
     },
