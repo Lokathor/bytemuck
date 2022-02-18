@@ -38,17 +38,23 @@ impl Derivable for Pod {
 
   fn asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
     if !input.generics.params.is_empty() {
-      return Err("Pod requires cannot be derived for structs containing generic parameters because the padding requirements can't be verified for generic structs");
+      return Err("Pod requires cannot be derived for types containing generic parameters because the padding requirements can't be verified for generic structs");
     }
 
-    let assert_no_padding = generate_assert_no_padding(input)?;
-    let assert_fields_are_pod =
-      generate_fields_are_trait(input, Self::ident())?;
+    match &input.data {
+      Data::Struct(_) => {
+        let assert_no_padding = generate_assert_no_padding(input)?;
+        let assert_fields_are_pod =
+          generate_fields_are_trait(input, Self::ident())?;
 
-    Ok(quote!(
-      #assert_no_padding
-      #assert_fields_are_pod
-    ))
+        Ok(quote!(
+          #assert_no_padding
+          #assert_fields_are_pod
+        ))
+      },
+      Data::Union(_) => NoPadding::asserts(input),
+      Data::Enum(_) => Err("Deriving Pod is not supported for enums"),
+    }
   }
 
   fn check_attributes(
@@ -59,7 +65,7 @@ impl Derivable for Pod {
       Some("C") => Ok(()),
       Some("transparent") => Ok(()),
       _ => {
-        Err("Pod requires the struct to be #[repr(C)] or #[repr(transparent)]")
+        Err("Pod requires the type to be #[repr(C)] or #[repr(transparent)]")
       }
     }
   }
@@ -77,7 +83,11 @@ impl Derivable for AnyBitPattern {
   }
 
   fn asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
-    generate_fields_are_trait(input, Self::ident())
+    match &input.data {
+      Data::Union(_) => Ok(quote!()), // unions are always `AnyBitPattern`
+      Data::Struct(_) => generate_fields_are_trait(input, Self::ident()),
+      Data::Enum(_) => Err("Deriving AnyBitPattern is not supported for enums"),
+    }
   }
 }
 
@@ -89,7 +99,11 @@ impl Derivable for Zeroable {
   }
 
   fn asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
-    generate_fields_are_trait(input, Self::ident())
+    match &input.data {
+      Data::Union(_) => Ok(quote!()), // unions are always `Zeroable`
+      Data::Struct(_) => generate_fields_are_trait(input, Self::ident()),
+      Data::Enum(_) => Err("Deriving Zeroable is not supported for enums"),
+    }
   }
 }
 
