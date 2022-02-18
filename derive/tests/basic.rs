@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use bytemuck::{
-  AnyBitPattern, Contiguous, CheckedBitPattern, NoPadding, Pod, TransparentWrapper, Zeroable,
+  Contiguous, CheckedBitPattern, NoPadding, Pod, TransparentWrapper, Zeroable, AnyBitPattern,
 };
 use std::marker::PhantomData;
 
@@ -55,6 +55,20 @@ enum ContiguousWithImplicitValues {
 #[repr(C)]
 struct NoPaddingTest {
   a: u16,
+  b: u16,
+}
+
+#[derive(Copy, Clone, NoPadding)]
+#[repr(C)]
+union UnionTestNoPadding {
+  a: NoPaddingTest,
+  b: Test,
+}
+
+#[derive(Copy, Clone, AnyBitPattern)]
+#[repr(C)]
+union UnionTestAnyBitPattern {
+  a: u8,
   b: u16,
 }
 
