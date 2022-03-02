@@ -1,5 +1,10 @@
 # `bytemuck` changelog
 
+## 1.8.0
+
+* `try_pod_read_unaligned` and `pod_read_unaligned` let you go from `&[u8]` to
+  `T:Pod` without worrying about alignment.
+
 ## 1.7.3
 
 * Experimental support for the `portable_simd` language extension under the
