@@ -193,7 +193,7 @@ pub fn try_pod_read_unaligned<T: Pod>(bytes: &[u8]) -> Result<T, PodCastError> {
   if bytes.len() != size_of::<T>() {
     Err(PodCastError::SizeMismatch)
   } else {
-    Ok(unsafe { bytes.as_ptr().cast::<T>().read_unaligned() })
+    Ok(unsafe { (bytes.as_ptr() as *const T).read_unaligned() })
   }
 }
 
