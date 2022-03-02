@@ -184,6 +184,31 @@ pub fn from_bytes_mut<T: Pod>(s: &mut [u8]) -> &mut T {
   }
 }
 
+/// Reads from the bytes as if they were a `T`.
+///
+/// ## Failure
+/// * If the `bytes` length is not equal to `size_of::<T>()`.
+#[inline]
+pub fn try_pod_read_unaligned<T: Pod>(bytes: &[u8]) -> Result<T, PodCastError> {
+  if bytes.len() != size_of::<T>() {
+    Err(PodCastError::SizeMismatch)
+  } else {
+    Ok(unsafe { bytes.as_ptr().cast::<T>().read_unaligned() })
+  }
+}
+
+/// Reads the slice into a `T` value.
+///
+/// ## Panics
+/// * This is like `try_pod_read_unaligned` but will panic on failure.
+#[inline]
+pub fn pod_read_unaligned<T: Pod>(bytes: &[u8]) -> T {
+  match try_pod_read_unaligned(bytes) {
+    Ok(t) => t,
+    Err(e) => something_went_wrong("pod_read_unaligned", e),
+  }
+}
+
 /// Re-interprets `&[u8]` as `&T`.
 ///
 /// ## Failure
