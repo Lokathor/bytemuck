@@ -34,6 +34,7 @@ use crate::Pod;
 ///   [Infallible](core::convert::Infallible)).
 /// * The type must be valid for any bit pattern of its backing memory.
 /// * Structs need to have all fields also be `AnyBitPattern`.
+/// * There's probably more, don't mess it up (I mean it).
 pub unsafe trait AnyBitPattern: Sized + Copy + 'static {}
 
 unsafe impl<T: Pod> AnyBitPattern for T {}

@@ -156,7 +156,7 @@ pub fn bytes_of<T: NoPadding>(t: &T) -> &[u8] {
 /// Any ZST becomes an empty slice, and in that case the pointer value of that
 /// empty slice might not match the pointer value of the input reference.
 #[inline]
-pub fn bytes_of_mut<T: Pod>(t: &mut T) -> &mut [u8] {
+pub fn bytes_of_mut<T: NoPadding + AnyBitPattern>(t: &mut T) -> &mut [u8] {
   unsafe { internal::bytes_of_mut(t) }
 }
 
@@ -176,7 +176,7 @@ pub fn from_bytes<T: AnyBitPattern>(s: &[u8]) -> &T {
 ///
 /// This is [`try_from_bytes_mut`] but will panic on error.
 #[inline]
-pub fn from_bytes_mut<T: Pod>(s: &mut [u8]) -> &mut T {
+pub fn from_bytes_mut<T: NoPadding + AnyBitPattern>(s: &mut [u8]) -> &mut T {
   unsafe { internal::from_bytes_mut(s) }
 }
 
@@ -198,7 +198,7 @@ pub fn try_from_bytes<T: AnyBitPattern>(s: &[u8]) -> Result<&T, PodCastError> {
 /// * If the slice isn't aligned for the new type
 /// * If the slice's length isn’t exactly the size of the new type
 #[inline]
-pub fn try_from_bytes_mut<T: Pod>(
+pub fn try_from_bytes_mut<T: NoPadding + AnyBitPattern>(
   s: &mut [u8],
 ) -> Result<&mut T, PodCastError> {
   unsafe { internal::try_from_bytes_mut(s) }
@@ -220,7 +220,7 @@ pub fn cast<A: NoPadding, B: AnyBitPattern>(a: A) -> B {
 ///
 /// This is [`try_cast_mut`] but will panic on error.
 #[inline]
-pub fn cast_mut<A: Pod, B: Pod>(a: &mut A) -> &mut B {
+pub fn cast_mut<A: NoPadding + AnyBitPattern, B: NoPadding + AnyBitPattern>(a: &mut A) -> &mut B {
   unsafe { internal::cast_mut(a) }
 }
 
@@ -250,7 +250,7 @@ pub fn cast_slice<A: NoPadding, B: AnyBitPattern>(a: &[A]) -> &[B] {
 ///
 /// This is [`try_cast_slice_mut`] but will panic on error.
 #[inline]
-pub fn cast_slice_mut<A: Pod, B: Pod>(a: &mut [A]) -> &mut [B] {
+pub fn cast_slice_mut<A: NoPadding + AnyBitPattern, B: NoPadding + AnyBitPattern>(a: &mut [A]) -> &mut [B] {
   unsafe { internal::cast_slice_mut(a) }
 }
 
@@ -262,7 +262,7 @@ pub fn pod_align_to<T: NoPadding, U: AnyBitPattern>(vals: &[T]) -> (&[T], &[U], 
 
 /// As `align_to_mut`, but safe because of the [`Pod`] bound.
 #[inline]
-pub fn pod_align_to_mut<T: Pod, U: Pod>(
+pub fn pod_align_to_mut<T: NoPadding + AnyBitPattern, U: NoPadding + AnyBitPattern>(
   vals: &mut [T],
 ) -> (&mut [T], &mut [U], &mut [T]) {
   unsafe { vals.align_to_mut::<U>() }
@@ -298,7 +298,7 @@ pub fn try_cast_ref<A: NoPadding, B: AnyBitPattern>(a: &A) -> Result<&B, PodCast
 ///
 /// As [`try_cast_ref`], but `mut`.
 #[inline]
-pub fn try_cast_mut<A: Pod, B: Pod>(a: &mut A) -> Result<&mut B, PodCastError> {
+pub fn try_cast_mut<A: NoPadding + AnyBitPattern, B: NoPadding + AnyBitPattern>(a: &mut A) -> Result<&mut B, PodCastError> {
   unsafe { internal::try_cast_mut(a) }
 }
 
@@ -327,7 +327,7 @@ pub fn try_cast_slice<A: NoPadding, B: AnyBitPattern>(a: &[A]) -> Result<&[B], P
 ///
 /// As [`try_cast_slice`], but `&mut`.
 #[inline]
-pub fn try_cast_slice_mut<A: Pod, B: Pod>(
+pub fn try_cast_slice_mut<A: NoPadding + AnyBitPattern, B: NoPadding + AnyBitPattern>(
   a: &mut [A],
 ) -> Result<&mut [B], PodCastError> {
   unsafe { internal::try_cast_slice_mut(a) }

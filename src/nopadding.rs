@@ -42,6 +42,7 @@ use crate::Pod;
 ///   all other rules end up being followed.
 /// * Enums need to have an explicit `#[repr(Int)]`
 /// * Enums must have only fieldless variants
+/// * There's probably more, don't mess it up (I mean it).
 pub unsafe trait NoPadding: Sized + Copy + 'static {}
 
 unsafe impl<T: Pod> NoPadding for T {}

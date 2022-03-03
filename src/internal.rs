@@ -22,12 +22,12 @@ possibility code branch.
 /// Immediately panics.
 #[cold]
 #[inline(never)]
-fn something_went_wrong(_src: &str, _err: PodCastError) -> ! {
+pub(crate) fn something_went_wrong<D: core::fmt::Display>(_src: &str, _err: D) -> ! {
   // Note(Lokathor): Keeping the panic here makes the panic _formatting_ go
   // here too, which helps assembly readability and also helps keep down
   // the inline pressure.
   #[cfg(not(target_arch = "spirv"))]
-  panic!("{src}>{err:?}", src = _src, err = _err);
+  panic!("{src}>{err}", src = _src, err = _err);
   // Note: On the spirv targets from [rust-gpu](https://github.com/EmbarkStudios/rust-gpu)
   // panic formatting cannot be used. We we just give a generic error message
   // The chance that the panicking version of these functions will ever get
