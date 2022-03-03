@@ -8,6 +8,9 @@ use syn::{
 
 pub trait Derivable {
   fn ident() -> TokenStream;
+  fn implies_trait() -> Option<TokenStream> {
+    None
+  }
   fn generic_params(_input: &DeriveInput) -> Result<TokenStream, &'static str> {
     Ok(quote!())
   }
@@ -67,6 +70,10 @@ pub struct AnyBitPattern;
 impl Derivable for AnyBitPattern {
   fn ident() -> TokenStream {
     quote!(::bytemuck::AnyBitPattern)
+  }
+
+  fn implies_trait() -> Option<TokenStream> {
+    Some(quote!(::bytemuck::Zeroable))
   }
 
   fn asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {

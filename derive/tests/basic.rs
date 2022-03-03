@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use bytemuck::{
-  Contiguous, CheckedBitPattern, NoPadding, Pod, TransparentWrapper, Zeroable,
+  AnyBitPattern, Contiguous, CheckedBitPattern, NoPadding, Pod, TransparentWrapper, Zeroable,
 };
 use std::marker::PhantomData;
 
@@ -95,6 +95,13 @@ struct CheckedBitPatternStruct {
   b: CheckedBitPatternEnumNonContiguous,
 }
 
+#[derive(Debug, Copy, Clone, AnyBitPattern, PartialEq, Eq)]
+#[repr(C)]
+struct AnyBitPatternTest {
+  a: u16,
+  b: u16
+}
+
 #[test]
 fn fails_cast_contiguous() {
   let can_cast = CheckedBitPatternEnumWithValues::is_valid_bit_pattern(&5);
@@ -132,4 +139,10 @@ fn passes_cast_struct() {
   let pod = [0u8, 8u8];
   let res = bytemuck::checked::from_bytes::<CheckedBitPatternStruct>(&pod);
   assert_eq!(*res, CheckedBitPatternStruct { a: 0, b: CheckedBitPatternEnumNonContiguous::B });
+}
+
+#[test]
+fn anybitpattern_implies_zeroable() {
+  let test = AnyBitPatternTest::zeroed();
+  assert_eq!(test, AnyBitPatternTest { a: 0, b: 0 });
 }

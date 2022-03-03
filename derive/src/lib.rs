@@ -244,6 +244,12 @@ fn derive_marker_trait_inner<Trait: Derivable>(
   let trait_params = Trait::generic_params(&input)?;
   let (trait_impl_extras, trait_impl) = Trait::trait_impl(&input)?;
 
+  let implies_trait = if let Some(implies_trait) = Trait::implies_trait() {
+    quote!(unsafe impl #implies_trait for #name {})
+  } else {
+    quote!()
+  };
+
   Ok(quote! {
     #asserts
 
@@ -252,5 +258,7 @@ fn derive_marker_trait_inner<Trait: Derivable>(
     unsafe impl #impl_generics #trait_ #trait_params for #name #ty_generics #where_clause {
       #trait_impl
     }
+
+    #implies_trait
   })
 }

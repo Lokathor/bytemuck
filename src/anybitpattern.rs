@@ -1,4 +1,4 @@
-use crate::Pod;
+use crate::{Pod, Zeroable};
 
 /// Marker trait for "plain old data" types that are valid for any bit pattern.
 ///
@@ -11,6 +11,9 @@ use crate::Pod;
 ///
 /// [`Pod`] is a superset of [`AnyBitPattern`], meaning that any `T: Pod` is also
 /// [`AnyBitPattern`] but any `T: AnyBitPattern` is not necessarily [`Pod`].
+///
+/// [`AnyBitPattern`] is a subset of [`Zeroable`], meaning that any `T: AnyBitPattern`
+/// is also [`Zeroable`], but any `T: Zeroable` is not necessarily [`AnyBitPattern  ]
 ///
 /// # Derive
 ///
@@ -35,6 +38,6 @@ use crate::Pod;
 /// * The type must be valid for any bit pattern of its backing memory.
 /// * Structs need to have all fields also be `AnyBitPattern`.
 /// * There's probably more, don't mess it up (I mean it).
-pub unsafe trait AnyBitPattern: Sized + Copy + 'static {}
+pub unsafe trait AnyBitPattern: Zeroable + Sized + Copy + 'static {}
 
 unsafe impl<T: Pod> AnyBitPattern for T {}
