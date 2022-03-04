@@ -119,7 +119,7 @@ pub unsafe trait CheckedBitPattern: Copy {
   /// [`is_valid_bit_pattern`]: CheckedBitPattern::is_valid_bit_pattern
   type Bits: AnyBitPattern;
 
-  /// If this function returns true, then it must be valid to reinterpret `pod` as `&Self`.
+  /// If this function returns true, then it must be valid to reinterpret `bits` as `&Self`.
   fn is_valid_bit_pattern(bits: &Self::Bits) -> bool;
 }
 
@@ -188,7 +188,7 @@ impl From<crate::PodCastError> for CheckedCastError {
 pub fn try_from_bytes<T: CheckedBitPattern>(
   s: &[u8],
 ) -> Result<&T, CheckedCastError> {
-  let pod = unsafe { internal::try_from_bytes(s)? };
+  let pod = unsafe { internal::try_from_bytes(s) }?;
 
   if <T as CheckedBitPattern>::is_valid_bit_pattern(pod) {
     Ok(unsafe { &*(pod as *const <T as CheckedBitPattern>::Bits as *const T) })
@@ -208,7 +208,7 @@ pub fn try_from_bytes<T: CheckedBitPattern>(
 pub fn try_from_bytes_mut<T: CheckedBitPattern + NoPadding>(
   s: &mut [u8],
 ) -> Result<&mut T, CheckedCastError> {
-  let pod = unsafe { internal::try_from_bytes_mut(s)? };
+  let pod = unsafe { internal::try_from_bytes_mut(s) }?;
 
   if <T as CheckedBitPattern>::is_valid_bit_pattern(pod) {
     Ok(unsafe { &mut *(pod as *mut <T as CheckedBitPattern>::Bits as *mut T) })

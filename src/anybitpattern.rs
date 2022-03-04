@@ -9,7 +9,7 @@ use crate::{Pod, Zeroable};
 /// *immutable* references and *owned* values into [`AnyBitPattern`] types, not
 /// *mutable* references.
 ///
-/// [`Pod`] is a superset of [`AnyBitPattern`], meaning that any `T: Pod` is also
+/// [`Pod`] is a subset of [`AnyBitPattern`], meaning that any `T: Pod` is also
 /// [`AnyBitPattern`] but any `T: AnyBitPattern` is not necessarily [`Pod`].
 ///
 /// [`AnyBitPattern`] is a subset of [`Zeroable`], meaning that any `T: AnyBitPattern`
@@ -19,7 +19,7 @@ use crate::{Pod, Zeroable};
 ///
 /// A `#[derive(AnyBitPattern)]` macro is provided under the `derive` feature flag which will
 /// automatically validate the requirements of this trait and implement the
-/// trait for you for both structs. This is the recommended method for
+/// trait for you for both structs and enums. This is the recommended method for
 /// implementing the trait, however it's also possible to do manually. If you
 /// implement it manually, you *must* carefully follow the below safety rules.
 ///
