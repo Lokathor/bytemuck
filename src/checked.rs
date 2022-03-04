@@ -16,7 +16,7 @@ use crate::{internal::{self, something_went_wrong}, NoPadding, AnyBitPattern};
 /// can allow casting from the `Bits` to `Self` (and therefore, any type which
 /// is able to be cast to `Bits` is also able to be cast to `Self`).
 ///
-/// [`AnyBitPattern`] is a superset of [`CheckedBitPattern`], meaning that any `T: AnyBitPattern` is also
+/// [`AnyBitPattern`] is a subset of [`CheckedBitPattern`], meaning that any `T: AnyBitPattern` is also
 /// [`CheckedBitPattern`]. This means you can also use any [`AnyBitPattern`] type in the checked versions
 /// of casting functions in this module. If it's possible, prefer implementing [`AnyBitPattern`] for your
 /// type directly instead of [`CheckedBitPattern`] as it gives greater flexibility.

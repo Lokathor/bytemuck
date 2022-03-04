@@ -10,7 +10,7 @@ use crate::Pod;
 /// *immutable* references to a [`NoPadding`] type into *immutable* references of any other
 /// type, no casting of mutable references or mutable references to slices etc.
 ///
-/// [`Pod`] is a superset of [`NoPadding`], meaning that any `T: Pod` is also
+/// [`Pod`] is a subset of [`NoPadding`], meaning that any `T: Pod` is also
 /// [`NoPadding`] but any `T: NoPadding` is not necessarily [`Pod`]. If possible,
 /// prefer implementing [`Pod`] directly. To get more [`Pod`]-like functionality for
 /// a type that is only [`NoPadding`], consider also implementing [`CheckedBitPattern`][crate::CheckedBitPattern].
