@@ -224,9 +224,12 @@ fn generate_assert_no_padding(
     quote_spanned!(span => 0)
   };
 
-  Ok(quote_spanned! {span => const _: fn() = || {
-    struct TypeWithoutPadding([u8; #size_sum]);
-    let _ = ::core::mem::transmute::<#struct_type, TypeWithoutPadding>;
+  Ok(quote_spanned! {span => const _: () = {
+    #[cfg(not(unsafe_unsound_unstable_remove_static_asserts_for_coverage))]
+    fn check_type_padding() {
+      struct TypeWithoutPadding([u8; #size_sum]);
+      let _ = ::core::mem::transmute::<#struct_type, TypeWithoutPadding>;
+    }
   };})
 }
 
@@ -239,7 +242,8 @@ fn generate_fields_are_trait(
   let fields = get_struct_fields(input)?;
   let span = input.span();
   let field_types = get_field_types(&fields);
-  Ok(quote_spanned! {span => #(const _: fn() = || {
+  Ok(quote_spanned! {span => #(const _: () = {
+      #[cfg(not(unsafe_unsound_unstable_remove_static_asserts_for_coverage))]
       fn check #impl_generics () #where_clause {
         fn assert_impl<T: #trait_>() {}
         assert_impl::<#field_types>();
