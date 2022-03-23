@@ -371,10 +371,16 @@ fn generate_checked_bit_pattern_struct(
   let field_name = &field_names[..];
   let field_ty = &field_tys[..];
 
+  #[cfg(not(target_arch = "spirv"))]
+  let derive_dbg = quote!(#[derive(Debug)]);
+  #[cfg(target_arch = "spirv")]
+  let derive_dbg = quote!();
+
   (
     quote! {
         #[repr(#repr)]
-        #[derive(Debug, Clone, Copy, ::bytemuck::AnyBitPattern)]
+        #[derive(Clone, Copy, ::bytemuck::AnyBitPattern)]
+        #derive_dbg
         pub struct #bits_ty {
             #(#field_name: <#field_ty as ::bytemuck::CheckedBitPattern>::Bits,)*
         }
