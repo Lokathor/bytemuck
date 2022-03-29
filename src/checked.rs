@@ -47,7 +47,10 @@ use crate::{internal::{self, something_went_wrong}, NoPadding, AnyBitPattern};
 ///     type Bits = u32;
 ///
 ///     fn is_valid_bit_pattern(bits: &u32) -> bool {
-///         matches!(*bits, 0 | 1 | 2)
+///         match *bits {
+///             0 | 1 | 2 => true,
+///             _ => false,
+///         }
 ///     }
 /// }
 /// 
@@ -71,8 +74,11 @@ use crate::{internal::{self, something_went_wrong}, NoPadding, AnyBitPattern};
 /// # unsafe impl NoPadding for MyEnum {}
 /// # unsafe impl CheckedBitPattern for MyEnum {
 /// #     type Bits = u32;
-/// #     fn is_valid_bit_pattern(pod: &u32) -> bool {
-/// #         matches!(*pod, 0 | 1 | 2)
+/// #     fn is_valid_bit_pattern(bits: &u32) -> bool {
+/// #         match *bits {
+/// #             0 | 1 | 2 => true,
+/// #             _ => false,
+/// #         }
 /// #     }
 /// # }
 /// use bytemuck::{bytes_of, bytes_of_mut};
@@ -85,7 +91,7 @@ use crate::{internal::{self, something_went_wrong}, NoPadding, AnyBitPattern};
 /// // Fails for invalid discriminant
 /// let bytes = bytes_of(&100u32);
 /// let result = checked::try_from_bytes::<MyEnum>(bytes);
-/// assert!(matches!(result, Err(_)));
+/// assert!(result.is_err());
 /// 
 /// // Since we implemented NoPadding, we can also cast mutably from an original type
 /// // that is `NoPadding + AnyBitPattern`:
@@ -137,7 +143,7 @@ unsafe impl CheckedBitPattern for char {
 
   #[inline]
   fn is_valid_bit_pattern(bits: &Self::Bits) -> bool {
-    char::from_u32(*bits).is_some()
+    core::char::from_u32(*bits).is_some()
   }
 }
 
@@ -146,7 +152,10 @@ unsafe impl CheckedBitPattern for bool {
 
   #[inline]
   fn is_valid_bit_pattern(bits: &Self::Bits) -> bool {
-    matches!(*bits, 0 | 1)
+    match *bits {
+      0 | 1 => true,
+      _ => false,
+    }
   }
 }
 
