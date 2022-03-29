@@ -95,13 +95,13 @@ use crate::{internal::{self, something_went_wrong}, NoPadding, AnyBitPattern};
 /// 
 /// // Since we implemented NoPadding, we can also cast mutably from an original type
 /// // that is `NoPadding + AnyBitPattern`:
-/// let mut bytes = (2u32).to_ne_bytes();
+/// let mut my_u32 = 2u32;
 /// {
-///   let result_mut = checked::from_bytes_mut::<MyEnum>(&mut bytes);
-///   assert_eq!(result_mut, &mut MyEnum::Variant2);
-///   *result_mut = MyEnum::Variant0;
+///   let as_enum_mut = checked::cast_mut::<_, MyEnum>(&mut my_u32);
+///   assert_eq!(as_enum_mut, &mut MyEnum::Variant2);
+///   *as_enum_mut = MyEnum::Variant0;
 /// }
-/// assert_eq!(&bytes, &(0u32).to_ne_bytes());
+/// assert_eq!(my_u32, 0u32);
 /// ```
 ///
 /// # Safety
