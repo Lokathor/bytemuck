@@ -226,6 +226,22 @@ pub fn try_from_bytes_mut<T: CheckedBitPattern + NoPadding>(
   }
 }
 
+/// Reads from the bytes as if they were a `T`.
+///
+/// ## Failure
+/// * If the `bytes` length is not equal to `size_of::<T>()`.
+/// * If the slice contains an invalid bit pattern for `T`
+#[inline]
+pub fn try_pod_read_unaligned<T: CheckedBitPattern>(bytes: &[u8]) -> Result<T, CheckedCastError> {
+  let pod = unsafe { internal::try_pod_read_unaligned(bytes) }?;
+
+  if <T as CheckedBitPattern>::is_valid_bit_pattern(pod) {
+    Ok(unsafe { transmute!(pod) })
+  } else {
+    Err(CheckedCastError::InvalidBitPattern)
+  }
+}
+
 /// Try to cast `T` into `U`.
 ///
 /// Note that for this particular type of cast, alignment isn't a factor. The
@@ -359,6 +375,18 @@ pub fn from_bytes_mut<T: NoPadding + CheckedBitPattern>(s: &mut [u8]) -> &mut T 
   match try_from_bytes_mut(s) {
     Ok(t) => t,
     Err(e) => something_went_wrong("from_bytes_mut", e),
+  }
+}
+
+/// Reads the slice into a `T` value.
+///
+/// ## Panics
+/// * This is like `try_pod_read_unaligned` but will panic on failure.
+#[inline]
+pub fn pod_read_unaligned<T: AnyBitPattern>(bytes: &[u8]) -> T {
+  match try_pod_read_unaligned(bytes) {
+    Ok(t) => t,
+    Err(e) => something_went_wrong("pod_read_unaligned", e),
   }
 }
 

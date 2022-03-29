@@ -185,12 +185,8 @@ pub fn from_bytes_mut<T: NoPadding + AnyBitPattern>(s: &mut [u8]) -> &mut T {
 /// ## Failure
 /// * If the `bytes` length is not equal to `size_of::<T>()`.
 #[inline]
-pub fn try_pod_read_unaligned<T: Pod>(bytes: &[u8]) -> Result<T, PodCastError> {
-  if bytes.len() != size_of::<T>() {
-    Err(PodCastError::SizeMismatch)
-  } else {
-    Ok(unsafe { (bytes.as_ptr() as *const T).read_unaligned() })
-  }
+pub fn try_pod_read_unaligned<T: AnyBitPattern>(bytes: &[u8]) -> Result<T, PodCastError> {
+  unsafe { internal::try_pod_read_unaligned(bytes) }
 }
 
 /// Reads the slice into a `T` value.
@@ -198,11 +194,8 @@ pub fn try_pod_read_unaligned<T: Pod>(bytes: &[u8]) -> Result<T, PodCastError> {
 /// ## Panics
 /// * This is like `try_pod_read_unaligned` but will panic on failure.
 #[inline]
-pub fn pod_read_unaligned<T: Pod>(bytes: &[u8]) -> T {
-  match try_pod_read_unaligned(bytes) {
-    Ok(t) => t,
-    Err(e) => something_went_wrong("pod_read_unaligned", e),
-  }
+pub fn pod_read_unaligned<T: AnyBitPattern>(bytes: &[u8]) -> T {
+  unsafe { internal::pod_read_unaligned(bytes) }
 }
 
 /// Re-interprets `&[u8]` as `&T`.
