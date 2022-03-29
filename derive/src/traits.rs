@@ -1,5 +1,5 @@
 use proc_macro2::{Ident, TokenStream, TokenTree};
-use quote::{quote, quote_spanned, ToTokens, format_ident};
+use quote::{quote, quote_spanned, ToTokens};
 use syn::{
   spanned::Spanned, AttrStyle, Attribute, Data, DataEnum, DataStruct,
   DeriveInput, Expr, ExprLit, ExprUnary, Fields, Lit, LitInt, Type, UnOp,
@@ -52,8 +52,8 @@ impl Derivable for Pod {
           #assert_fields_are_pod
         ))
       },
-      Data::Union(_) => NoPadding::asserts(input),
       Data::Enum(_) => Err("Deriving Pod is not supported for enums"),
+      Data::Union(_) => Err("Deriving Pod is not supported for unions")
     }
   }
 
@@ -119,7 +119,7 @@ impl Derivable for NoPadding {
   ) -> Result<(), &'static str> {
     let repr = get_repr(attributes);
     match ty {
-      Data::Struct(_) | Data::Union(_) => match repr.as_deref() {
+      Data::Struct(_) => match repr.as_deref() {
         Some("C" | "transparent") => Ok(()),
         _ => Err("NoPadding derive requires the type to be #[repr(C)] or #[repr(transparent)]"),
       },
@@ -128,6 +128,7 @@ impl Derivable for NoPadding {
       } else {
         Err("NoPadding requires the enum to be an explicit #[repr(Int)]")
       },
+      Data::Union(_) => Err("NoPadding cannot be derived for unions")
     }
   }
 
@@ -154,16 +155,7 @@ impl Derivable for NoPadding {
           Ok(quote!())
         }
       }
-      Data::Union(_) => {
-        let assert_no_padding = generate_assert_no_padding_union(&input)?;
-        let assert_fields_are_no_padding =
-          generate_fields_are_trait(&input, Self::ident())?;
-
-        Ok(quote!(
-            #assert_no_padding
-            #assert_fields_are_no_padding
-        ))
-      }
+      Data::Union(_) => Err("NoPadding cannot be derived for unions")
     }
   }
 
@@ -505,44 +497,6 @@ fn generate_assert_no_padding(
   Ok(quote_spanned! {span => const _: fn() = || {
     struct TypeWithoutPadding([u8; #size_sum]);
     let _ = ::core::mem::transmute::<#struct_type, TypeWithoutPadding>;
-  };})
-}
-
-fn generate_assert_no_padding_union(
-  input: &DeriveInput,
-) -> Result<TokenStream, &'static str> {
-  let input_ident = &input.ident;
-  let fields = get_fields(input)?;
-
-  let max_field_size_ident = format_ident!("{}_MaxFieldSize", input_ident);
-
-  let field_size_structs = fields.iter().map(|field| {
-    let field_span = field.span();
-    let field_ty = &field.ty;
-    let field_ident = field.ident.as_ref().unwrap(); // unions only have named fields
-    let ident = format_ident!("Field_{}_Size", field_ident);
-    (
-      ident.clone(),
-      field_span,
-      quote_spanned! { field_span=>
-        #[allow(non_camel_case_types)]
-        struct #ident([u8; ::core::mem::size_of::<#field_ty>()]);
-      },
-    )
-  }).collect::<Vec<_>>();
-
-  let asserts = field_size_structs.iter().map(|(field_size_struct, span, declaration)| {
-    quote_spanned! {*span=>
-      #declaration
-      let _ = ::core::mem::transmute::<#max_field_size_ident, #field_size_struct>;
-    }
-  });
-
-  Ok(quote_spanned! { input.span()=> const _: fn() = || {
-    #[allow(non_camel_case_types)]
-    struct #max_field_size_ident([u8; ::core::mem::size_of::<#input_ident>()]);
-
-    #( #asserts )*
   };})
 }
 
