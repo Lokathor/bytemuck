@@ -9,6 +9,8 @@
   that the crate will probably go in the eventual 2.0 version. We're still waiting
   on [Project Safe Transmute](https://github.com/rust-lang/project-safe-transmute)
   for an actual 2.0 version of the crate, but until then please enjoy this preview.
+* Also Fusha added better support for `union` types in the derive macros. I still don't
+  know how any of the proc-macro stuff works at all, so please direct questions to her.
 
 ## 1.8.0
 
