@@ -1,5 +1,15 @@
 # `bytemuck` changelog
 
+## 1.9.0
+
+* Fusha added the `NoUninit`, `AnyBitPattern`, and `CheckedBitPattern` traits.
+  This allows for a more fine-grained level of detail in what casting operations
+  are allowed for a type. Types that already implement `Zeroable` and `Pod` will
+  have a blanket impl for these new traits. This is a "preview" of the direction
+  that the crate will probably go in the eventual 2.0 version. We're still waiting
+  on [Project Safe Transmute](https://github.com/rust-lang/project-safe-transmute)
+  for an actual 2.0 version of the crate, but until then please enjoy this preview.
+
 ## 1.8.0
 
 * `try_pod_read_unaligned` and `pod_read_unaligned` let you go from `&[u8]` to
