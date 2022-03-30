@@ -1,7 +1,7 @@
 //! Checked versions of the casting functions exposed in crate root
 //! that support [`CheckedBitPattern`] types.
 
-use crate::{internal::{self, something_went_wrong}, NoPadding, AnyBitPattern};
+use crate::{internal::{self, something_went_wrong}, NoUninit, AnyBitPattern};
 
 /// A marker trait that allows types that have some invalid bit patterns to be used
 /// in places that otherwise require [`AnyBitPattern`] or [`Pod`] types by performing
@@ -33,7 +33,7 @@ use crate::{internal::{self, something_went_wrong}, NoPadding, AnyBitPattern};
 /// If manually implementing the trait, we can do something like so:
 ///
 /// ```rust
-/// use bytemuck::{CheckedBitPattern, NoPadding};
+/// use bytemuck::{CheckedBitPattern, NoUninit};
 ///
 /// #[repr(u32)]
 /// #[derive(Copy, Clone)]
@@ -54,16 +54,16 @@ use crate::{internal::{self, something_went_wrong}, NoPadding, AnyBitPattern};
 ///     }
 /// }
 /// 
-/// // It is often useful to also implement `NoPadding` on our `CheckedBitPattern` types.
+/// // It is often useful to also implement `NoUninit` on our `CheckedBitPattern` types.
 /// // This will allow us to do casting of mutable references (and mutable slices).
 /// // It is not always possible to do so, but in this case we have no padding so it is.
-/// unsafe impl NoPadding for MyEnum {}
+/// unsafe impl NoUninit for MyEnum {}
 /// ```
 ///
 /// We can now use relevant casting functions. For example,
 ///
 /// ```rust
-/// # use bytemuck::{CheckedBitPattern, NoPadding};
+/// # use bytemuck::{CheckedBitPattern, NoUninit};
 /// # #[repr(u32)]
 /// # #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 /// # enum MyEnum {
@@ -71,7 +71,7 @@ use crate::{internal::{self, something_went_wrong}, NoPadding, AnyBitPattern};
 /// #     Variant1 = 1,
 /// #     Variant2 = 2,
 /// # }
-/// # unsafe impl NoPadding for MyEnum {}
+/// # unsafe impl NoUninit for MyEnum {}
 /// # unsafe impl CheckedBitPattern for MyEnum {
 /// #     type Bits = u32;
 /// #     fn is_valid_bit_pattern(bits: &u32) -> bool {
@@ -93,8 +93,8 @@ use crate::{internal::{self, something_went_wrong}, NoPadding, AnyBitPattern};
 /// let result = checked::try_from_bytes::<MyEnum>(bytes);
 /// assert!(result.is_err());
 /// 
-/// // Since we implemented NoPadding, we can also cast mutably from an original type
-/// // that is `NoPadding + AnyBitPattern`:
+/// // Since we implemented NoUninit, we can also cast mutably from an original type
+/// // that is `NoUninit + AnyBitPattern`:
 /// let mut my_u32 = 2u32;
 /// {
 ///   let as_enum_mut = checked::cast_mut::<_, MyEnum>(&mut my_u32);
@@ -214,7 +214,7 @@ pub fn try_from_bytes<T: CheckedBitPattern>(
 /// * If the slice's length isn’t exactly the size of the new type
 /// * If the slice contains an invalid bit pattern for `T`
 #[inline]
-pub fn try_from_bytes_mut<T: CheckedBitPattern + NoPadding>(
+pub fn try_from_bytes_mut<T: CheckedBitPattern + NoUninit>(
   s: &mut [u8],
 ) -> Result<&mut T, CheckedCastError> {
   let pod = unsafe { internal::try_from_bytes_mut(s) }?;
@@ -254,7 +254,7 @@ pub fn try_pod_read_unaligned<T: CheckedBitPattern>(bytes: &[u8]) -> Result<T, C
 /// * If the types don't have the same size this fails.
 /// * If `a` contains an invalid bit pattern for `B` this fails.
 #[inline]
-pub fn try_cast<A: NoPadding, B: CheckedBitPattern>(
+pub fn try_cast<A: NoUninit, B: CheckedBitPattern>(
   a: A,
 ) -> Result<B, CheckedCastError> {
   let pod = unsafe { internal::try_cast(a) }?;
@@ -274,7 +274,7 @@ pub fn try_cast<A: NoPadding, B: CheckedBitPattern>(
 /// * If the source type and target type aren't the same size.
 /// * If `a` contains an invalid bit pattern for `B` this fails.
 #[inline]
-pub fn try_cast_ref<A: NoPadding, B: CheckedBitPattern>(
+pub fn try_cast_ref<A: NoUninit, B: CheckedBitPattern>(
   a: &A,
 ) -> Result<&B, CheckedCastError> {
   let pod = unsafe { internal::try_cast_ref(a) }?;
@@ -290,7 +290,7 @@ pub fn try_cast_ref<A: NoPadding, B: CheckedBitPattern>(
 ///
 /// As [`checked_cast_ref`], but `mut`.
 #[inline]
-pub fn try_cast_mut<A: NoPadding + AnyBitPattern, B: CheckedBitPattern + NoPadding>(
+pub fn try_cast_mut<A: NoUninit + AnyBitPattern, B: CheckedBitPattern + NoUninit>(
   a: &mut A,
 ) -> Result<&mut B, CheckedCastError> {
   let pod = unsafe { internal::try_cast_mut(a) }?;
@@ -319,7 +319,7 @@ pub fn try_cast_mut<A: NoPadding + AnyBitPattern, B: CheckedBitPattern + NoPaddi
 ///   and a non-ZST.
 /// * If any element of the converted slice would contain an invalid bit pattern for `B` this fails.
 #[inline]
-pub fn try_cast_slice<A: NoPadding, B: CheckedBitPattern>(
+pub fn try_cast_slice<A: NoUninit, B: CheckedBitPattern>(
   a: &[A],
 ) -> Result<&[B], CheckedCastError> {
   let pod = unsafe { internal::try_cast_slice(a) }?;
@@ -338,7 +338,7 @@ pub fn try_cast_slice<A: NoPadding, B: CheckedBitPattern>(
 ///
 /// As [`checked_cast_slice`], but `&mut`.
 #[inline]
-pub fn try_cast_slice_mut<A: NoPadding + AnyBitPattern, B: CheckedBitPattern + NoPadding>(
+pub fn try_cast_slice_mut<A: NoUninit + AnyBitPattern, B: CheckedBitPattern + NoUninit>(
   a: &mut [A],
 ) -> Result<&mut [B], CheckedCastError> {
   let pod = unsafe { internal::try_cast_slice_mut(a) }?;
@@ -371,7 +371,7 @@ pub fn from_bytes<T: CheckedBitPattern>(s: &[u8]) -> &T {
 ///
 /// This is [`try_from_bytes_mut`] but will panic on error.
 #[inline]
-pub fn from_bytes_mut<T: NoPadding + CheckedBitPattern>(s: &mut [u8]) -> &mut T {
+pub fn from_bytes_mut<T: NoUninit + CheckedBitPattern>(s: &mut [u8]) -> &mut T {
   match try_from_bytes_mut(s) {
     Ok(t) => t,
     Err(e) => something_went_wrong("from_bytes_mut", e),
@@ -396,7 +396,7 @@ pub fn pod_read_unaligned<T: AnyBitPattern>(bytes: &[u8]) -> T {
 ///
 /// * This is like [`try_cast`](try_cast), but will panic on a size mismatch.
 #[inline]
-pub fn cast<A: NoPadding, B: CheckedBitPattern>(a: A) -> B {
+pub fn cast<A: NoUninit, B: CheckedBitPattern>(a: A) -> B {
   match try_cast(a) {
     Ok(t) => t,
     Err(e) => something_went_wrong("cast", e),
@@ -409,7 +409,7 @@ pub fn cast<A: NoPadding, B: CheckedBitPattern>(a: A) -> B {
 ///
 /// This is [`try_cast_mut`] but will panic on error.
 #[inline]
-pub fn cast_mut<A: NoPadding + AnyBitPattern, B: NoPadding + CheckedBitPattern>(a: &mut A) -> &mut B {
+pub fn cast_mut<A: NoUninit + AnyBitPattern, B: NoUninit + CheckedBitPattern>(a: &mut A) -> &mut B {
   match try_cast_mut(a) {
     Ok(t) => t,
     Err(e) => something_went_wrong("cast_mut", e),
@@ -422,7 +422,7 @@ pub fn cast_mut<A: NoPadding + AnyBitPattern, B: NoPadding + CheckedBitPattern>(
 ///
 /// This is [`try_cast_ref`] but will panic on error.
 #[inline]
-pub fn cast_ref<A: NoPadding, B: CheckedBitPattern>(a: &A) -> &B {
+pub fn cast_ref<A: NoUninit, B: CheckedBitPattern>(a: &A) -> &B {
   match try_cast_ref(a) {
     Ok(t) => t,
     Err(e) => something_went_wrong("cast_ref", e),
@@ -435,7 +435,7 @@ pub fn cast_ref<A: NoPadding, B: CheckedBitPattern>(a: &A) -> &B {
 ///
 /// This is [`try_cast_slice`] but will panic on error.
 #[inline]
-pub fn cast_slice<A: NoPadding, B: CheckedBitPattern>(a: &[A]) -> &[B] {
+pub fn cast_slice<A: NoUninit, B: CheckedBitPattern>(a: &[A]) -> &[B] {
   match try_cast_slice(a) {
     Ok(t) => t,
     Err(e) => something_went_wrong("cast_slice", e),
@@ -448,7 +448,7 @@ pub fn cast_slice<A: NoPadding, B: CheckedBitPattern>(a: &[A]) -> &[B] {
 ///
 /// This is [`try_cast_slice_mut`] but will panic on error.
 #[inline]
-pub fn cast_slice_mut<A: NoPadding + AnyBitPattern, B: NoPadding + CheckedBitPattern>(a: &mut [A]) -> &mut [B] {
+pub fn cast_slice_mut<A: NoUninit + AnyBitPattern, B: NoUninit + CheckedBitPattern>(a: &mut [A]) -> &mut [B] {
   match try_cast_slice_mut(a) {
     Ok(t) => t,
     Err(e) => something_went_wrong("cast_slice_mut", e),

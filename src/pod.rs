@@ -18,7 +18,7 @@ use super::*;
 ///   [Infallible](core::convert::Infallible)).
 /// * The type must allow any bit pattern (eg: no `bool` or `char`, which have
 ///   illegal bit patterns).
-/// * The type must not contain any padding bytes, either in the middle or on
+/// * The type must not contain any uninit (or padding) bytes, either in the middle or on
 ///   the end (eg: no `#[repr(C)] struct Foo(u8, u16)`, which has padding in the
 ///   middle, and also no `#[repr(C)] struct Foo(u16, u8)`, which has padding on
 ///   the end).
