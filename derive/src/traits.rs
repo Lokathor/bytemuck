@@ -107,11 +107,11 @@ impl Derivable for Zeroable {
   }
 }
 
-pub struct NoPadding;
+pub struct NoUninit;
 
-impl Derivable for NoPadding {
+impl Derivable for NoUninit {
   fn ident() -> TokenStream {
-    quote!(::bytemuck::NoPadding)
+    quote!(::bytemuck::NoUninit)
   }
 
   fn check_attributes(
@@ -121,20 +121,20 @@ impl Derivable for NoPadding {
     match ty {
       Data::Struct(_) => match repr.as_deref() {
         Some("C" | "transparent") => Ok(()),
-        _ => Err("NoPadding derive requires the type to be #[repr(C)] or #[repr(transparent)]"),
+        _ => Err("NoUninit requires the struct to be #[repr(C)] or #[repr(transparent)]"),
       },
       Data::Enum(_) => if repr.map(|repr| repr.starts_with('u') || repr.starts_with('i')) == Some(true) {
         Ok(())
       } else {
-        Err("NoPadding requires the enum to be an explicit #[repr(Int)]")
+        Err("NoUninit requires the enum to be an explicit #[repr(Int)]")
       },
-      Data::Union(_) => Err("NoPadding cannot be derived for unions")
+      Data::Union(_) => Err("NoUninit can only be derived on enums and structs")
     }
   }
 
   fn asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
     if !input.generics.params.is_empty() {
-      return Err("NoPadding cannot be derived for structs containing generic parameters because the padding requirements can't be verified for generic structs");
+      return Err("NoUninit cannot be derived for structs containing generic parameters because the padding requirements can't be verified for generic structs");
     }
 
     match &input.data {
@@ -150,12 +150,12 @@ impl Derivable for NoPadding {
       }
       Data::Enum(DataEnum { variants, .. }) => {
         if variants.iter().any(|variant| !variant.fields.is_empty()) {
-          Err("Only fieldless enums are supported for NoPadding")
+          Err("Only fieldless enums are supported for NoUninit")
         } else {
           Ok(quote!())
         }
       }
-      Data::Union(_) => Err("NoPadding cannot be derived for unions")
+      Data::Union(_) => Err("NoUninit cannot be derived for unions"), // shouldn't be possible since we already error in attribute check for this case
     }
   }
 
@@ -203,7 +203,7 @@ impl Derivable for CheckedBitPattern {
 
         Ok(assert_fields_are_maybe_pod)
       }
-      Data::Enum(_) => Ok(quote!()), // nothing needed, already guaranteed OK by NoPadding
+      Data::Enum(_) => Ok(quote!()), // nothing needed, already guaranteed OK by NoUninit
       Data::Union(_) => Err("Internal error in CheckedBitPattern derive"), // shouldn't be possible since we already error in attribute check for this case
     }
   }

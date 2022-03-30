@@ -18,7 +18,7 @@ use core::convert::TryInto;
 
 /// As [`try_cast_box`](try_cast_box), but unwraps for you.
 #[inline]
-pub fn cast_box<A: NoPadding, B: AnyBitPattern>(input: Box<A>) -> Box<B> {
+pub fn cast_box<A: NoUninit, B: AnyBitPattern>(input: Box<A>) -> Box<B> {
   try_cast_box(input).map_err(|(e, _v)| e).unwrap()
 }
 
@@ -32,7 +32,7 @@ pub fn cast_box<A: NoPadding, B: AnyBitPattern>(input: Box<A>) -> Box<B> {
 ///   alignment.
 /// * The start and end size of the `Box` must have the exact same size.
 #[inline]
-pub fn try_cast_box<A: NoPadding, B: AnyBitPattern>(
+pub fn try_cast_box<A: NoUninit, B: AnyBitPattern>(
   input: Box<A>,
 ) -> Result<Box<B>, (PodCastError, Box<A>)> {
   if align_of::<A>() != align_of::<B>() {
@@ -139,7 +139,7 @@ pub fn zeroed_slice_box<T: Zeroable>(length: usize) -> Box<[T]> {
 
 /// As [`try_cast_vec`](try_cast_vec), but unwraps for you.
 #[inline]
-pub fn cast_vec<A: NoPadding, B: AnyBitPattern>(input: Vec<A>) -> Vec<B> {
+pub fn cast_vec<A: NoUninit, B: AnyBitPattern>(input: Vec<A>) -> Vec<B> {
   try_cast_vec(input).map_err(|(e, _v)| e).unwrap()
 }
 
@@ -156,7 +156,7 @@ pub fn cast_vec<A: NoPadding, B: AnyBitPattern>(input: Vec<A>) -> Vec<B> {
 ///   capacity and length get adjusted during transmutation, but for now it's
 ///   absolute.
 #[inline]
-pub fn try_cast_vec<A: NoPadding, B: AnyBitPattern>(
+pub fn try_cast_vec<A: NoUninit, B: AnyBitPattern>(
   input: Vec<A>,
 ) -> Result<Vec<B>, (PodCastError, Vec<A>)> {
   if align_of::<A>() != align_of::<B>() {
@@ -199,7 +199,7 @@ pub fn try_cast_vec<A: NoPadding, B: AnyBitPattern>(
 ///   assert_eq!(&vec_of_words[..], &[0x0005_0006, 0x0007_0008][..])
 /// }
 /// ```
-pub fn pod_collect_to_vec<A: NoPadding + AnyBitPattern, B: NoPadding + AnyBitPattern>(src: &[A]) -> Vec<B> {
+pub fn pod_collect_to_vec<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(src: &[A]) -> Vec<B> {
   let src_size = size_of_val(src);
   // Note(Lokathor): dst_count is rounded up so that the dest will always be at
   // least as many bytes as the src.

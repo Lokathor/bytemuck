@@ -9,7 +9,7 @@ use quote::{quote, quote_spanned};
 use syn::{parse_macro_input, DeriveInput, spanned::Spanned};
 
 use crate::traits::{
-  AnyBitPattern, Contiguous, Derivable, CheckedBitPattern, NoPadding, Pod, TransparentWrapper, Zeroable,
+  AnyBitPattern, Contiguous, Derivable, CheckedBitPattern, NoUninit, Pod, TransparentWrapper, Zeroable,
 };
 
 /// Derive the `Pod` trait for a struct
@@ -93,17 +93,17 @@ pub fn derive_zeroable(
   proc_macro::TokenStream::from(expanded)
 }
 
-/// Derive the `NoPadding` trait for a struct or enum
+/// Derive the `NoUninit` trait for a struct or enum
 ///
 /// The macro ensures that the type follows all the the safety requirements
-/// for the `NoPadding` trait.
+/// for the `NoUninit` trait.
 ///
 /// The following constraints need to be satisfied for the macro to succeed
-/// (the rest of the constraints are guaranteed by the `NoPadding` subtrait bounds,
+/// (the rest of the constraints are guaranteed by the `NoUninit` subtrait bounds,
 /// i.e. the type must be `Sized + Copy + 'static`):
 ///
 /// If applied to a struct:
-/// - All fields in the struct must implement `NoPadding`
+/// - All fields in the struct must implement `NoUninit`
 /// - The struct must be `#[repr(C)]` or `#[repr(transparent)]`
 /// - The struct must not contain any padding bytes
 /// - The struct must contain no generic parameters
@@ -112,12 +112,12 @@ pub fn derive_zeroable(
 /// - The enum must be explicit `#[repr(Int)]`
 /// - All variants must be fieldless
 /// - The enum must contain no generic parameters
-#[proc_macro_derive(NoPadding)]
-pub fn derive_no_padding(
+#[proc_macro_derive(NoUninit)]
+pub fn derive_no_uninit(
   input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
   let expanded =
-    derive_marker_trait::<NoPadding>(parse_macro_input!(input as DeriveInput));
+    derive_marker_trait::<NoUninit>(parse_macro_input!(input as DeriveInput));
 
   proc_macro::TokenStream::from(expanded)
 }
@@ -130,14 +130,14 @@ pub fn derive_no_padding(
 ///
 /// The following constraints need to be satisfied for the macro to succeed
 /// (the rest of the constraints are guaranteed by the `CheckedBitPattern` subtrait bounds,
-/// i.e. are guaranteed by the requirements of the `NoPadding` trait which `CheckedBitPattern`
+/// i.e. are guaranteed by the requirements of the `NoUninit` trait which `CheckedBitPattern`
 /// is a subtrait of):
 ///
 /// If applied to a struct:
 /// - All fields must implement `CheckedBitPattern`
 ///
 /// If applied to an enum:
-/// - All requirements already checked by `NoPadding`, just impls the trait
+/// - All requirements already checked by `NoUninit`, just impls the trait
 #[proc_macro_derive(CheckedBitPattern)]
 pub fn derive_maybe_pod(
   input: proc_macro::TokenStream,

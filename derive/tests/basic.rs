@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use bytemuck::{
-  Contiguous, CheckedBitPattern, NoPadding, Pod, TransparentWrapper, Zeroable, AnyBitPattern,
+  AnyBitPattern, Contiguous, CheckedBitPattern, NoUninit, Pod, TransparentWrapper, Zeroable,
 };
 use std::marker::PhantomData;
 
@@ -51,9 +51,9 @@ enum ContiguousWithImplicitValues {
   E,
 }
 
-#[derive(Copy, Clone, NoPadding)]
+#[derive(Copy, Clone, NoUninit)]
 #[repr(C)]
-struct NoPaddingTest {
+struct NoUninitTest {
   a: u16,
   b: u16,
 }
@@ -66,7 +66,7 @@ union UnionTestAnyBitPattern {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, NoPadding, CheckedBitPattern, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, NoUninit, CheckedBitPattern, PartialEq, Eq)]
 enum CheckedBitPatternEnumWithValues {
   A = 0,
   B = 1,
@@ -76,7 +76,7 @@ enum CheckedBitPatternEnumWithValues {
 }
 
 #[repr(i8)]
-#[derive(Clone, Copy, NoPadding, CheckedBitPattern)]
+#[derive(Clone, Copy, NoUninit, CheckedBitPattern)]
 enum CheckedBitPatternEnumWithImplicitValues {
   A = -10,
   B,
@@ -86,7 +86,7 @@ enum CheckedBitPatternEnumWithImplicitValues {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, NoPadding, CheckedBitPattern, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, NoUninit, CheckedBitPattern, PartialEq, Eq)]
 enum CheckedBitPatternEnumNonContiguous {
   A = 1,
   B = 8,
@@ -95,7 +95,7 @@ enum CheckedBitPatternEnumNonContiguous {
   E = 56,
 }
 
-#[derive(Debug, Copy, Clone, NoPadding, CheckedBitPattern, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, NoUninit, CheckedBitPattern, PartialEq, Eq)]
 #[repr(C)]
 struct CheckedBitPatternStruct {
   a: u8,

@@ -3,9 +3,9 @@ use crate::{Pod, Zeroable};
 /// Marker trait for "plain old data" types that are valid for any bit pattern.
 ///
 /// The requirements for this is very similar to [`Pod`],
-/// except that it doesn't require that the type contains no padding bytes.
+/// except that it doesn't require that the type contains no uninit (or padding) bytes.
 /// This limits what you can do with a type of this kind, but also broadens the
-/// included types to `repr(C)` structs that contain padding. Notably, you can only cast
+/// included types to `repr(C)` `struct`s that contain padding as well as `union`s. Notably, you can only cast
 /// *immutable* references and *owned* values into [`AnyBitPattern`] types, not
 /// *mutable* references.
 ///
@@ -29,7 +29,7 @@ use crate::{Pod, Zeroable};
 /// 
 /// # Safety
 ///
-/// Similar to [`Pod`] except we disregard the rule about it must not contain padding.
+/// Similar to [`Pod`] except we disregard the rule about it must not contain uninit bytes.
 /// Still, this is a quite strong guarantee about a type, so *be careful* when
 /// implementing it manually.
 ///
