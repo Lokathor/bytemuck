@@ -1,5 +1,11 @@
 # `bytemuck` changelog
 
+## 1.9.1
+
+* Bumped the minimum `bytemuck_derive` dependency version from `1.0` to `1.1`.
+  The fact that `bytemuck` and `bytemuck_derive` are separate crates at all is
+  an unfortunate technical limit of current Rust, woe and calamity.
+
 ## 1.9.0
 
 * [fu5ha](https://github.com/fu5ha) added the `NoUninit`, `AnyBitPattern`, and
