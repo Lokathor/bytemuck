@@ -137,6 +137,42 @@ pub fn zeroed_slice_box<T: Zeroable>(length: usize) -> Box<[T]> {
   try_zeroed_slice_box(length).unwrap()
 }
 
+/// As [`try_cast_slice_box`](try_cast_slice_box), but unwraps for you.
+#[inline]
+pub fn cast_slice_box<A: NoUninit, B: AnyBitPattern>(input: Box<[A]>) -> Box<[B]> {
+  try_cast_slice_box(input).map_err(|(e, _v)| e).unwrap()
+}
+
+/// Attempts to cast the content type of a `Box<[T]>`.
+///
+/// On failure you get back an error along with the starting `Box<[T]>`.
+///
+/// ## Failure
+///
+/// * The start and end content type of the `Box<[T]>` must have the exact same
+///   alignment.
+/// * The start and end size of the `Box<[T]>` must have the exact same size.
+/// * In the future this second restriction might be lessened by having the
+///   length get adjusted during transmutation, but for now it's absolute.
+#[inline]
+pub fn try_cast_slice_box<A: NoUninit, B: AnyBitPattern>(
+  input: Box<[A]>,
+) -> Result<Box<[B]>, (PodCastError, Box<[A]>)> {
+  if align_of::<A>() != align_of::<B>() {
+    Err((PodCastError::AlignmentMismatch, input))
+  } else if size_of::<A>() != size_of::<B>() {
+    // Note(Lokathor): Under some conditions it would be possible to cast
+    // between Box<[T]> content types of the same alignment but different sizes by
+    // changing the len value in the output Box. However, we will
+    // not attempt that for now.
+    Err((PodCastError::SizeMismatch, input))
+  } else {
+    let box_ptr: *mut [A] = Box::into_raw(input);
+    let ptr: *mut [B] = box_ptr as *mut [B];
+    Ok(unsafe { Box::<[B]>::from_raw(ptr) })
+  }
+}
+
 /// As [`try_cast_vec`](try_cast_vec), but unwraps for you.
 #[inline]
 pub fn cast_vec<A: NoUninit, B: AnyBitPattern>(input: Vec<A>) -> Vec<B> {
