@@ -5,7 +5,9 @@
 //! * You must enable the `extern_crate_alloc` feature of `bytemuck` or you will
 //!   not be able to use this module! This is generally done by adding the
 //!   feature to the dependency in Cargo.toml like so:
-//!   `bytemuck = { version = "VERSION_YOU_ARE_USING", features = ["extern_crate_alloc"]}`
+//!
+//!   `bytemuck = { version = "VERSION_YOU_ARE_USING", features =
+//! ["extern_crate_alloc"]}`
 
 use super::*;
 use alloc::{
@@ -139,7 +141,9 @@ pub fn zeroed_slice_box<T: Zeroable>(length: usize) -> Box<[T]> {
 
 /// As [`try_cast_slice_box`](try_cast_slice_box), but unwraps for you.
 #[inline]
-pub fn cast_slice_box<A: NoUninit, B: AnyBitPattern>(input: Box<[A]>) -> Box<[B]> {
+pub fn cast_slice_box<A: NoUninit, B: AnyBitPattern>(
+  input: Box<[A]>,
+) -> Box<[B]> {
   try_cast_slice_box(input).map_err(|(e, _v)| e).unwrap()
 }
 
@@ -151,7 +155,8 @@ pub fn cast_slice_box<A: NoUninit, B: AnyBitPattern>(input: Box<[A]>) -> Box<[B]
 ///
 /// * The start and end content type of the `Box<[T]>` must have the exact same
 ///   alignment.
-/// * The start and end content size in bytes of the `Box<[T]>` must be the exact same.
+/// * The start and end content size in bytes of the `Box<[T]>` must be the
+///   exact same.
 #[inline]
 pub fn try_cast_slice_box<A: NoUninit, B: AnyBitPattern>(
   input: Box<[A]>,
@@ -170,11 +175,12 @@ pub fn try_cast_slice_box<A: NoUninit, B: AnyBitPattern>(
       // std::alloc::GlobalAlloc::dealloc(), the Layout that was used to alloc
       // the block must be the same Layout that is used to dealloc the block.
       // Luckily, Layout only stores two things, the alignment, and the size in
-      // bytes. So as long as both of those stay the same, the Layout will remain
-      // a valid input to dealloc.
+      // bytes. So as long as both of those stay the same, the Layout will
+      // remain a valid input to dealloc.
       let length = size_of::<A>() * input.len() / size_of::<B>();
       let box_ptr: *mut A = Box::into_raw(input) as *mut A;
-      let ptr: *mut [B] = unsafe { core::slice::from_raw_parts_mut(box_ptr as *mut B, length) };
+      let ptr: *mut [B] =
+        unsafe { core::slice::from_raw_parts_mut(box_ptr as *mut B, length) };
       Ok(unsafe { Box::<[B]>::from_raw(ptr) })
     }
   } else {
@@ -198,7 +204,8 @@ pub fn cast_vec<A: NoUninit, B: AnyBitPattern>(input: Vec<A>) -> Vec<B> {
 ///
 /// * The start and end content type of the `Vec` must have the exact same
 ///   alignment.
-/// * The start and end content size in bytes of the `Vec` must be the exact same.
+/// * The start and end content size in bytes of the `Vec` must be the exact
+///   same.
 /// * The start and end capacity in bytes of the `Vec` mest be the exact same.
 #[inline]
 pub fn try_cast_vec<A: NoUninit, B: AnyBitPattern>(
@@ -208,12 +215,14 @@ pub fn try_cast_vec<A: NoUninit, B: AnyBitPattern>(
     Err((PodCastError::AlignmentMismatch, input))
   } else if size_of::<A>() != size_of::<B>() {
     if size_of::<A>() * input.len() % size_of::<B>() != 0
-      || size_of::<A>() * input.capacity() % size_of::<B>() != 0 {
+      || size_of::<A>() * input.capacity() % size_of::<B>() != 0
+    {
       // If the size in bytes of the underlying buffer does not match an exact
       // multiple of the size of B, we cannot cast between them.
-      // Note that we have to pay special attention to make sure that both length and
-      // capacity are valid under B, as we do not want to change which bytes are
-      // considered part of the initialized slice of the Vec
+      // Note that we have to pay special attention to make sure that both
+      // length and capacity are valid under B, as we do not want to
+      // change which bytes are considered part of the initialized slice
+      // of the Vec
       Err((PodCastError::SizeMismatch, input))
     } else {
       // Because the size is an exact multiple, we can now change the length and
@@ -222,11 +231,11 @@ pub fn try_cast_vec<A: NoUninit, B: AnyBitPattern>(
       // std::alloc::GlobalAlloc::dealloc(), the Layout that was used to alloc
       // the block must be the same Layout that is used to dealloc the block.
       // Luckily, Layout only stores two things, the alignment, and the size in
-      // bytes. So as long as both of those stay the same, the Layout will remain
-      // a valid input to dealloc.
+      // bytes. So as long as both of those stay the same, the Layout will
+      // remain a valid input to dealloc.
 
-      // Note(Lokathor): First we record the length and capacity, which don't have
-      // any secret provenance metadata.
+      // Note(Lokathor): First we record the length and capacity, which don't
+      // have any secret provenance metadata.
       let length: usize = size_of::<A>() * input.len() / size_of::<B>();
       let capacity: usize = size_of::<A>() * input.capacity() / size_of::<B>();
       // Note(Lokathor): Next we "pre-forget" the old Vec by wrapping with
@@ -270,7 +279,12 @@ pub fn try_cast_vec<A: NoUninit, B: AnyBitPattern>(
 ///   assert_eq!(&vec_of_words[..], &[0x0005_0006, 0x0007_0008][..])
 /// }
 /// ```
-pub fn pod_collect_to_vec<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(src: &[A]) -> Vec<B> {
+pub fn pod_collect_to_vec<
+  A: NoUninit + AnyBitPattern,
+  B: NoUninit + AnyBitPattern,
+>(
+  src: &[A],
+) -> Vec<B> {
   let src_size = size_of_val(src);
   // Note(Lokathor): dst_count is rounded up so that the dest will always be at
   // least as many bytes as the src.
