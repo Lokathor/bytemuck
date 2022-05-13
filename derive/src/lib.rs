@@ -51,7 +51,7 @@ pub fn derive_pod(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 ///
 /// The following constraints need to be satisfied for the macro to succeed
 ///
-/// - All fields ind the struct must to implement `AnyBitPattern`
+/// - All fields in the struct must to implement `AnyBitPattern`
 #[proc_macro_derive(AnyBitPattern)]
 pub fn derive_anybitpattern(
   input: proc_macro::TokenStream,
@@ -69,7 +69,7 @@ pub fn derive_anybitpattern(
 ///
 /// The following constraints need to be satisfied for the macro to succeed
 ///
-/// - All fields ind the struct must to implement `Zeroable`
+/// - All fields in the struct must to implement `Zeroable`
 ///
 /// ## Example
 ///
