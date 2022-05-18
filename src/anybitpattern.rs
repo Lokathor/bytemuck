@@ -3,7 +3,7 @@ use crate::{Pod, Zeroable};
 /// Marker trait for "plain old data" types that are valid for any bit pattern.
 ///
 /// The requirements for this is very similar to [`Pod`],
-/// except that it doesn't require that the type contains no uninit (or padding) bytes.
+/// except that the type can allow uninit (or padding) bytes.
 /// This limits what you can do with a type of this kind, but also broadens the
 /// included types to `repr(C)` `struct`s that contain padding as well as `union`s. Notably, you can only cast
 /// *immutable* references and *owned* values into [`AnyBitPattern`] types, not
@@ -37,6 +37,9 @@ use crate::{Pod, Zeroable};
 ///   [Infallible](core::convert::Infallible)).
 /// * The type must be valid for any bit pattern of its backing memory.
 /// * Structs need to have all fields also be `AnyBitPattern`.
+/// * The type must have no interior mutability. In the sense of RustBelt's separation logic, a
+///   type is allowed to define a sharing predicate that holds for shared references. We require
+///   this predicate to be trivial and permit only read-only access.
 /// * There's probably more, don't mess it up (I mean it).
 pub unsafe trait AnyBitPattern: Zeroable + Sized + Copy + 'static {}
 

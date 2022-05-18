@@ -42,6 +42,9 @@ use crate::Pod;
 ///   all other rules end up being followed.
 /// * Enums need to have an explicit `#[repr(Int)]`
 /// * Enums must have only fieldless variants
+/// * The type must have no interior mutability. In the sense of RustBelt's separation logic, a
+///   type is allowed to define a sharing predicate that holds for shared references. We require
+///   this predicate to be trivial and permit only read-only access.
 /// * There's probably more, don't mess it up (I mean it).
 pub unsafe trait NoUninit: Sized + Copy + 'static {}
 

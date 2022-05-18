@@ -26,6 +26,9 @@ use super::*;
 /// * The type needs to be `repr(C)` or `repr(transparent)`. In the case of
 ///   `repr(C)`, the `packed` and `align` repr modifiers can be used as long as
 ///   all other rules end up being followed.
+/// * The type must have no interior mutability. In the sense of RustBelt's separation logic, a
+///   type is allowed to define a sharing predicate that holds for shared references. We require
+///   this predicate to be trivial and permit only read-only access.
 pub unsafe trait Pod: Zeroable + Copy + 'static {}
 
 unsafe impl Pod for () {}
