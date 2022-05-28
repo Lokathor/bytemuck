@@ -1,4 +1,18 @@
 use crate::Pod;
+use core::num::{
+    NonZeroU8,
+    NonZeroI8,
+    NonZeroU16,
+    NonZeroI16,
+    NonZeroU32,
+    NonZeroI32,
+    NonZeroU64,
+    NonZeroI64,
+    NonZeroU128,
+    NonZeroI128,
+    NonZeroUsize,
+    NonZeroIsize,
+};
 
 /// Marker trait for "plain old data" types with no uninit (or padding) bytes.
 ///
@@ -57,3 +71,16 @@ unsafe impl<T: Pod> NoUninit for T {}
 unsafe impl NoUninit for char {}
 
 unsafe impl NoUninit for bool {}
+
+unsafe impl NoUninit for NonZeroU8 {}
+unsafe impl NoUninit for NonZeroI8 {}
+unsafe impl NoUninit for NonZeroU16 {}
+unsafe impl NoUninit for NonZeroI16 {}
+unsafe impl NoUninit for NonZeroU32 {}
+unsafe impl NoUninit for NonZeroI32 {}
+unsafe impl NoUninit for NonZeroU64 {}
+unsafe impl NoUninit for NonZeroI64 {}
+unsafe impl NoUninit for NonZeroU128 {}
+unsafe impl NoUninit for NonZeroI128 {}
+unsafe impl NoUninit for NonZeroUsize {}
+unsafe impl NoUninit for NonZeroIsize {}
