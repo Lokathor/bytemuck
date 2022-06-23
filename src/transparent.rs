@@ -101,16 +101,16 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
   /// type.
   #[inline]
   fn wrap_ref(s: &Inner) -> &Self {
+    assert!(size_of::<*const Inner>() == size_of::<*const Self>());
+    // A pointer cast doesn't work here because rustc can't tell that
+    // the vtables match (because of the `?Sized` restriction relaxation).
+    // A `transmute` doesn't work because the sizes are unspecified.
+    //
+    // SAFETY: The unsafe contract requires that these two have
+    // identical representations.
+    let inner_ptr = s as *const Inner;
+    let wrapper_ptr: *const Self = transmute!(inner_ptr);
     unsafe {
-      assert!(size_of::<*const Inner>() == size_of::<*const Self>());
-      // A pointer cast doesn't work here because rustc can't tell that
-      // the vtables match (because of the `?Sized` restriction relaxation).
-      // A `transmute` doesn't work because the sizes are unspecified.
-      //
-      // SAFETY: The unsafe contract requires that these two have
-      // identical representations.
-      let inner_ptr = s as *const Inner;
-      let wrapper_ptr: *const Self = transmute!(inner_ptr);
       &*wrapper_ptr
     }
   }
@@ -119,17 +119,17 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
   /// the wrapper type.
   #[inline]
   fn wrap_mut(s: &mut Inner) -> &mut Self {
+    assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
+    // A pointer cast doesn't work here because rustc can't tell that
+    // the vtables match (because of the `?Sized` restriction relaxation).
+    // A `transmute` doesn't work because the sizes are unspecified.
+    //
+    // SAFETY: The unsafe contract requires that these two have
+    // identical representations.
+    let inner_ptr = s as *mut Inner;
+    let wrapper_ptr: *mut Self = transmute!(inner_ptr);
     unsafe {
-      assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
-      // A pointer cast doesn't work here because rustc can't tell that
-      // the vtables match (because of the `?Sized` restriction relaxation).
-      // A `transmute` doesn't work because the sizes are unspecified.
-      //
-      // SAFETY: The unsafe contract requires that these two have
-      // identical representations.
-      let inner_ptr = s as *mut Inner;
-      let wrapper_ptr: *mut Self = transmute!(inner_ptr);
-      &mut *wrapper_ptr
+       &mut *wrapper_ptr
     }
   }
 
@@ -180,16 +180,16 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
   /// type.
   #[inline]
   fn peel_ref(s: &Self) -> &Inner {
+    assert!(size_of::<*const Inner>() == size_of::<*const Self>());
+    // A pointer cast doesn't work here because rustc can't tell that
+    // the vtables match (because of the `?Sized` restriction relaxation).
+    // A `transmute` doesn't work because the sizes are unspecified.
+    //
+    // SAFETY: The unsafe contract requires that these two have
+    // identical representations.
+    let wrapper_ptr = s as *const Self;
+    let inner_ptr: *const Inner = transmute!(wrapper_ptr);
     unsafe {
-      assert!(size_of::<*const Inner>() == size_of::<*const Self>());
-      // A pointer cast doesn't work here because rustc can't tell that
-      // the vtables match (because of the `?Sized` restriction relaxation).
-      // A `transmute` doesn't work because the sizes are unspecified.
-      //
-      // SAFETY: The unsafe contract requires that these two have
-      // identical representations.
-      let wrapper_ptr = s as *const Self;
-      let inner_ptr: *const Inner = transmute!(wrapper_ptr);
       &*inner_ptr
     }
   }
@@ -198,16 +198,16 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
   /// to the inner type.
   #[inline]
   fn peel_mut(s: &mut Self) -> &mut Inner {
+    assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
+    // A pointer cast doesn't work here because rustc can't tell that
+    // the vtables match (because of the `?Sized` restriction relaxation).
+    // A `transmute` doesn't work because the sizes are unspecified.
+    //
+    // SAFETY: The unsafe contract requires that these two have
+    // identical representations.
+    let wrapper_ptr = s as *mut Self;
+    let inner_ptr: *mut Inner = transmute!(wrapper_ptr);
     unsafe {
-      assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
-      // A pointer cast doesn't work here because rustc can't tell that
-      // the vtables match (because of the `?Sized` restriction relaxation).
-      // A `transmute` doesn't work because the sizes are unspecified.
-      //
-      // SAFETY: The unsafe contract requires that these two have
-      // identical representations.
-      let wrapper_ptr = s as *mut Self;
-      let inner_ptr: *mut Inner = transmute!(wrapper_ptr);
       &mut *inner_ptr
     }
   }
