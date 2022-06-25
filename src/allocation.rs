@@ -297,3 +297,55 @@ pub fn pod_collect_to_vec<
   dst_bytes[..src_size].copy_from_slice(src_bytes);
   dst
 }
+
+/// An extension trait for `TransparentWrapper` and alloc types.
+pub trait TransparentWrapperAlloc<Inner: ?Sized>: TransparentWrapper<Inner> {
+  /// Convert a vec of the inner type into a vec of the wrapper type.
+  fn wrap_vec(s: Vec<Inner>) -> Vec<Self>
+  where
+    Self: Sized,
+    Inner: Sized
+  {
+    // Not sure if these are needed
+    assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
+    assert!(align_of::<*mut Inner>() == align_of::<*mut Self>());
+
+    let mut s = core::mem::ManuallyDrop::new(s);
+    unsafe {
+      // SAFETY:
+      // * ptr comes from Vec (and will not be double-dropped)
+      // * the two types have the identical representation
+      // * the len and capacity fields are valid
+      Vec::from_raw_parts(
+        s.as_mut_ptr() as *mut Self,
+        s.len(),
+        s.capacity()
+      )
+    }
+  }
+
+  /// Convert a vec of the wrapper type into a vec of the inner type.
+  fn peel_vec(s: Vec<Self>) -> Vec<Inner>
+  where
+    Self: Sized,
+    Inner: Sized
+  {
+    // Not sure if these are needed
+    assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
+    assert!(align_of::<*mut Inner>() == align_of::<*mut Self>());
+
+    let mut s = core::mem::ManuallyDrop::new(s);
+    unsafe {
+      // SAFETY:
+      // * ptr comes from Vec (and will not be double-dropped)
+      // * the two types have the identical representation
+      // * the len and capacity fields are valid
+      Vec::from_raw_parts(
+        s.as_mut_ptr() as *mut Inner,
+        s.len(),
+        s.capacity()
+      )
+    }
+  }
+}
+impl<I: ?Sized, T: TransparentWrapper<I>> TransparentWrapperAlloc<I> for T {}
