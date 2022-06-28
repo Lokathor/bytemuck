@@ -61,4 +61,21 @@ fn test_transparent_wrapper() {
     Foreign::default(),
   ]));
   // counterpart?
+
+  #[cfg(feature = "extern_crate_alloc")]
+  {
+    use bytemuck::allocation::TransparentWrapperAlloc;
+
+    let a: Vec<Foreign> = vec![Foreign::default(); 2];
+    
+    let b: Vec<Wrapper> = Wrapper::wrap_vec(a);
+    assert_eq!(
+      bytemuck::cast_slice::<Wrapper, u8>(b.as_slice()), &[0u8, 0]
+    );
+
+    let c: Vec<Foreign> = Wrapper::peel_vec(b);
+    assert_eq!(
+      bytemuck::cast_slice::<Wrapper, u8>(Wrapper::wrap_slice(c.as_slice())), &[0, 0]
+    );
+  }
 }
