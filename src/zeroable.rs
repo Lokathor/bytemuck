@@ -42,22 +42,30 @@ unsafe impl Zeroable for f32 {}
 unsafe impl Zeroable for f64 {}
 unsafe impl<T: Zeroable> Zeroable for Wrapping<T> {}
 
-unsafe impl Zeroable for Option<NonZeroI8> {}
-unsafe impl Zeroable for Option<NonZeroI16> {}
-unsafe impl Zeroable for Option<NonZeroI32> {}
-unsafe impl Zeroable for Option<NonZeroI64> {}
-unsafe impl Zeroable for Option<NonZeroI128> {}
-unsafe impl Zeroable for Option<NonZeroIsize> {}
-unsafe impl Zeroable for Option<NonZeroU8> {}
-unsafe impl Zeroable for Option<NonZeroU16> {}
-unsafe impl Zeroable for Option<NonZeroU32> {}
-unsafe impl Zeroable for Option<NonZeroU64> {}
-unsafe impl Zeroable for Option<NonZeroU128> {}
-unsafe impl Zeroable for Option<NonZeroUsize> {}
+/// Trait for types which are [Zeroable](Zeroable) when wrapped in [Option](core::option::Option).
+/// 
+/// ## Safety
+/// 
+/// * `Option<T>` must uphold the same invariants as [Zeroable](Zeroable).
+pub unsafe trait ZeroableInOption: Sized {}
+unsafe impl<T: ZeroableInOption> Zeroable for Option<T> {}
+
+unsafe impl ZeroableInOption for NonZeroI8 {} 
+unsafe impl ZeroableInOption for NonZeroI16 {}
+unsafe impl ZeroableInOption for NonZeroI32 {}
+unsafe impl ZeroableInOption for NonZeroI64 {}
+unsafe impl ZeroableInOption for NonZeroI128 {}
+unsafe impl ZeroableInOption for NonZeroIsize {}
+unsafe impl ZeroableInOption for NonZeroU8 {}
+unsafe impl ZeroableInOption for NonZeroU16 {}
+unsafe impl ZeroableInOption for NonZeroU32 {}
+unsafe impl ZeroableInOption for NonZeroU64 {}
+unsafe impl ZeroableInOption for NonZeroU128 {}
+unsafe impl ZeroableInOption for NonZeroUsize {}
 
 unsafe impl<T> Zeroable for *mut T {}
 unsafe impl<T> Zeroable for *const T {}
-unsafe impl<T> Zeroable for Option<NonNull<T>> {}
+unsafe impl<T> ZeroableInOption for NonNull<T> {}
 unsafe impl<T: Zeroable> Zeroable for PhantomData<T> {}
 unsafe impl Zeroable for PhantomPinned {}
 unsafe impl<T: Zeroable> Zeroable for ManuallyDrop<T> {}
