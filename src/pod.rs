@@ -52,25 +52,33 @@ unsafe impl Pod for f32 {}
 unsafe impl Pod for f64 {}
 unsafe impl<T: Pod> Pod for Wrapping<T> {}
 
-unsafe impl Pod for Option<NonZeroI8> {}
-unsafe impl Pod for Option<NonZeroI16> {}
-unsafe impl Pod for Option<NonZeroI32> {}
-unsafe impl Pod for Option<NonZeroI64> {}
-unsafe impl Pod for Option<NonZeroI128> {}
-unsafe impl Pod for Option<NonZeroIsize> {}
-unsafe impl Pod for Option<NonZeroU8> {}
-unsafe impl Pod for Option<NonZeroU16> {}
-unsafe impl Pod for Option<NonZeroU32> {}
-unsafe impl Pod for Option<NonZeroU64> {}
-unsafe impl Pod for Option<NonZeroU128> {}
-unsafe impl Pod for Option<NonZeroUsize> {}
+/// Trait for types which are [Pod](Pod) when wrapped in [Option](core::option::Option).
+/// 
+/// ## Safety
+/// 
+/// * `Option<T>` must uphold the same invariants as [Pod](Pod).
+pub unsafe trait PodInOption: ZeroableInOption + Copy + 'static {}
+unsafe impl<T: PodInOption> Pod for Option<T> {}
+
+unsafe impl PodInOption for NonZeroI8 {}
+unsafe impl PodInOption for NonZeroI16 {}
+unsafe impl PodInOption for NonZeroI32 {}
+unsafe impl PodInOption for NonZeroI64 {}
+unsafe impl PodInOption for NonZeroI128 {}
+unsafe impl PodInOption for NonZeroIsize {}
+unsafe impl PodInOption for NonZeroU8 {}
+unsafe impl PodInOption for NonZeroU16 {}
+unsafe impl PodInOption for NonZeroU32 {}
+unsafe impl PodInOption for NonZeroU64 {}
+unsafe impl PodInOption for NonZeroU128 {}
+unsafe impl PodInOption for NonZeroUsize {}
 
 #[cfg(feature = "unsound_ptr_pod_impl")]
 unsafe impl<T: 'static> Pod for *mut T {}
 #[cfg(feature = "unsound_ptr_pod_impl")]
 unsafe impl<T: 'static> Pod for *const T {}
 #[cfg(feature = "unsound_ptr_pod_impl")]
-unsafe impl<T: 'static> Pod for Option<NonNull<T>> {}
+unsafe impl<T: 'static> PodInOption for NonNull<T> {}
 
 unsafe impl<T: Pod> Pod for PhantomData<T> {}
 unsafe impl Pod for PhantomPinned {}
