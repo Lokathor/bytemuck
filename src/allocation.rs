@@ -306,20 +306,21 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>: TransparentWrapper<Inner> {
     Self: Sized,
     Inner: Sized
   {
-    // Not sure if these are needed
-    assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
-    assert!(align_of::<*mut Inner>() == align_of::<*mut Self>());
-
     let mut s = core::mem::ManuallyDrop::new(s);
+
+    let length = s.len();
+    let capacity = s.capacity();
+    let ptr = s.as_mut_ptr();
+
     unsafe {
       // SAFETY:
       // * ptr comes from Vec (and will not be double-dropped)
       // * the two types have the identical representation
       // * the len and capacity fields are valid
       Vec::from_raw_parts(
-        s.as_mut_ptr() as *mut Self,
-        s.len(),
-        s.capacity()
+        ptr as *mut Self,
+        length,
+        capacity
       )
     }
   }
@@ -330,20 +331,21 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>: TransparentWrapper<Inner> {
     Self: Sized,
     Inner: Sized
   {
-    // Not sure if these are needed
-    assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
-    assert!(align_of::<*mut Inner>() == align_of::<*mut Self>());
-
     let mut s = core::mem::ManuallyDrop::new(s);
+
+    let length = s.len();
+    let capacity = s.capacity();
+    let ptr = s.as_mut_ptr();
+
     unsafe {
       // SAFETY:
       // * ptr comes from Vec (and will not be double-dropped)
       // * the two types have the identical representation
       // * the len and capacity fields are valid
       Vec::from_raw_parts(
-        s.as_mut_ptr() as *mut Inner,
-        s.len(),
-        s.capacity()
+        ptr as *mut Inner,
+        length,
+        capacity
       )
     }
   }
