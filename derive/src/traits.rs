@@ -510,6 +510,7 @@ fn generate_fields_are_trait(
   let span = input.span();
   let field_types = get_field_types(&fields);
   Ok(quote_spanned! {span => #(const _: fn() = || {
+      #[allow(clippy::missing_const_for_fn)]
       fn check #impl_generics () #where_clause {
         fn assert_impl<T: #trait_>() {}
         assert_impl::<#field_types>();
