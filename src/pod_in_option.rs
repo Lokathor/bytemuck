@@ -9,6 +9,8 @@ unsafe impl<T: PodInOption> Pod for Option<T> {}
 /// ## Safety
 ///
 /// * `Option<T>` must uphold the same invariants as [Pod](Pod).
+/// * **Reminder:** pointers are **not** pod! **Do not** mix this trait with a
+///   newtype over [NonNull](core::ptr::NonNull).
 pub unsafe trait PodInOption: ZeroableInOption + Copy + 'static {}
 
 unsafe impl PodInOption for NonZeroI8 {}
