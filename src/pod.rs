@@ -18,21 +18,22 @@ use super::*;
 ///   [Infallible](core::convert::Infallible)).
 /// * The type must allow any bit pattern (eg: no `bool` or `char`, which have
 ///   illegal bit patterns).
-/// * The type must not contain any uninit (or padding) bytes, either in the middle or on
-///   the end (eg: no `#[repr(C)] struct Foo(u8, u16)`, which has padding in the
-///   middle, and also no `#[repr(C)] struct Foo(u16, u8)`, which has padding on
-///   the end).
+/// * The type must not contain any uninit (or padding) bytes, either in the
+///   middle or on the end (eg: no `#[repr(C)] struct Foo(u8, u16)`, which has
+///   padding in the middle, and also no `#[repr(C)] struct Foo(u16, u8)`, which
+///   has padding on the end).
 /// * The type needs to have all fields also be `Pod`.
 /// * The type needs to be `repr(C)` or `repr(transparent)`. In the case of
 ///   `repr(C)`, the `packed` and `align` repr modifiers can be used as long as
 ///   all other rules end up being followed.
-/// * It is disallowed for types to contain pointer types, `Cell`, `UnsafeCell`, atomics, and any
-///   other forms of interior mutability.
-/// * More precisely: A shared reference to the type must allow reads, and *only* reads. RustBelt's
-///   separation logic is based on the notion that a type is allowed to define a sharing predicate,
-///   its own invariant that must hold for shared references, and this predicate is the reasoning
-///   that allow it to deal with atomic and cells etc. We require the sharing predicate to be
-///   trivial and permit only read-only access.
+/// * It is disallowed for types to contain pointer types, `Cell`, `UnsafeCell`,
+///   atomics, and any other forms of interior mutability.
+/// * More precisely: A shared reference to the type must allow reads, and
+///   *only* reads. RustBelt's separation logic is based on the notion that a
+///   type is allowed to define a sharing predicate, its own invariant that must
+///   hold for shared references, and this predicate is the reasoning that allow
+///   it to deal with atomic and cells etc. We require the sharing predicate to
+///   be trivial and permit only read-only access.
 pub unsafe trait Pod: Zeroable + Copy + 'static {}
 
 unsafe impl Pod for () {}
@@ -51,27 +52,6 @@ unsafe impl Pod for i128 {}
 unsafe impl Pod for f32 {}
 unsafe impl Pod for f64 {}
 unsafe impl<T: Pod> Pod for Wrapping<T> {}
-
-/// Trait for types which are [Pod](Pod) when wrapped in [Option](core::option::Option).
-/// 
-/// ## Safety
-/// 
-/// * `Option<T>` must uphold the same invariants as [Pod](Pod).
-pub unsafe trait PodInOption: ZeroableInOption + Copy + 'static {}
-unsafe impl<T: PodInOption> Pod for Option<T> {}
-
-unsafe impl PodInOption for NonZeroI8 {}
-unsafe impl PodInOption for NonZeroI16 {}
-unsafe impl PodInOption for NonZeroI32 {}
-unsafe impl PodInOption for NonZeroI64 {}
-unsafe impl PodInOption for NonZeroI128 {}
-unsafe impl PodInOption for NonZeroIsize {}
-unsafe impl PodInOption for NonZeroU8 {}
-unsafe impl PodInOption for NonZeroU16 {}
-unsafe impl PodInOption for NonZeroU32 {}
-unsafe impl PodInOption for NonZeroU64 {}
-unsafe impl PodInOption for NonZeroU128 {}
-unsafe impl PodInOption for NonZeroUsize {}
 
 #[cfg(feature = "unsound_ptr_pod_impl")]
 unsafe impl<T: 'static> Pod for *mut T {}
