@@ -44,7 +44,6 @@ unsafe impl<T: Zeroable> Zeroable for Wrapping<T> {}
 
 unsafe impl<T> Zeroable for *mut T {}
 unsafe impl<T> Zeroable for *const T {}
-unsafe impl<T> ZeroableInOption for NonNull<T> {}
 unsafe impl<T: Zeroable> Zeroable for PhantomData<T> {}
 unsafe impl Zeroable for PhantomPinned {}
 unsafe impl<T: Zeroable> Zeroable for ManuallyDrop<T> {}

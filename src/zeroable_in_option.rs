@@ -24,3 +24,5 @@ unsafe impl ZeroableInOption for NonZeroU32 {}
 unsafe impl ZeroableInOption for NonZeroU64 {}
 unsafe impl ZeroableInOption for NonZeroU128 {}
 unsafe impl ZeroableInOption for NonZeroUsize {}
+
+unsafe impl<T> ZeroableInOption for NonNull<T> {}
