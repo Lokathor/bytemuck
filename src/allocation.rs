@@ -102,14 +102,8 @@ pub fn try_zeroed_vec<T: Zeroable>(length: usize) -> Result<Vec<T>, ()> {
   if length == 0 {
     Ok(Vec::new())
   } else {
-    let layout = Layout::array::<T>(length).map_err(|_| ())?;
-    let ptr = unsafe { alloc_zeroed(layout) };
-    if ptr.is_null() {
-      // we don't know what the error is because `alloc_zeroed` is a dumb API
-      Err(())
-    } else {
-      Ok(unsafe { Vec::from_raw_parts(ptr as *mut T, length, length) })
-    }
+    let boxed_slice = try_zeroed_slice_box(length)?;
+    Ok(boxed_slice.into_vec())
   }
 }
 
