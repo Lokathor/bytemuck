@@ -11,7 +11,7 @@
 
 use super::*;
 use alloc::{
-  alloc::{alloc_zeroed, Layout, LayoutError},
+  alloc::{alloc_zeroed, Layout},
   boxed::Box,
   vec,
   vec::Vec,
@@ -98,16 +98,18 @@ pub fn zeroed_box<T: Zeroable>() -> Box<T> {
 /// ## Failure
 ///
 /// This fails if the allocation fails, or if a layout cannot be calculated for the allocation.
-pub fn try_zeroed_vec<T: Zeroable>(length: usize) -> Result<Vec<T>, LayoutError> {
+pub fn try_zeroed_vec<T: Zeroable>(length: usize) -> Result<Vec<T>, ()> {
   if length == 0 {
     Ok(Vec::new())
   } else {
-    let layout = Layout::array::<T>(length)?;
+    let layout = Layout::array::<T>(length).map_err(|_| ())?;
     let ptr = unsafe { alloc_zeroed(layout) };
     if ptr.is_null() {
-      alloc::alloc::handle_alloc_error(layout);
+      // we don't know what the error is because `alloc_zeroed` is a dumb API
+      Err(())
+    } else {
+      Ok(unsafe { Vec::from_raw_parts(ptr as *mut T, length, length) })
     }
-    Ok(unsafe { Vec::from_raw_parts(ptr as *mut T, length, length) })
   }
 }
 
@@ -143,11 +145,13 @@ pub fn try_zeroed_slice_box<T: Zeroable>(
   let layout = core::alloc::Layout::array::<T>(length).map_err(|_| ())?;
   let ptr = unsafe { alloc_zeroed(layout) };
   if ptr.is_null() {
-    alloc::alloc::handle_alloc_error(layout);
-  }
-  let slice =
-    unsafe { core::slice::from_raw_parts_mut(ptr as *mut T, length) };
-  Ok(unsafe { Box::<[T]>::from_raw(slice) })
+    // we don't know what the error is because `alloc_zeroed` is a dumb API
+    Err(())
+  } else {
+    let slice =
+      unsafe { core::slice::from_raw_parts_mut(ptr as *mut T, length) };
+    Ok(unsafe { Box::<[T]>::from_raw(slice) })
+}
 }
 
 /// As [`try_zeroed_slice_box`](try_zeroed_slice_box), but unwraps for you.
