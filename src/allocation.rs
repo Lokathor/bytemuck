@@ -93,6 +93,25 @@ pub fn zeroed_box<T: Zeroable>() -> Box<T> {
   try_zeroed_box().unwrap()
 }
 
+/// Allocates a `Vec<T>` of length and capacity exactly equal to `length` and all elements zeroed.
+/// 
+/// ## Failure
+///
+/// This fails if the allocation fails, or if a layout cannot be calculated for the allocation.
+pub fn try_zeroed_vec<T: Zeroable>(length: usize) -> Result<Vec<T>, ()> {
+  if length == 0 {
+    Ok(Vec::new())
+  } else {
+    let boxed_slice = try_zeroed_slice_box(length)?;
+    Ok(boxed_slice.into_vec())
+  }
+}
+
+/// As [`try_zeroed_vec`] but unwraps for you
+pub fn zeroed_vec<T: Zeroable>(length: usize) -> Vec<T> {
+  try_zeroed_vec(length).unwrap()
+}
+
 /// Allocates a `Box<[T]>` with all contents being zeroed out.
 ///
 /// This uses the global allocator to create a zeroed allocation and _then_
@@ -102,7 +121,7 @@ pub fn zeroed_box<T: Zeroable>() -> Box<T> {
 ///
 /// ## Failure
 ///
-/// This fails if the allocation fails.
+/// This fails if the allocation fails, or if a layout cannot be calculated for the allocation.
 #[inline]
 pub fn try_zeroed_slice_box<T: Zeroable>(
   length: usize,
@@ -117,12 +136,7 @@ pub fn try_zeroed_slice_box<T: Zeroable>(
     // This will also not allocate.
     return Ok(Vec::new().into_boxed_slice());
   }
-  // For Pod types, the layout of the array/slice is equivalent to repeating the
-  // type.
-  let layout_length = size_of::<T>().checked_mul(length).ok_or(())?;
-  assert!(layout_length != 0);
-  let layout =
-    Layout::from_size_align(layout_length, align_of::<T>()).map_err(|_| ())?;
+  let layout = core::alloc::Layout::array::<T>(length).map_err(|_| ())?;
   let ptr = unsafe { alloc_zeroed(layout) };
   if ptr.is_null() {
     // we don't know what the error is because `alloc_zeroed` is a dumb API
@@ -131,7 +145,7 @@ pub fn try_zeroed_slice_box<T: Zeroable>(
     let slice =
       unsafe { core::slice::from_raw_parts_mut(ptr as *mut T, length) };
     Ok(unsafe { Box::<[T]>::from_raw(slice) })
-  }
+}
 }
 
 /// As [`try_zeroed_slice_box`](try_zeroed_slice_box), but unwraps for you.
