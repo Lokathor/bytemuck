@@ -1,6 +1,12 @@
 
 ## `bytemuck_derive` changelog
 
+## 1.1.1
+
+* Adjusted the license files to use full files rather than symlinks.
+  [PR](https://github.com/Lokathor/bytemuck/pull/118)
+  The license is unchanged, just no more symlinks.
+
 ## 1.1.0
 
 * Updated to work with `bytemuck-1.9.0`
