@@ -1,32 +1,40 @@
 //! Checked versions of the casting functions exposed in crate root
 //! that support [`CheckedBitPattern`] types.
 
-use crate::{internal::{self, something_went_wrong}, NoUninit, AnyBitPattern};
+use crate::{
+  internal::{self, something_went_wrong},
+  AnyBitPattern, NoUninit,
+};
 
-/// A marker trait that allows types that have some invalid bit patterns to be used
-/// in places that otherwise require [`AnyBitPattern`] or [`Pod`] types by performing
-/// a runtime check on a perticular set of bits. This is particularly
-/// useful for types like fieldless ('C-style') enums, [`char`], bool, and structs containing them.
+/// A marker trait that allows types that have some invalid bit patterns to be
+/// used in places that otherwise require [`AnyBitPattern`] or [`Pod`] types by
+/// performing a runtime check on a perticular set of bits. This is particularly
+/// useful for types like fieldless ('C-style') enums, [`char`], bool, and
+/// structs containing them.
 ///
 /// To do this, we define a `Bits` type which is a type with equivalent layout
 /// to `Self` other than the invalid bit patterns which disallow `Self` from
-/// being [`AnyBitPattern`]. This `Bits` type must itself implement [`AnyBitPattern`].
-/// Then, we implement a function that checks wheter a certain instance
-/// of the `Bits` is also a valid bit pattern of `Self`. If this check passes, then we
-/// can allow casting from the `Bits` to `Self` (and therefore, any type which
-/// is able to be cast to `Bits` is also able to be cast to `Self`).
+/// being [`AnyBitPattern`]. This `Bits` type must itself implement
+/// [`AnyBitPattern`]. Then, we implement a function that checks wheter a
+/// certain instance of the `Bits` is also a valid bit pattern of `Self`. If
+/// this check passes, then we can allow casting from the `Bits` to `Self` (and
+/// therefore, any type which is able to be cast to `Bits` is also able to be
+/// cast to `Self`).
 ///
-/// [`AnyBitPattern`] is a subset of [`CheckedBitPattern`], meaning that any `T: AnyBitPattern` is also
-/// [`CheckedBitPattern`]. This means you can also use any [`AnyBitPattern`] type in the checked versions
-/// of casting functions in this module. If it's possible, prefer implementing [`AnyBitPattern`] for your
-/// type directly instead of [`CheckedBitPattern`] as it gives greater flexibility.
+/// [`AnyBitPattern`] is a subset of [`CheckedBitPattern`], meaning that any `T:
+/// AnyBitPattern` is also [`CheckedBitPattern`]. This means you can also use
+/// any [`AnyBitPattern`] type in the checked versions of casting functions in
+/// this module. If it's possible, prefer implementing [`AnyBitPattern`] for
+/// your type directly instead of [`CheckedBitPattern`] as it gives greater
+/// flexibility.
 ///
 /// # Derive
 ///
-/// A `#[derive(CheckedBitPattern)]` macro is provided under the `derive` feature flag which will
-/// automatically validate the requirements of this trait and implement the
-/// trait for you for both enums and structs. This is the recommended method for
-/// implementing the trait, however it's also possible to do manually.
+/// A `#[derive(CheckedBitPattern)]` macro is provided under the `derive`
+/// feature flag which will automatically validate the requirements of this
+/// trait and implement the trait for you for both enums and structs. This is
+/// the recommended method for implementing the trait, however it's also
+/// possible to do manually.
 ///
 /// # Example
 ///
@@ -53,7 +61,7 @@ use crate::{internal::{self, something_went_wrong}, NoUninit, AnyBitPattern};
 ///         }
 ///     }
 /// }
-/// 
+///
 /// // It is often useful to also implement `NoUninit` on our `CheckedBitPattern` types.
 /// // This will allow us to do casting of mutable references (and mutable slices).
 /// // It is not always possible to do so, but in this case we have no padding so it is.
@@ -92,7 +100,7 @@ use crate::{internal::{self, something_went_wrong}, NoUninit, AnyBitPattern};
 /// let bytes = bytes_of(&100u32);
 /// let result = checked::try_from_bytes::<MyEnum>(bytes);
 /// assert!(result.is_err());
-/// 
+///
 /// // Since we implemented NoUninit, we can also cast mutably from an original type
 /// // that is `NoUninit + AnyBitPattern`:
 /// let mut my_u32 = 2u32;
@@ -107,25 +115,28 @@ use crate::{internal::{self, something_went_wrong}, NoUninit, AnyBitPattern};
 /// # Safety
 ///
 /// * `Self` *must* have the same layout as the specified `Bits` except for
-/// the possible invalid bit patterns being checked during [`is_valid_bit_pattern`].
+/// the possible invalid bit patterns being checked during
+/// [`is_valid_bit_pattern`].
 ///   * This almost certainly means your type must be `#[repr(C)]` or a similar
-///   specified repr, but if you think you know better, you probably don't. If you
-///   still think you know better, be careful and have fun. And don't mess it up
-///   (I mean it).
-/// * If [`is_valid_bit_pattern`] returns true, then the bit pattern contained in
-///   `bits` must also be valid for an instance of `Self`.
+///   specified repr, but if you think you know better, you probably don't. If
+/// you   still think you know better, be careful and have fun. And don't mess
+/// it up   (I mean it).
+/// * If [`is_valid_bit_pattern`] returns true, then the bit pattern contained
+///   in `bits` must also be valid for an instance of `Self`.
 /// * Probably more, don't mess it up (I mean it 2.0)
 ///
 /// [`is_valid_bit_pattern`]: CheckedBitPattern::is_valid_bit_pattern
 /// [`Pod`]: crate::Pod
 pub unsafe trait CheckedBitPattern: Copy {
   /// `Self` *must* have the same layout as the specified `Bits` except for
-  /// the possible invalid bit patterns being checked during [`is_valid_bit_pattern`].
+  /// the possible invalid bit patterns being checked during
+  /// [`is_valid_bit_pattern`].
   ///
   /// [`is_valid_bit_pattern`]: CheckedBitPattern::is_valid_bit_pattern
   type Bits: AnyBitPattern;
 
-  /// If this function returns true, then it must be valid to reinterpret `bits` as `&Self`.
+  /// If this function returns true, then it must be valid to reinterpret `bits`
+  /// as `&Self`.
   fn is_valid_bit_pattern(bits: &Self::Bits) -> bool;
 }
 
@@ -159,15 +170,16 @@ unsafe impl CheckedBitPattern for bool {
   }
 }
 
-/// The things that can go wrong when casting between [`CheckedBitPattern`] data forms.
+/// The things that can go wrong when casting between [`CheckedBitPattern`] data
+/// forms.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CheckedCastError {
   /// An error occurred during a true-[`Pod`] cast
   PodCastError(crate::PodCastError),
-  /// When casting to a [`CheckedBitPattern`] type, it is possible that the original
-  /// data contains an invalid bit pattern. If so, the cast will fail and
-  /// this error will be returned. Will never happen on casts between
-  /// [`Pod`] types.
+  /// When casting to a [`CheckedBitPattern`] type, it is possible that the
+  /// original data contains an invalid bit pattern. If so, the cast will
+  /// fail and this error will be returned. Will never happen on casts
+  /// between [`Pod`] types.
   InvalidBitPattern,
 }
 
@@ -232,7 +244,9 @@ pub fn try_from_bytes_mut<T: CheckedBitPattern + NoUninit>(
 /// * If the `bytes` length is not equal to `size_of::<T>()`.
 /// * If the slice contains an invalid bit pattern for `T`
 #[inline]
-pub fn try_pod_read_unaligned<T: CheckedBitPattern>(bytes: &[u8]) -> Result<T, CheckedCastError> {
+pub fn try_pod_read_unaligned<T: CheckedBitPattern>(
+  bytes: &[u8],
+) -> Result<T, CheckedCastError> {
   let pod = unsafe { internal::try_pod_read_unaligned(bytes) }?;
 
   if <T as CheckedBitPattern>::is_valid_bit_pattern(pod) {
@@ -290,7 +304,10 @@ pub fn try_cast_ref<A: NoUninit, B: CheckedBitPattern>(
 ///
 /// As [`checked_cast_ref`], but `mut`.
 #[inline]
-pub fn try_cast_mut<A: NoUninit + AnyBitPattern, B: CheckedBitPattern + NoUninit>(
+pub fn try_cast_mut<
+  A: NoUninit + AnyBitPattern,
+  B: CheckedBitPattern + NoUninit,
+>(
   a: &mut A,
 ) -> Result<&mut B, CheckedCastError> {
   let pod = unsafe { internal::try_cast_mut(a) }?;
@@ -317,7 +334,8 @@ pub fn try_cast_mut<A: NoUninit + AnyBitPattern, B: CheckedBitPattern + NoUninit
 ///   that's a failure).
 /// * Similarly, you can't convert between a [ZST](https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
 ///   and a non-ZST.
-/// * If any element of the converted slice would contain an invalid bit pattern for `B` this fails.
+/// * If any element of the converted slice would contain an invalid bit pattern
+///   for `B` this fails.
 #[inline]
 pub fn try_cast_slice<A: NoUninit, B: CheckedBitPattern>(
   a: &[A],
@@ -338,7 +356,10 @@ pub fn try_cast_slice<A: NoUninit, B: CheckedBitPattern>(
 ///
 /// As [`checked_cast_slice`], but `&mut`.
 #[inline]
-pub fn try_cast_slice_mut<A: NoUninit + AnyBitPattern, B: CheckedBitPattern + NoUninit>(
+pub fn try_cast_slice_mut<
+  A: NoUninit + AnyBitPattern,
+  B: CheckedBitPattern + NoUninit,
+>(
   a: &mut [A],
 ) -> Result<&mut [B], CheckedCastError> {
   let pod = unsafe { internal::try_cast_slice_mut(a) }?;
@@ -409,7 +430,12 @@ pub fn cast<A: NoUninit, B: CheckedBitPattern>(a: A) -> B {
 ///
 /// This is [`try_cast_mut`] but will panic on error.
 #[inline]
-pub fn cast_mut<A: NoUninit + AnyBitPattern, B: NoUninit + CheckedBitPattern>(a: &mut A) -> &mut B {
+pub fn cast_mut<
+  A: NoUninit + AnyBitPattern,
+  B: NoUninit + CheckedBitPattern,
+>(
+  a: &mut A,
+) -> &mut B {
   match try_cast_mut(a) {
     Ok(t) => t,
     Err(e) => something_went_wrong("cast_mut", e),
@@ -448,7 +474,12 @@ pub fn cast_slice<A: NoUninit, B: CheckedBitPattern>(a: &[A]) -> &[B] {
 ///
 /// This is [`try_cast_slice_mut`] but will panic on error.
 #[inline]
-pub fn cast_slice_mut<A: NoUninit + AnyBitPattern, B: NoUninit + CheckedBitPattern>(a: &mut [A]) -> &mut [B] {
+pub fn cast_slice_mut<
+  A: NoUninit + AnyBitPattern,
+  B: NoUninit + CheckedBitPattern,
+>(
+  a: &mut [A],
+) -> &mut [B] {
   match try_cast_slice_mut(a) {
     Ok(t) => t,
     Err(e) => something_went_wrong("cast_slice_mut", e),

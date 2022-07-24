@@ -21,11 +21,15 @@ fn test_transparent_wrapper() {
   unsafe impl bytemuck::Pod for Wrapper {}
 
   impl PartialEq<u8> for Foreign {
-    fn eq(&self, &other: &u8) -> bool { self.0 == other }
+    fn eq(&self, &other: &u8) -> bool {
+      self.0 == other
+    }
   }
-  
+
   impl PartialEq<u8> for Wrapper {
-    fn eq(&self, &other: &u8) -> bool { self.0 == other }
+    fn eq(&self, &other: &u8) -> bool {
+      self.0 == other
+    }
   }
 
   let _: u8 = bytemuck::cast(Wrapper::wrap(Foreign::default()));
@@ -75,7 +79,7 @@ fn test_transparent_wrapper() {
     use bytemuck::allocation::TransparentWrapperAlloc;
 
     let a: Vec<Foreign> = vec![Foreign::default(); 2];
-    
+
     let b: Vec<Wrapper> = Wrapper::wrap_vec(a);
     assert_eq!(b, [0, 0]);
 
@@ -83,7 +87,7 @@ fn test_transparent_wrapper() {
     assert_eq!(c, [0, 0]);
 
     let d: Box<Foreign> = Box::new(Foreign::default());
-    
+
     let e: Box<Wrapper> = Wrapper::wrap_box(d);
     assert_eq!(&*e, &0);
     let f: Box<Foreign> = Wrapper::peel_box(e);
