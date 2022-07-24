@@ -339,6 +339,30 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>: TransparentWrapper<Inner> {
     }
   }
 
+  /// Convert a box to the inner type into a box to the wrapper
+  /// type.
+  #[inline]
+  fn wrap_box(s: Box<Inner>) -> Box<Self> {
+    assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
+
+    unsafe {
+      // A pointer cast doesn't work here because rustc can't tell that
+      // the vtables match (because of the `?Sized` restriction relaxation).
+      // A `transmute` doesn't work because the sizes are unspecified.
+      //
+      // SAFETY: 
+      // * The unsafe contract requires that pointers to Inner and Self
+      //   have identical representations 
+      // * Box is guaranteed to have representation identical to a 
+      //   (non-null) pointer
+      // * The pointer comes from a box (and thus satisfies all safety 
+      //   requirements of Box)
+      let inner_ptr: *mut Inner = Box::into_raw(s);
+      let wrapper_ptr: *mut Self = transmute!(inner_ptr);
+      Box::from_raw(wrapper_ptr)
+    }
+  }
+
   /// Convert a vec of the wrapper type into a vec of the inner type.
   fn peel_vec(s: Vec<Self>) -> Vec<Inner>
   where
@@ -361,6 +385,30 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>: TransparentWrapper<Inner> {
         length,
         capacity
       )
+    }
+  }
+
+  /// Convert a box to the wrapper type into a box to the inner
+  /// type.
+  #[inline]
+  fn peel_box(s: Box<Self>) -> Box<Inner> {
+    assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
+
+    unsafe {
+      // A pointer cast doesn't work here because rustc can't tell that
+      // the vtables match (because of the `?Sized` restriction relaxation).
+      // A `transmute` doesn't work because the sizes are unspecified.
+      //
+      // SAFETY: 
+      // * The unsafe contract requires that pointers to Inner and Self
+      //   have identical representations 
+      // * Box is guaranteed to have representation identical to a 
+      //   (non-null) pointer
+      // * The pointer comes from a box (and thus satisfies all safety 
+      //   requirements of Box)
+      let wrapper_ptr: *mut Self = Box::into_raw(s);
+      let inner_ptr: *mut Inner = transmute!(wrapper_ptr);
+      Box::from_raw(inner_ptr)
     }
   }
 }

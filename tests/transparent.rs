@@ -5,12 +5,12 @@
 #[test]
 fn test_transparent_wrapper() {
   // An external type defined in a different crate.
-  #[derive(Copy, Clone, Default)]
+  #[derive(Debug, Copy, Clone, Default)]
   struct Foreign(u8);
 
   use bytemuck::TransparentWrapper;
 
-  #[derive(Copy, Clone)]
+  #[derive(Debug, Copy, Clone)]
   #[repr(transparent)]
   struct Wrapper(Foreign);
 
@@ -19,6 +19,14 @@ fn test_transparent_wrapper() {
   // Traits can be implemented on crate-local wrapper.
   unsafe impl bytemuck::Zeroable for Wrapper {}
   unsafe impl bytemuck::Pod for Wrapper {}
+
+  impl PartialEq<u8> for Foreign {
+    fn eq(&self, &other: &u8) -> bool { self.0 == other }
+  }
+  
+  impl PartialEq<u8> for Wrapper {
+    fn eq(&self, &other: &u8) -> bool { self.0 == other }
+  }
 
   let _: u8 = bytemuck::cast(Wrapper::wrap(Foreign::default()));
   let _: Foreign = Wrapper::peel(bytemuck::cast(u8::default()));
@@ -69,13 +77,16 @@ fn test_transparent_wrapper() {
     let a: Vec<Foreign> = vec![Foreign::default(); 2];
     
     let b: Vec<Wrapper> = Wrapper::wrap_vec(a);
-    assert_eq!(
-      bytemuck::cast_slice::<Wrapper, u8>(b.as_slice()), &[0u8, 0]
-    );
+    assert_eq!(b, [0, 0]);
 
     let c: Vec<Foreign> = Wrapper::peel_vec(b);
-    assert_eq!(
-      bytemuck::cast_slice::<Wrapper, u8>(Wrapper::wrap_slice(c.as_slice())), &[0, 0]
-    );
+    assert_eq!(c, [0, 0]);
+
+    let d: Box<Foreign> = Box::new(Foreign::default());
+    
+    let e: Box<Wrapper> = Wrapper::wrap_box(d);
+    assert_eq!(&*e, &0);
+    let f: Box<Foreign> = Wrapper::peel_box(e);
+    assert_eq!(&*f, &0);
   }
 }
