@@ -93,11 +93,13 @@ pub fn zeroed_box<T: Zeroable>() -> Box<T> {
   try_zeroed_box().unwrap()
 }
 
-/// Allocates a `Vec<T>` of length and capacity exactly equal to `length` and all elements zeroed.
-/// 
+/// Allocates a `Vec<T>` of length and capacity exactly equal to `length` and
+/// all elements zeroed.
+///
 /// ## Failure
 ///
-/// This fails if the allocation fails, or if a layout cannot be calculated for the allocation.
+/// This fails if the allocation fails, or if a layout cannot be calculated for
+/// the allocation.
 pub fn try_zeroed_vec<T: Zeroable>(length: usize) -> Result<Vec<T>, ()> {
   if length == 0 {
     Ok(Vec::new())
@@ -121,7 +123,8 @@ pub fn zeroed_vec<T: Zeroable>(length: usize) -> Vec<T> {
 ///
 /// ## Failure
 ///
-/// This fails if the allocation fails, or if a layout cannot be calculated for the allocation.
+/// This fails if the allocation fails, or if a layout cannot be calculated for
+/// the allocation.
 #[inline]
 pub fn try_zeroed_slice_box<T: Zeroable>(
   length: usize,
@@ -145,7 +148,7 @@ pub fn try_zeroed_slice_box<T: Zeroable>(
     let slice =
       unsafe { core::slice::from_raw_parts_mut(ptr as *mut T, length) };
     Ok(unsafe { Box::<[T]>::from_raw(slice) })
-}
+  }
 }
 
 /// As [`try_zeroed_slice_box`](try_zeroed_slice_box), but unwraps for you.
@@ -313,12 +316,14 @@ pub fn pod_collect_to_vec<
 }
 
 /// An extension trait for `TransparentWrapper` and alloc types.
-pub trait TransparentWrapperAlloc<Inner: ?Sized>: TransparentWrapper<Inner> {
+pub trait TransparentWrapperAlloc<Inner: ?Sized>:
+  TransparentWrapper<Inner>
+{
   /// Convert a vec of the inner type into a vec of the wrapper type.
   fn wrap_vec(s: Vec<Inner>) -> Vec<Self>
   where
     Self: Sized,
-    Inner: Sized
+    Inner: Sized,
   {
     let mut s = core::mem::ManuallyDrop::new(s);
 
@@ -331,11 +336,7 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>: TransparentWrapper<Inner> {
       // * ptr comes from Vec (and will not be double-dropped)
       // * the two types have the identical representation
       // * the len and capacity fields are valid
-      Vec::from_raw_parts(
-        ptr as *mut Self,
-        length,
-        capacity
-      )
+      Vec::from_raw_parts(ptr as *mut Self, length, capacity)
     }
   }
 
@@ -350,12 +351,12 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>: TransparentWrapper<Inner> {
       // the vtables match (because of the `?Sized` restriction relaxation).
       // A `transmute` doesn't work because the sizes are unspecified.
       //
-      // SAFETY: 
-      // * The unsafe contract requires that pointers to Inner and Self
-      //   have identical representations 
-      // * Box is guaranteed to have representation identical to a 
-      //   (non-null) pointer
-      // * The pointer comes from a box (and thus satisfies all safety 
+      // SAFETY:
+      // * The unsafe contract requires that pointers to Inner and Self have
+      //   identical representations
+      // * Box is guaranteed to have representation identical to a (non-null)
+      //   pointer
+      // * The pointer comes from a box (and thus satisfies all safety
       //   requirements of Box)
       let inner_ptr: *mut Inner = Box::into_raw(s);
       let wrapper_ptr: *mut Self = transmute!(inner_ptr);
@@ -367,7 +368,7 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>: TransparentWrapper<Inner> {
   fn peel_vec(s: Vec<Self>) -> Vec<Inner>
   where
     Self: Sized,
-    Inner: Sized
+    Inner: Sized,
   {
     let mut s = core::mem::ManuallyDrop::new(s);
 
@@ -380,11 +381,7 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>: TransparentWrapper<Inner> {
       // * ptr comes from Vec (and will not be double-dropped)
       // * the two types have the identical representation
       // * the len and capacity fields are valid
-      Vec::from_raw_parts(
-        ptr as *mut Inner,
-        length,
-        capacity
-      )
+      Vec::from_raw_parts(ptr as *mut Inner, length, capacity)
     }
   }
 
@@ -399,12 +396,12 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>: TransparentWrapper<Inner> {
       // the vtables match (because of the `?Sized` restriction relaxation).
       // A `transmute` doesn't work because the sizes are unspecified.
       //
-      // SAFETY: 
-      // * The unsafe contract requires that pointers to Inner and Self
-      //   have identical representations 
-      // * Box is guaranteed to have representation identical to a 
-      //   (non-null) pointer
-      // * The pointer comes from a box (and thus satisfies all safety 
+      // SAFETY:
+      // * The unsafe contract requires that pointers to Inner and Self have
+      //   identical representations
+      // * Box is guaranteed to have representation identical to a (non-null)
+      //   pointer
+      // * The pointer comes from a box (and thus satisfies all safety
       //   requirements of Box)
       let wrapper_ptr: *mut Self = Box::into_raw(s);
       let inner_ptr: *mut Inner = transmute!(wrapper_ptr);
