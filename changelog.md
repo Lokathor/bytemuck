@@ -1,5 +1,12 @@
 # `bytemuck` changelog
 
+## 1.11
+
+* [WaffleLapkin](https://github.com/WaffleLapkin) added `wrap_box` and `peel_box`
+  to the `TransparentWrapperAlloc` trait. Default impls of these functions are
+  provided, and (as usual with the transparent trait stuff) you should not override
+  the default versions.
+
 ## 1.10
 
 * [TheEdward162](https://github.com/TheEdward162) added the `ZeroableInOption`
