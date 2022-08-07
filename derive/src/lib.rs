@@ -5,8 +5,8 @@ extern crate proc_macro;
 mod traits;
 
 use proc_macro2::TokenStream;
-use quote::{quote, quote_spanned};
-use syn::{parse_macro_input, DeriveInput, spanned::Spanned};
+use quote::quote;
+use syn::{parse_macro_input, DeriveInput, Result};
 
 use crate::traits::{
   AnyBitPattern, Contiguous, Derivable, CheckedBitPattern, NoUninit, Pod, TransparentWrapper, Zeroable,
@@ -223,17 +223,13 @@ pub fn derive_contiguous(
 
 /// Basic wrapper for error handling
 fn derive_marker_trait<Trait: Derivable>(input: DeriveInput) -> TokenStream {
-  let span = input.span();
-  derive_marker_trait_inner::<Trait>(input).unwrap_or_else(|err| {
-    quote_spanned! { span =>
-      compile_error!(#err);
-    }
-  })
+  derive_marker_trait_inner::<Trait>(input)
+    .unwrap_or_else(|err| err.into_compile_error())
 }
 
 fn derive_marker_trait_inner<Trait: Derivable>(
   input: DeriveInput,
-) -> Result<TokenStream, &'static str> {
+) -> Result<TokenStream> {
   let name = &input.ident;
 
   let (impl_generics, ty_generics, where_clause) =
