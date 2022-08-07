@@ -12,6 +12,38 @@ struct Test {
   b: u16,
 }
 
+#[derive(Pod, Zeroable)]
+#[repr(C, packed)]
+struct GenericPackedStruct<T: Pod> {
+  a: u32,
+  b: T,
+  c: u32,
+}
+
+impl<T: Pod> Clone for GenericPackedStruct<T> {
+  fn clone(&self) -> Self {
+    *self
+  }
+}
+
+impl<T: Pod> Copy for GenericPackedStruct<T> {}
+
+#[derive(Pod, Zeroable)]
+#[repr(C, packed(1))]
+struct GenericPackedStructExplicitPackedAlignment<T: Pod> {
+  a: u32,
+  b: T,
+  c: u32,
+}
+
+impl<T: Pod> Clone for GenericPackedStructExplicitPackedAlignment<T> {
+  fn clone(&self) -> Self {
+    *self
+  }
+}
+
+impl<T: Pod> Copy for GenericPackedStructExplicitPackedAlignment<T> {}
+
 #[derive(Zeroable)]
 struct ZeroGeneric<T: bytemuck::Zeroable> {
   a: T,
