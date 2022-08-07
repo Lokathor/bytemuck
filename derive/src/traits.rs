@@ -37,13 +37,21 @@ impl Derivable for Pod {
   }
 
   fn asserts(input: &DeriveInput) -> Result<TokenStream, &'static str> {
-    if !input.generics.params.is_empty() {
-      return Err("Pod requires cannot be derived for types containing generic parameters because the padding requirements can't be verified for generic structs");
+    let repr = get_repr(&input.attrs);
+
+    let completly_packed = repr.packed == Some(1);
+
+    if !completly_packed && !input.generics.params.is_empty() {
+      return Err("Pod requires cannot be derived for non-packed types containing generic parameters because the padding requirements can't be verified for generic non-packed structs");
     }
 
     match &input.data {
       Data::Struct(_) => {
-        let assert_no_padding = generate_assert_no_padding(input)?;
+        let assert_no_padding = if !completly_packed {
+          Some(generate_assert_no_padding(input)?)
+        } else {
+          None
+        };
         let assert_fields_are_pod =
           generate_fields_are_trait(input, Self::ident())?;
 
