@@ -20,22 +20,26 @@ possibility code branch.
 */
 
 /// Immediately panics.
+#[cfg(not(target_arch = "spirv"))]
 #[cold]
 #[inline(never)]
-pub(crate) fn something_went_wrong<D: core::fmt::Display>(
-  _src: &str, _err: D,
-) -> ! {
+pub(crate) fn something_went_wrong<D: core::fmt::Display>(_src: &str, _err: D) -> ! {
   // Note(Lokathor): Keeping the panic here makes the panic _formatting_ go
   // here too, which helps assembly readability and also helps keep down
   // the inline pressure.
-  #[cfg(not(target_arch = "spirv"))]
   panic!("{src}>{err}", src = _src, err = _err);
+}
+
+/// Immediately panics.
+#[cfg(target_arch = "spirv")]
+#[cold]
+#[inline(never)]
+pub(crate) fn something_went_wrong<D>(_src: &str, _err: D) -> ! {
   // Note: On the spirv targets from [rust-gpu](https://github.com/EmbarkStudios/rust-gpu)
   // panic formatting cannot be used. We we just give a generic error message
   // The chance that the panicking version of these functions will ever get
   // called on spir-v targets with invalid inputs is small, but giving a
   // simple error message is better than no error message at all.
-  #[cfg(target_arch = "spirv")]
   panic!("Called a panicing helper from bytemuck which paniced");
 }
 
