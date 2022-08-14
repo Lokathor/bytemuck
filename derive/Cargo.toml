@@ -1,7 +1,7 @@
 [package]
 name = "bytemuck_derive"
 description = "derive proc-macros for `bytemuck`"
-version = "1.1.1"
+version = "1.2.0"
 authors = ["Lokathor <zefria@gmail.com>"]
 repository = "https://github.com/Lokathor/bytemuck"
 readme = "README.md"
@@ -16,7 +16,7 @@ proc-macro = true
 
 [dependencies]
 # syn seems to have broken backwards compability in this version https://github.com/dtolnay/syn/issues/1194
-syn = "1.0.15"
+syn = "1.0.99"
 quote = "1"
 proc-macro2 = "1"
 
