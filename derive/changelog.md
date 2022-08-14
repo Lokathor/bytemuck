@@ -11,7 +11,11 @@
   "curret" (1.0.99). If absolutely necessary we could probably reduce the
   minimum `syn` version again in a patch release for 1.2, but I don't want to
   play this dance too much so I'd rather make each jump as big as can possibly
-  be. [Issue 122](https://github.com/Lokathor/bytemuck/issues/122)
+  be. [Issue 122](https://github.com/Lokathor/bytemuck/issues/122). **Note:**
+  While the core `bytemuck` crate continues to keep building on rustc-1.34.0,
+  the `bytemuck_derive` crate is considered an opt-in bonus feature (which
+  doesn't do anything you couldn't trivially do yourself) and so it does not
+  support a specific MSRV.
 
 ## 1.1.1
 
