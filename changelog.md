@@ -1,5 +1,17 @@
 # `bytemuck` changelog
 
+## 1.12
+
+* This minor version bump is caused by a version bump in our `bytemuck_derive`
+  dependency, which is in turn caused by a mixup in the minimum version of `syn`
+  that `bytemuck_derive` uses. See [Issue
+  122](https://github.com/Lokathor/bytemuck/issues/122). There's not any
+  specific "new" API as you might normally expect from a minor version bump.
+* [pali](https://github.com/pali6) fixed a problem with SPIR-V builds being
+  broken. The error handling functions were trying to be generic over `Display`,
+  which the error types normally support, except on SPIR-V targets (which run on
+  the GPU and don't have text formatting).
+
 ## 1.11
 
 * [WaffleLapkin](https://github.com/WaffleLapkin) added `wrap_box` and `peel_box`
