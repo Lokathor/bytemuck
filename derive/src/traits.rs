@@ -592,6 +592,11 @@ fn get_repr(attributes: &[Attribute]) -> Result<Representation> {
           | (None, b) => b,
           | _ => bail!("conflicting representation hints"),
         },
+        align: match (a.align, b.align) {
+          | (a, None) => a,
+          | (None, b) => b,
+          | _ => bail!("conflicting representation hints"),
+        },
       })
     })
 }
@@ -643,12 +648,13 @@ macro_rules! mk_repr {(
   #[derive(Clone, Copy)]
   struct Representation {
     packed: Option<u32>,
+    align: Option<u32>,
     repr: Repr,
   }
 
   impl Default for Representation {
     fn default() -> Self {
-      Self { packed: None, repr: Repr::Rust }
+      Self { packed: None, align: None, repr: Repr::Rust }
     }
   }
 
@@ -669,6 +675,12 @@ macro_rules! mk_repr {(
             } else {
               1
             });
+            let _: Option<Token![,]> = input.parse()?;
+            continue;
+          },
+          "align" => {
+            let contents; parenthesized!(contents in input);
+            ret.align = Some(LitInt::base10_parse::<u32>(&contents.parse()?)?);
             let _: Option<Token![,]> = input.parse()?;
             continue;
           },
