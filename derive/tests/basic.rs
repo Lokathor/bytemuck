@@ -185,3 +185,7 @@ fn anybitpattern_implies_zeroable() {
   let test = AnyBitPatternTest::zeroed();
   assert_eq!(test, AnyBitPatternTest { a: 0, b: 0 });
 }
+
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+#[repr(C, align(16))]
+struct Issue127 {}
