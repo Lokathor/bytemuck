@@ -1,5 +1,10 @@
 # `bytemuck` changelog
 
+## 1.12.1
+
+* Patch bumped the required `bytemuck_derive` version because of a regression in
+  how it handled `align(N)` attributes.
+
 ## 1.12
 
 * This minor version bump is caused by a version bump in our `bytemuck_derive`
