@@ -1,6 +1,11 @@
 
 ## `bytemuck_derive` changelog
 
+## 1.2.1
+
+* Fixed a regression of the `align(N)` attribute that occured during otherwise
+  routine cleanup.
+
 ## 1.2.0
 
 * Apparently our minimum required version of `syn` went up without anyone
