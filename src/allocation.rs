@@ -415,9 +415,12 @@ pub fn try_cast_slice_rc<A: NoUninit, B: AnyBitPattern>(
       // size of the type T in the new Rc<T>. So as long as both the size
       // and alignment stay the same, the Rc will remain a valid Rc.
       let length = size_of::<A>() * input.len() / size_of::<B>();
-      let rc_ptr: *mut A = Rc::into_raw(input) as *mut A;
-      let ptr: *mut [B] =
-        unsafe { core::slice::from_raw_parts_mut(rc_ptr as *mut B, length) };
+      let rc_ptr: *const A = Rc::into_raw(input) as *const A;
+      // Must use ptr::slice_from_raw_parts, because we cannot make an
+      // intermediate const reference, because it has mutable provenance,
+      // nor an intermediate mutable reference, because it could be aliased.
+      let ptr =
+        unsafe { core::ptr::slice_from_raw_parts(rc_ptr as *const B, length) };
       Ok(unsafe { Rc::<[B]>::from_raw(ptr) })
     }
   } else {
@@ -465,9 +468,12 @@ pub fn try_cast_slice_arc<A: NoUninit, B: AnyBitPattern>(
       // size of the type T in the new Arc<T>. So as long as both the size
       // and alignment stay the same, the Arc will remain a valid Arc.
       let length = size_of::<A>() * input.len() / size_of::<B>();
-      let arc_ptr: *mut A = Arc::into_raw(input) as *mut A;
-      let ptr: *mut [B] =
-        unsafe { core::slice::from_raw_parts_mut(arc_ptr as *mut B, length) };
+      let arc_ptr: *const A = Arc::into_raw(input) as *const A;
+      // Must use ptr::slice_from_raw_parts, because we cannot make an
+      // intermediate const reference, because it has mutable provenance,
+      // nor an intermediate mutable reference, because it could be aliased.
+      let ptr =
+        unsafe { core::ptr::slice_from_raw_parts(arc_ptr as *const B, length) };
       Ok(unsafe { Arc::<[B]>::from_raw(ptr) })
     }
   } else {
