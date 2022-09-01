@@ -319,7 +319,9 @@ pub fn pod_collect_to_vec<
 
 /// As [`try_cast_rc`](try_cast_rc), but unwraps for you.
 #[inline]
-pub fn cast_rc<A: NoUninit, B: AnyBitPattern>(input: Rc<A>) -> Rc<B> {
+pub fn cast_rc<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(
+  input: Rc<A>,
+) -> Rc<B> {
   try_cast_rc(input).map_err(|(e, _v)| e).unwrap()
 }
 
@@ -327,13 +329,17 @@ pub fn cast_rc<A: NoUninit, B: AnyBitPattern>(input: Rc<A>) -> Rc<B> {
 ///
 /// On failure you get back an error along with the starting `Rc`.
 ///
+/// The bounds on this function are the same as [`cast_mut`], because a user
+/// could call `Rc::get_unchecked_mut` on the output, which could be observable
+/// in the input.
+///
 /// ## Failure
 ///
 /// * The start and end content type of the `Rc` must have the exact same
 ///   alignment.
 /// * The start and end size of the `Rc` must have the exact same size.
 #[inline]
-pub fn try_cast_rc<A: NoUninit, B: AnyBitPattern>(
+pub fn try_cast_rc<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(
   input: Rc<A>,
 ) -> Result<Rc<B>, (PodCastError, Rc<A>)> {
   if align_of::<A>() != align_of::<B>() {
@@ -349,7 +355,9 @@ pub fn try_cast_rc<A: NoUninit, B: AnyBitPattern>(
 
 /// As [`try_cast_arc`](try_cast_arc), but unwraps for you.
 #[inline]
-pub fn cast_arc<A: NoUninit, B: AnyBitPattern>(input: Arc<A>) -> Arc<B> {
+pub fn cast_arc<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(
+  input: Arc<A>,
+) -> Arc<B> {
   try_cast_arc(input).map_err(|(e, _v)| e).unwrap()
 }
 
@@ -357,13 +365,20 @@ pub fn cast_arc<A: NoUninit, B: AnyBitPattern>(input: Arc<A>) -> Arc<B> {
 ///
 /// On failure you get back an error along with the starting `Arc`.
 ///
+/// The bounds on this function are the same as [`cast_mut`], because a user
+/// could call `Rc::get_unchecked_mut` on the output, which could be observable
+/// in the input.
+///
 /// ## Failure
 ///
 /// * The start and end content type of the `Arc` must have the exact same
 ///   alignment.
 /// * The start and end size of the `Arc` must have the exact same size.
 #[inline]
-pub fn try_cast_arc<A: NoUninit, B: AnyBitPattern>(
+pub fn try_cast_arc<
+  A: NoUninit + AnyBitPattern,
+  B: NoUninit + AnyBitPattern,
+>(
   input: Arc<A>,
 ) -> Result<Arc<B>, (PodCastError, Arc<A>)> {
   if align_of::<A>() != align_of::<B>() {
@@ -379,13 +394,22 @@ pub fn try_cast_arc<A: NoUninit, B: AnyBitPattern>(
 
 /// As [`try_cast_slice_rc`](try_cast_slice_rc), but unwraps for you.
 #[inline]
-pub fn cast_slice_rc<A: NoUninit, B: AnyBitPattern>(input: Rc<[A]>) -> Rc<[B]> {
+pub fn cast_slice_rc<
+  A: NoUninit + AnyBitPattern,
+  B: NoUninit + AnyBitPattern,
+>(
+  input: Rc<[A]>,
+) -> Rc<[B]> {
   try_cast_slice_rc(input).map_err(|(e, _v)| e).unwrap()
 }
 
 /// Attempts to cast the content type of a `Rc<[T]>`.
 ///
 /// On failure you get back an error along with the starting `Rc<[T]>`.
+///
+/// The bounds on this function are the same as [`cast_mut`], because a user
+/// could call `Rc::get_unchecked_mut` on the output, which could be observable
+/// in the input.
 ///
 /// ## Failure
 ///
@@ -394,7 +418,10 @@ pub fn cast_slice_rc<A: NoUninit, B: AnyBitPattern>(input: Rc<[A]>) -> Rc<[B]> {
 /// * The start and end content size in bytes of the `Rc<[T]>` must be the exact
 ///   same.
 #[inline]
-pub fn try_cast_slice_rc<A: NoUninit, B: AnyBitPattern>(
+pub fn try_cast_slice_rc<
+  A: NoUninit + AnyBitPattern,
+  B: NoUninit + AnyBitPattern,
+>(
   input: Rc<[A]>,
 ) -> Result<Rc<[B]>, (PodCastError, Rc<[A]>)> {
   if align_of::<A>() != align_of::<B>() {
@@ -429,7 +456,10 @@ pub fn try_cast_slice_rc<A: NoUninit, B: AnyBitPattern>(
 
 /// As [`try_cast_slice_arc`](try_cast_slice_arc), but unwraps for you.
 #[inline]
-pub fn cast_slice_arc<A: NoUninit, B: AnyBitPattern>(
+pub fn cast_slice_arc<
+  A: NoUninit + AnyBitPattern,
+  B: NoUninit + AnyBitPattern,
+>(
   input: Arc<[A]>,
 ) -> Arc<[B]> {
   try_cast_slice_arc(input).map_err(|(e, _v)| e).unwrap()
@@ -439,6 +469,10 @@ pub fn cast_slice_arc<A: NoUninit, B: AnyBitPattern>(
 ///
 /// On failure you get back an error along with the starting `Arc<[T]>`.
 ///
+/// The bounds on this function are the same as [`cast_mut`], because a user
+/// could call `Rc::get_unchecked_mut` on the output, which could be observable
+/// in the input.
+///
 /// ## Failure
 ///
 /// * The start and end content type of the `Arc<[T]>` must have the exact same
@@ -446,7 +480,10 @@ pub fn cast_slice_arc<A: NoUninit, B: AnyBitPattern>(
 /// * The start and end content size in bytes of the `Arc<[T]>` must be the
 ///   exact same.
 #[inline]
-pub fn try_cast_slice_arc<A: NoUninit, B: AnyBitPattern>(
+pub fn try_cast_slice_arc<
+  A: NoUninit + AnyBitPattern,
+  B: NoUninit + AnyBitPattern,
+>(
   input: Arc<[A]>,
 ) -> Result<Arc<[B]>, (PodCastError, Arc<[A]>)> {
   if align_of::<A>() != align_of::<B>() {
