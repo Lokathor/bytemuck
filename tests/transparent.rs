@@ -77,8 +77,7 @@ fn test_transparent_wrapper() {
   #[cfg(feature = "extern_crate_alloc")]
   {
     use bytemuck::allocation::TransparentWrapperAlloc;
-    use std::rc::Rc;
-    use std::sync::Arc;
+    use std::{rc::Rc, sync::Arc};
 
     let a: Vec<Foreign> = vec![Foreign::default(); 2];
 

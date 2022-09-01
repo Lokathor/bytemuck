@@ -13,10 +13,10 @@ use super::*;
 use alloc::{
   alloc::{alloc_zeroed, Layout},
   boxed::Box,
-  vec,
-  vec::Vec,
   rc::Rc,
   sync::Arc,
+  vec,
+  vec::Vec,
 };
 use core::convert::TryInto;
 
@@ -379,9 +379,7 @@ pub fn try_cast_arc<A: NoUninit, B: AnyBitPattern>(
 
 /// As [`try_cast_slice_rc`](try_cast_slice_rc), but unwraps for you.
 #[inline]
-pub fn cast_slice_rc<A: NoUninit, B: AnyBitPattern>(
-  input: Rc<[A]>,
-) -> Rc<[B]> {
+pub fn cast_slice_rc<A: NoUninit, B: AnyBitPattern>(input: Rc<[A]>) -> Rc<[B]> {
   try_cast_slice_rc(input).map_err(|(e, _v)| e).unwrap()
 }
 
@@ -393,8 +391,8 @@ pub fn cast_slice_rc<A: NoUninit, B: AnyBitPattern>(
 ///
 /// * The start and end content type of the `Rc<[T]>` must have the exact same
 ///   alignment.
-/// * The start and end content size in bytes of the `Rc<[T]>` must be the
-///   exact same.
+/// * The start and end content size in bytes of the `Rc<[T]>` must be the exact
+///   same.
 #[inline]
 pub fn try_cast_slice_rc<A: NoUninit, B: AnyBitPattern>(
   input: Rc<[A]>,
@@ -419,8 +417,7 @@ pub fn try_cast_slice_rc<A: NoUninit, B: AnyBitPattern>(
       // Must use ptr::slice_from_raw_parts, because we cannot make an
       // intermediate const reference, because it has mutable provenance,
       // nor an intermediate mutable reference, because it could be aliased.
-      let ptr =
-        unsafe { core::ptr::slice_from_raw_parts(rc_ptr as *const B, length) };
+      let ptr = core::ptr::slice_from_raw_parts(rc_ptr as *const B, length);
       Ok(unsafe { Rc::<[B]>::from_raw(ptr) })
     }
   } else {
@@ -472,8 +469,7 @@ pub fn try_cast_slice_arc<A: NoUninit, B: AnyBitPattern>(
       // Must use ptr::slice_from_raw_parts, because we cannot make an
       // intermediate const reference, because it has mutable provenance,
       // nor an intermediate mutable reference, because it could be aliased.
-      let ptr =
-        unsafe { core::ptr::slice_from_raw_parts(arc_ptr as *const B, length) };
+      let ptr = core::ptr::slice_from_raw_parts(arc_ptr as *const B, length);
       Ok(unsafe { Arc::<[B]>::from_raw(ptr) })
     }
   } else {
@@ -532,8 +528,8 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
     }
   }
 
-  /// Convert an [`Rc`](alloc::rc::Rc) to the inner type into an `Rc` to the wrapper
-  /// type.
+  /// Convert an [`Rc`](alloc::rc::Rc) to the inner type into an `Rc` to the
+  /// wrapper type.
   #[inline]
   fn wrap_rc(s: Rc<Inner>) -> Rc<Self> {
     assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
@@ -546,7 +542,7 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
       // SAFETY:
       // * The unsafe contract requires that pointers to Inner and Self have
       //   identical representations, and that the size and alignment of Inner
-      //   and Self are the same, which meets the safety requirements of 
+      //   and Self are the same, which meets the safety requirements of
       //   Rc::from_raw
       let inner_ptr: *const Inner = Rc::into_raw(s);
       let wrapper_ptr: *const Self = transmute!(inner_ptr);
@@ -554,8 +550,8 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
     }
   }
 
-  /// Convert an [`Arc`](alloc::sync::Arc) to the inner type into an `Arc` to the wrapper
-  /// type.
+  /// Convert an [`Arc`](alloc::sync::Arc) to the inner type into an `Arc` to
+  /// the wrapper type.
   #[inline]
   fn wrap_arc(s: Arc<Inner>) -> Arc<Self> {
     assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
@@ -568,7 +564,7 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
       // SAFETY:
       // * The unsafe contract requires that pointers to Inner and Self have
       //   identical representations, and that the size and alignment of Inner
-      //   and Self are the same, which meets the safety requirements of 
+      //   and Self are the same, which meets the safety requirements of
       //   Arc::from_raw
       let inner_ptr: *const Inner = Arc::into_raw(s);
       let wrapper_ptr: *const Self = transmute!(inner_ptr);
@@ -621,8 +617,8 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
     }
   }
 
-  /// Convert an [`Rc`](alloc::rc::Rc) to the wrapper type into an `Rc` to the inner
-  /// type.
+  /// Convert an [`Rc`](alloc::rc::Rc) to the wrapper type into an `Rc` to the
+  /// inner type.
   #[inline]
   fn peel_rc(s: Rc<Self>) -> Rc<Inner> {
     assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
@@ -635,7 +631,7 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
       // SAFETY:
       // * The unsafe contract requires that pointers to Inner and Self have
       //   identical representations, and that the size and alignment of Inner
-      //   and Self are the same, which meets the safety requirements of 
+      //   and Self are the same, which meets the safety requirements of
       //   Rc::from_raw
       let wrapper_ptr: *const Self = Rc::into_raw(s);
       let inner_ptr: *const Inner = transmute!(wrapper_ptr);
@@ -643,8 +639,8 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
     }
   }
 
-  /// Convert an [`Arc`](alloc::sync::Arc) to the wrapper type into an `Arc` to the inner
-  /// type.
+  /// Convert an [`Arc`](alloc::sync::Arc) to the wrapper type into an `Arc` to
+  /// the inner type.
   #[inline]
   fn peel_arc(s: Arc<Self>) -> Arc<Inner> {
     assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
@@ -657,7 +653,7 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
       // SAFETY:
       // * The unsafe contract requires that pointers to Inner and Self have
       //   identical representations, and that the size and alignment of Inner
-      //   and Self are the same, which meets the safety requirements of 
+      //   and Self are the same, which meets the safety requirements of
       //   Arc::from_raw
       let wrapper_ptr: *const Self = Arc::into_raw(s);
       let inner_ptr: *const Inner = transmute!(wrapper_ptr);
