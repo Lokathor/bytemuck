@@ -15,6 +15,8 @@ use alloc::{
   boxed::Box,
   vec,
   vec::Vec,
+  rc::Rc,
+  sync::Arc,
 };
 use core::convert::TryInto;
 
@@ -315,6 +317,166 @@ pub fn pod_collect_to_vec<
   dst
 }
 
+/// As [`try_cast_rc`](try_cast_rc), but unwraps for you.
+#[inline]
+pub fn cast_rc<A: NoUninit, B: AnyBitPattern>(input: Rc<A>) -> Rc<B> {
+  try_cast_rc(input).map_err(|(e, _v)| e).unwrap()
+}
+
+/// Attempts to cast the content type of a [`Rc`](alloc::rc::Rc).
+///
+/// On failure you get back an error along with the starting `Rc`.
+///
+/// ## Failure
+///
+/// * The start and end content type of the `Rc` must have the exact same
+///   alignment.
+/// * The start and end size of the `Rc` must have the exact same size.
+#[inline]
+pub fn try_cast_rc<A: NoUninit, B: AnyBitPattern>(
+  input: Rc<A>,
+) -> Result<Rc<B>, (PodCastError, Rc<A>)> {
+  if align_of::<A>() != align_of::<B>() {
+    Err((PodCastError::AlignmentMismatch, input))
+  } else if size_of::<A>() != size_of::<B>() {
+    Err((PodCastError::SizeMismatch, input))
+  } else {
+    // Safety: Rc::from_raw requires size and alignment match, which is met.
+    let ptr: *const B = Rc::into_raw(input) as *const B;
+    Ok(unsafe { Rc::from_raw(ptr) })
+  }
+}
+
+/// As [`try_cast_arc`](try_cast_arc), but unwraps for you.
+#[inline]
+pub fn cast_arc<A: NoUninit, B: AnyBitPattern>(input: Arc<A>) -> Arc<B> {
+  try_cast_arc(input).map_err(|(e, _v)| e).unwrap()
+}
+
+/// Attempts to cast the content type of a [`Arc`](alloc::sync::Arc).
+///
+/// On failure you get back an error along with the starting `Arc`.
+///
+/// ## Failure
+///
+/// * The start and end content type of the `Arc` must have the exact same
+///   alignment.
+/// * The start and end size of the `Arc` must have the exact same size.
+#[inline]
+pub fn try_cast_arc<A: NoUninit, B: AnyBitPattern>(
+  input: Arc<A>,
+) -> Result<Arc<B>, (PodCastError, Arc<A>)> {
+  if align_of::<A>() != align_of::<B>() {
+    Err((PodCastError::AlignmentMismatch, input))
+  } else if size_of::<A>() != size_of::<B>() {
+    Err((PodCastError::SizeMismatch, input))
+  } else {
+    // Safety: Arc::from_raw requires size and alignment match, which is met.
+    let ptr: *const B = Arc::into_raw(input) as *const B;
+    Ok(unsafe { Arc::from_raw(ptr) })
+  }
+}
+
+/// As [`try_cast_slice_rc`](try_cast_slice_rc), but unwraps for you.
+#[inline]
+pub fn cast_slice_rc<A: NoUninit, B: AnyBitPattern>(
+  input: Rc<[A]>,
+) -> Rc<[B]> {
+  try_cast_slice_rc(input).map_err(|(e, _v)| e).unwrap()
+}
+
+/// Attempts to cast the content type of a `Rc<[T]>`.
+///
+/// On failure you get back an error along with the starting `Rc<[T]>`.
+///
+/// ## Failure
+///
+/// * The start and end content type of the `Rc<[T]>` must have the exact same
+///   alignment.
+/// * The start and end content size in bytes of the `Rc<[T]>` must be the
+///   exact same.
+#[inline]
+pub fn try_cast_slice_rc<A: NoUninit, B: AnyBitPattern>(
+  input: Rc<[A]>,
+) -> Result<Rc<[B]>, (PodCastError, Rc<[A]>)> {
+  if align_of::<A>() != align_of::<B>() {
+    Err((PodCastError::AlignmentMismatch, input))
+  } else if size_of::<A>() != size_of::<B>() {
+    if size_of::<A>() * input.len() % size_of::<B>() != 0 {
+      // If the size in bytes of the underlying buffer does not match an exact
+      // multiple of the size of B, we cannot cast between them.
+      Err((PodCastError::SizeMismatch, input))
+    } else {
+      // Because the size is an exact multiple, we can now change the length
+      // of the slice and recreate the Rc
+      // NOTE: This is a valid operation because according to the docs of
+      // std::rc::Rc::from_raw(), the type U that was in the original Rc<U>
+      // acquired from Rc::into_raw() must have the same size alignment and
+      // size of the type T in the new Rc<T>. So as long as both the size
+      // and alignment stay the same, the Rc will remain a valid Rc.
+      let length = size_of::<A>() * input.len() / size_of::<B>();
+      let rc_ptr: *mut A = Rc::into_raw(input) as *mut A;
+      let ptr: *mut [B] =
+        unsafe { core::slice::from_raw_parts_mut(rc_ptr as *mut B, length) };
+      Ok(unsafe { Rc::<[B]>::from_raw(ptr) })
+    }
+  } else {
+    let rc_ptr: *const [A] = Rc::into_raw(input);
+    let ptr: *const [B] = rc_ptr as *const [B];
+    Ok(unsafe { Rc::<[B]>::from_raw(ptr) })
+  }
+}
+
+/// As [`try_cast_slice_arc`](try_cast_slice_arc), but unwraps for you.
+#[inline]
+pub fn cast_slice_arc<A: NoUninit, B: AnyBitPattern>(
+  input: Arc<[A]>,
+) -> Arc<[B]> {
+  try_cast_slice_arc(input).map_err(|(e, _v)| e).unwrap()
+}
+
+/// Attempts to cast the content type of a `Arc<[T]>`.
+///
+/// On failure you get back an error along with the starting `Arc<[T]>`.
+///
+/// ## Failure
+///
+/// * The start and end content type of the `Arc<[T]>` must have the exact same
+///   alignment.
+/// * The start and end content size in bytes of the `Arc<[T]>` must be the
+///   exact same.
+#[inline]
+pub fn try_cast_slice_arc<A: NoUninit, B: AnyBitPattern>(
+  input: Arc<[A]>,
+) -> Result<Arc<[B]>, (PodCastError, Arc<[A]>)> {
+  if align_of::<A>() != align_of::<B>() {
+    Err((PodCastError::AlignmentMismatch, input))
+  } else if size_of::<A>() != size_of::<B>() {
+    if size_of::<A>() * input.len() % size_of::<B>() != 0 {
+      // If the size in bytes of the underlying buffer does not match an exact
+      // multiple of the size of B, we cannot cast between them.
+      Err((PodCastError::SizeMismatch, input))
+    } else {
+      // Because the size is an exact multiple, we can now change the length
+      // of the slice and recreate the Arc
+      // NOTE: This is a valid operation because according to the docs of
+      // std::sync::Arc::from_raw(), the type U that was in the original Arc<U>
+      // acquired from Arc::into_raw() must have the same size alignment and
+      // size of the type T in the new Arc<T>. So as long as both the size
+      // and alignment stay the same, the Arc will remain a valid Arc.
+      let length = size_of::<A>() * input.len() / size_of::<B>();
+      let arc_ptr: *mut A = Arc::into_raw(input) as *mut A;
+      let ptr: *mut [B] =
+        unsafe { core::slice::from_raw_parts_mut(arc_ptr as *mut B, length) };
+      Ok(unsafe { Arc::<[B]>::from_raw(ptr) })
+    }
+  } else {
+    let arc_ptr: *const [A] = Arc::into_raw(input);
+    let ptr: *const [B] = arc_ptr as *const [B];
+    Ok(unsafe { Arc::<[B]>::from_raw(ptr) })
+  }
+}
+
 /// An extension trait for `TransparentWrapper` and alloc types.
 pub trait TransparentWrapperAlloc<Inner: ?Sized>:
   TransparentWrapper<Inner>
@@ -364,6 +526,50 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
     }
   }
 
+  /// Convert an [`Rc`](alloc::rc::Rc) to the inner type into an `Rc` to the wrapper
+  /// type.
+  #[inline]
+  fn wrap_rc(s: Rc<Inner>) -> Rc<Self> {
+    assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
+
+    unsafe {
+      // A pointer cast doesn't work here because rustc can't tell that
+      // the vtables match (because of the `?Sized` restriction relaxation).
+      // A `transmute` doesn't work because the layout of Rc is unspecified.
+      //
+      // SAFETY:
+      // * The unsafe contract requires that pointers to Inner and Self have
+      //   identical representations, and that the size and alignment of Inner
+      //   and Self are the same, which meets the safety requirements of 
+      //   Rc::from_raw
+      let inner_ptr: *const Inner = Rc::into_raw(s);
+      let wrapper_ptr: *const Self = transmute!(inner_ptr);
+      Rc::from_raw(wrapper_ptr)
+    }
+  }
+
+  /// Convert an [`Arc`](alloc::sync::Arc) to the inner type into an `Arc` to the wrapper
+  /// type.
+  #[inline]
+  fn wrap_arc(s: Arc<Inner>) -> Arc<Self> {
+    assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
+
+    unsafe {
+      // A pointer cast doesn't work here because rustc can't tell that
+      // the vtables match (because of the `?Sized` restriction relaxation).
+      // A `transmute` doesn't work because the layout of Arc is unspecified.
+      //
+      // SAFETY:
+      // * The unsafe contract requires that pointers to Inner and Self have
+      //   identical representations, and that the size and alignment of Inner
+      //   and Self are the same, which meets the safety requirements of 
+      //   Arc::from_raw
+      let inner_ptr: *const Inner = Arc::into_raw(s);
+      let wrapper_ptr: *const Self = transmute!(inner_ptr);
+      Arc::from_raw(wrapper_ptr)
+    }
+  }
+
   /// Convert a vec of the wrapper type into a vec of the inner type.
   fn peel_vec(s: Vec<Self>) -> Vec<Inner>
   where
@@ -406,6 +612,50 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
       let wrapper_ptr: *mut Self = Box::into_raw(s);
       let inner_ptr: *mut Inner = transmute!(wrapper_ptr);
       Box::from_raw(inner_ptr)
+    }
+  }
+
+  /// Convert an [`Rc`](alloc::rc::Rc) to the wrapper type into an `Rc` to the inner
+  /// type.
+  #[inline]
+  fn peel_rc(s: Rc<Self>) -> Rc<Inner> {
+    assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
+
+    unsafe {
+      // A pointer cast doesn't work here because rustc can't tell that
+      // the vtables match (because of the `?Sized` restriction relaxation).
+      // A `transmute` doesn't work because the layout of Rc is unspecified.
+      //
+      // SAFETY:
+      // * The unsafe contract requires that pointers to Inner and Self have
+      //   identical representations, and that the size and alignment of Inner
+      //   and Self are the same, which meets the safety requirements of 
+      //   Rc::from_raw
+      let wrapper_ptr: *const Self = Rc::into_raw(s);
+      let inner_ptr: *const Inner = transmute!(wrapper_ptr);
+      Rc::from_raw(inner_ptr)
+    }
+  }
+
+  /// Convert an [`Arc`](alloc::sync::Arc) to the wrapper type into an `Arc` to the inner
+  /// type.
+  #[inline]
+  fn peel_arc(s: Arc<Self>) -> Arc<Inner> {
+    assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
+
+    unsafe {
+      // A pointer cast doesn't work here because rustc can't tell that
+      // the vtables match (because of the `?Sized` restriction relaxation).
+      // A `transmute` doesn't work because the layout of Arc is unspecified.
+      //
+      // SAFETY:
+      // * The unsafe contract requires that pointers to Inner and Self have
+      //   identical representations, and that the size and alignment of Inner
+      //   and Self are the same, which meets the safety requirements of 
+      //   Arc::from_raw
+      let wrapper_ptr: *const Self = Arc::into_raw(s);
+      let inner_ptr: *const Inner = transmute!(wrapper_ptr);
+      Arc::from_raw(inner_ptr)
     }
   }
 }
