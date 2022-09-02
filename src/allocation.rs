@@ -20,6 +20,191 @@ use alloc::{
 };
 use core::convert::TryInto;
 
+/// Safety: Must only be implemented on types where it is valid to pass a
+/// pointer to from_raw that came from into_raw on a different instantiation of
+/// the same ADT, e.g.
+/// ```rs
+/// let ptr: *mut U = <MyPointer<U> as CastablePointer<U>>::into_raw(my_pointer);
+/// let new_ptr: *mut T = / cast ptr to *mut T upholding the invariants below */;
+/// let my_new_pointer = <MyPointer<T> as CastablePointer<T>>::from_raw(new_ptr);
+/// ```
+/// must be valid, as long as the following are upheld:
+/// * `T` and `U` are both `Sized`, and `T` and `U` have the same size and
+///   alignment.
+/// * OR `T` and `U` are both slices, `T` and `U` have the same alignment, and
+///   the length of the slice pointer was adjusted to be the same size in bytes.
+/// * Otherwise, from_raw and into_raw should not be called (TODO: maybe expand
+///   this?)
+unsafe trait CastablePointer<T: ?Sized> {
+  /// Return a pointer that can be given to Self<U>::from_raw, if all other
+  /// invariants hold. This pointer should not dereferenced, as it may be
+  /// invalid for anything other than passing to from_raw. (e.g. it may actually
+  /// be a *const T, or it may point to a dropped T that has not been
+  /// deallocated.)
+  fn into_raw(self) -> *mut T;
+  /// Safety: ptr must have come from CastablePointer::into_raw on the same ADT
+  /// (e.g. Box<T> -> Box<U>, &T -> &U), and the size in bytes and
+  /// type alignment must match those of the original type.
+  unsafe fn from_raw(ptr: *mut T) -> Self;
+}
+
+/// Safety: Same as CastablePointer, except that the alignment requirement is
+/// relaxed. That is, it is only required that the pointer passed to from_raw is
+/// aligned for T, not that its original type had the same alignment as T.
+///
+/// TODO: theoretically, `cast_ref`, `cast_mut`, `cast_slice`, and
+/// `cast_slice_mut` could be modified to use something like this, otherwise,
+/// there's no reason to have it
+unsafe trait CastablePointerRelaxedAlignment<T: ?Sized>:
+  CastablePointer<T>
+{
+}
+
+unsafe impl<T: ?Sized> CastablePointer<T> for Box<T> {
+  #[inline]
+  fn into_raw(self) -> *mut T {
+    Box::into_raw(self)
+  }
+
+  // NOTE: This is a valid operation because according to the docs of
+  // std::alloc::GlobalAlloc::dealloc(), the Layout that was used to alloc
+  // the block must be the same Layout that is used to dealloc the block.
+  // Luckily, Layout only stores two things, the alignment, and the size in
+  // bytes. So as long as both of those stay the same, the Layout will
+  // remain a valid input to dealloc.
+  #[inline]
+  unsafe fn from_raw(ptr: *mut T) -> Self {
+    Box::from_raw(ptr)
+  }
+}
+
+unsafe impl<T: ?Sized> CastablePointer<T> for Rc<T> {
+  #[inline]
+  fn into_raw(self) -> *mut T {
+    Rc::into_raw(self) as *mut T
+  }
+
+  // NOTE: This is a valid operation because according to the docs of
+  // std::rc::Rc::from_raw(), the type U that was in the original Rc<U>
+  // acquired from Rc::into_raw() must have the same size alignment and
+  // size of the type T in the new Rc<T>. So as long as both the size
+  // and alignment stay the same, the Rc will remain a valid Rc.
+  #[inline]
+  unsafe fn from_raw(ptr: *mut T) -> Self {
+    Rc::from_raw(ptr)
+  }
+}
+
+unsafe impl<T: ?Sized> CastablePointer<T> for Arc<T> {
+  #[inline]
+  fn into_raw(self) -> *mut T {
+    Arc::into_raw(self) as *mut T
+  }
+
+  // NOTE: This is a valid operation because according to the docs of
+  // std::sync::Arc::from_raw(), the type U that was in the original Arc<U>
+  // acquired from Arc::into_raw() must have the same size alignment and
+  // size of the type T in the new Arc<T>. So as long as both the size
+  // and alignment stay the same, the Arc will remain a valid Arc.
+  #[inline]
+  unsafe fn from_raw(ptr: *mut T) -> Self {
+    Arc::from_raw(ptr)
+  }
+}
+
+/// Attempts to cast the content type of an `OwnedCastablePointer<T>`.
+///
+/// On failure you get back an error along with the starting `OwnedCastablePointer`.
+///
+/// ## Failure
+///
+/// * The start and end content type of the `Box` must have the exact same
+///   alignment.
+/// * The start and end size of the `Box` must have the exact same size.
+///
+/// ## Safety
+///
+/// * `AP` and `BP` must be instantiations of the same ADT (e.g. `Box<A>` and
+///   `Box<B>`)
+/// * The invariants on A and B (e.g. NoUninit) must be upheld by the caller.
+unsafe fn try_cast_aligned_ptr<
+  A: Copy,
+  B: Copy,
+  AP: CastablePointer<A>,
+  BP: CastablePointer<B>,
+>(
+  input: AP,
+) -> Result<BP, (PodCastError, AP)> {
+  if align_of::<A>() != align_of::<B>() {
+    Err((PodCastError::AlignmentMismatch, input))
+  } else if size_of::<A>() != size_of::<B>() {
+    Err((PodCastError::SizeMismatch, input))
+  } else {
+    unsafe {
+      let ptr: *mut A = CastablePointer::into_raw(input);
+      Ok(CastablePointer::from_raw(ptr as *mut B))
+    }
+  }
+}
+
+/// Try to convert `OwnedCastablePointer<[A]>` into `OwnedCastablePointer<[B]>`
+/// (possibly with a change in length).
+///
+/// * `input.as_ptr() as usize == output.as_ptr() as usize`
+/// * `input.len() * size_of::<A>() == output.len() * size_of::<B>()`
+///
+/// ## Failure
+///
+/// * The start and end content type of the `OwnedCastablePointer<[T]>` must have
+///   the exact same alignment.
+/// * The start and end content size in bytes of the `OwnedCastablePointer<[T]>`
+///   must be the exact same.
+///
+/// ## Safety
+///
+/// * `AP` and `BP` must be instantiations of the same ADT (e.g. `Box<[A]>` and
+///   `Box<[B]>`)
+/// * The invariants on A and B, if any (e.g. NoUninit) must be upheld by the
+///   caller.
+/// TODO: if we want to support Weak, we'd have to remove the Deref bound and
+/// get the length from the pointer.
+unsafe fn try_cast_aligned_slice_ptr<
+  A: Copy,
+  B: Copy,
+  AP: CastablePointer<[A]> + core::ops::Deref<Target = [A]>,
+  BP: CastablePointer<[B]>,
+>(
+  input: AP,
+) -> Result<BP, (PodCastError, AP)> {
+  if align_of::<A>() != align_of::<B>() {
+    Err((PodCastError::AlignmentMismatch, input))
+  } else if size_of::<A>() != size_of::<B>() {
+    if size_of::<A>() * input.len() % size_of::<B>() != 0 {
+      // If the size in bytes of the underlying buffer does not match an exact
+      // multiple of the size of B, we cannot cast between them.
+      Err((PodCastError::SizeMismatch, input))
+    } else {
+      // Because the size is an exact multiple, we can now change the length
+      // of the slice and recreate the Box
+      // NOTE: This is a valid operation because according to the contract of
+      // CastablePointer, for slices only the size in bytes and type alignment
+      // must be the same.
+      let length = size_of::<A>() * input.len() / size_of::<B>();
+      unsafe {
+        let ptr: *mut [A] = CastablePointer::into_raw(input);
+        let ptr: *mut [B] =
+          core::ptr::slice_from_raw_parts_mut(ptr as *mut B, length);
+        Ok(CastablePointer::from_raw(ptr))
+      }
+    }
+  } else {
+    unsafe {
+      let ptr: *mut [A] = CastablePointer::into_raw(input);
+      Ok(CastablePointer::from_raw(ptr as *mut [B]))
+    }
+  }
+}
+
 /// As [`try_cast_box`](try_cast_box), but unwraps for you.
 #[inline]
 pub fn cast_box<A: NoUninit, B: AnyBitPattern>(input: Box<A>) -> Box<B> {
@@ -39,15 +224,7 @@ pub fn cast_box<A: NoUninit, B: AnyBitPattern>(input: Box<A>) -> Box<B> {
 pub fn try_cast_box<A: NoUninit, B: AnyBitPattern>(
   input: Box<A>,
 ) -> Result<Box<B>, (PodCastError, Box<A>)> {
-  if align_of::<A>() != align_of::<B>() {
-    Err((PodCastError::AlignmentMismatch, input))
-  } else if size_of::<A>() != size_of::<B>() {
-    Err((PodCastError::SizeMismatch, input))
-  } else {
-    // Note(Lokathor): This is much simpler than with the Vec casting!
-    let ptr: *mut B = Box::into_raw(input) as *mut B;
-    Ok(unsafe { Box::from_raw(ptr) })
-  }
+  unsafe { try_cast_aligned_ptr(input) }
 }
 
 /// Allocates a `Box<T>` with all of the contents being zeroed out.
@@ -180,33 +357,7 @@ pub fn cast_slice_box<A: NoUninit, B: AnyBitPattern>(
 pub fn try_cast_slice_box<A: NoUninit, B: AnyBitPattern>(
   input: Box<[A]>,
 ) -> Result<Box<[B]>, (PodCastError, Box<[A]>)> {
-  if align_of::<A>() != align_of::<B>() {
-    Err((PodCastError::AlignmentMismatch, input))
-  } else if size_of::<A>() != size_of::<B>() {
-    if size_of::<A>() * input.len() % size_of::<B>() != 0 {
-      // If the size in bytes of the underlying buffer does not match an exact
-      // multiple of the size of B, we cannot cast between them.
-      Err((PodCastError::SizeMismatch, input))
-    } else {
-      // Because the size is an exact multiple, we can now change the length
-      // of the slice and recreate the Box
-      // NOTE: This is a valid operation because according to the docs of
-      // std::alloc::GlobalAlloc::dealloc(), the Layout that was used to alloc
-      // the block must be the same Layout that is used to dealloc the block.
-      // Luckily, Layout only stores two things, the alignment, and the size in
-      // bytes. So as long as both of those stay the same, the Layout will
-      // remain a valid input to dealloc.
-      let length = size_of::<A>() * input.len() / size_of::<B>();
-      let box_ptr: *mut A = Box::into_raw(input) as *mut A;
-      let ptr: *mut [B] =
-        unsafe { core::slice::from_raw_parts_mut(box_ptr as *mut B, length) };
-      Ok(unsafe { Box::<[B]>::from_raw(ptr) })
-    }
-  } else {
-    let box_ptr: *mut [A] = Box::into_raw(input);
-    let ptr: *mut [B] = box_ptr as *mut [B];
-    Ok(unsafe { Box::<[B]>::from_raw(ptr) })
-  }
+  unsafe { try_cast_aligned_slice_ptr(input) }
 }
 
 /// As [`try_cast_vec`](try_cast_vec), but unwraps for you.
@@ -342,15 +493,7 @@ pub fn cast_rc<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(
 pub fn try_cast_rc<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(
   input: Rc<A>,
 ) -> Result<Rc<B>, (PodCastError, Rc<A>)> {
-  if align_of::<A>() != align_of::<B>() {
-    Err((PodCastError::AlignmentMismatch, input))
-  } else if size_of::<A>() != size_of::<B>() {
-    Err((PodCastError::SizeMismatch, input))
-  } else {
-    // Safety: Rc::from_raw requires size and alignment match, which is met.
-    let ptr: *const B = Rc::into_raw(input) as *const B;
-    Ok(unsafe { Rc::from_raw(ptr) })
-  }
+  unsafe { try_cast_aligned_ptr(input) }
 }
 
 /// As [`try_cast_arc`](try_cast_arc), but unwraps for you.
@@ -381,15 +524,7 @@ pub fn try_cast_arc<
 >(
   input: Arc<A>,
 ) -> Result<Arc<B>, (PodCastError, Arc<A>)> {
-  if align_of::<A>() != align_of::<B>() {
-    Err((PodCastError::AlignmentMismatch, input))
-  } else if size_of::<A>() != size_of::<B>() {
-    Err((PodCastError::SizeMismatch, input))
-  } else {
-    // Safety: Arc::from_raw requires size and alignment match, which is met.
-    let ptr: *const B = Arc::into_raw(input) as *const B;
-    Ok(unsafe { Arc::from_raw(ptr) })
-  }
+  unsafe { try_cast_aligned_ptr(input) }
 }
 
 /// As [`try_cast_slice_rc`](try_cast_slice_rc), but unwraps for you.
@@ -424,34 +559,7 @@ pub fn try_cast_slice_rc<
 >(
   input: Rc<[A]>,
 ) -> Result<Rc<[B]>, (PodCastError, Rc<[A]>)> {
-  if align_of::<A>() != align_of::<B>() {
-    Err((PodCastError::AlignmentMismatch, input))
-  } else if size_of::<A>() != size_of::<B>() {
-    if size_of::<A>() * input.len() % size_of::<B>() != 0 {
-      // If the size in bytes of the underlying buffer does not match an exact
-      // multiple of the size of B, we cannot cast between them.
-      Err((PodCastError::SizeMismatch, input))
-    } else {
-      // Because the size is an exact multiple, we can now change the length
-      // of the slice and recreate the Rc
-      // NOTE: This is a valid operation because according to the docs of
-      // std::rc::Rc::from_raw(), the type U that was in the original Rc<U>
-      // acquired from Rc::into_raw() must have the same size alignment and
-      // size of the type T in the new Rc<T>. So as long as both the size
-      // and alignment stay the same, the Rc will remain a valid Rc.
-      let length = size_of::<A>() * input.len() / size_of::<B>();
-      let rc_ptr: *const A = Rc::into_raw(input) as *const A;
-      // Must use ptr::slice_from_raw_parts, because we cannot make an
-      // intermediate const reference, because it has mutable provenance,
-      // nor an intermediate mutable reference, because it could be aliased.
-      let ptr = core::ptr::slice_from_raw_parts(rc_ptr as *const B, length);
-      Ok(unsafe { Rc::<[B]>::from_raw(ptr) })
-    }
-  } else {
-    let rc_ptr: *const [A] = Rc::into_raw(input);
-    let ptr: *const [B] = rc_ptr as *const [B];
-    Ok(unsafe { Rc::<[B]>::from_raw(ptr) })
-  }
+  unsafe { try_cast_aligned_slice_ptr(input) }
 }
 
 /// As [`try_cast_slice_arc`](try_cast_slice_arc), but unwraps for you.
@@ -486,34 +594,7 @@ pub fn try_cast_slice_arc<
 >(
   input: Arc<[A]>,
 ) -> Result<Arc<[B]>, (PodCastError, Arc<[A]>)> {
-  if align_of::<A>() != align_of::<B>() {
-    Err((PodCastError::AlignmentMismatch, input))
-  } else if size_of::<A>() != size_of::<B>() {
-    if size_of::<A>() * input.len() % size_of::<B>() != 0 {
-      // If the size in bytes of the underlying buffer does not match an exact
-      // multiple of the size of B, we cannot cast between them.
-      Err((PodCastError::SizeMismatch, input))
-    } else {
-      // Because the size is an exact multiple, we can now change the length
-      // of the slice and recreate the Arc
-      // NOTE: This is a valid operation because according to the docs of
-      // std::sync::Arc::from_raw(), the type U that was in the original Arc<U>
-      // acquired from Arc::into_raw() must have the same size alignment and
-      // size of the type T in the new Arc<T>. So as long as both the size
-      // and alignment stay the same, the Arc will remain a valid Arc.
-      let length = size_of::<A>() * input.len() / size_of::<B>();
-      let arc_ptr: *const A = Arc::into_raw(input) as *const A;
-      // Must use ptr::slice_from_raw_parts, because we cannot make an
-      // intermediate const reference, because it has mutable provenance,
-      // nor an intermediate mutable reference, because it could be aliased.
-      let ptr = core::ptr::slice_from_raw_parts(arc_ptr as *const B, length);
-      Ok(unsafe { Arc::<[B]>::from_raw(ptr) })
-    }
-  } else {
-    let arc_ptr: *const [A] = Arc::into_raw(input);
-    let ptr: *const [B] = arc_ptr as *const [B];
-    Ok(unsafe { Arc::<[B]>::from_raw(ptr) })
-  }
+  unsafe { try_cast_aligned_slice_ptr(input) }
 }
 
 /// An extension trait for `TransparentWrapper` and alloc types.
