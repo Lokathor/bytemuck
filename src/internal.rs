@@ -23,7 +23,9 @@ possibility code branch.
 #[cfg(not(target_arch = "spirv"))]
 #[cold]
 #[inline(never)]
-pub(crate) fn something_went_wrong<D: core::fmt::Display>(_src: &str, _err: D) -> ! {
+pub(crate) fn something_went_wrong<D: core::fmt::Display>(
+  _src: &str, _err: D,
+) -> ! {
   // Note(Lokathor): Keeping the panic here makes the panic _formatting_ go
   // here too, which helps assembly readability and also helps keep down
   // the inline pressure.

@@ -362,7 +362,11 @@ impl Derivable for Contiguous {
       quote!(),
       quote! {
           type Int = #integer_ty;
+
+          #![allow(clippy::missing_docs_in_private_items)]
           const MIN_VALUE: #integer_ty = #min_lit;
+
+          #![allow(clippy::missing_docs_in_private_items)]
           const MAX_VALUE: #integer_ty = #max_lit;
       },
     ))
@@ -429,6 +433,7 @@ fn generate_checked_bit_pattern_struct(
         #repr
         #[derive(Clone, Copy, ::bytemuck::AnyBitPattern)]
         #derive_dbg
+        #[allow(missing_docs)]
         pub struct #bits_ty {
             #(#field_name: <#field_ty as ::bytemuck::CheckedBitPattern>::Bits,)*
         }
@@ -437,7 +442,7 @@ fn generate_checked_bit_pattern_struct(
         type Bits = #bits_ty;
 
         #[inline]
-        #[allow(clippy::double_comparisons)]
+        #[allow(clippy::double_comparisons, unused)]
         fn is_valid_bit_pattern(bits: &#bits_ty) -> bool {
             #(<#field_ty as ::bytemuck::CheckedBitPattern>::is_valid_bit_pattern(&bits.#field_name) && )* true
         }
