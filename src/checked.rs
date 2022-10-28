@@ -249,7 +249,7 @@ pub fn try_pod_read_unaligned<T: CheckedBitPattern>(
 ) -> Result<T, CheckedCastError> {
   let pod = unsafe { internal::try_pod_read_unaligned(bytes) }?;
 
-  if <T as CheckedBitPattern>::is_valid_bit_pattern(pod) {
+  if <T as CheckedBitPattern>::is_valid_bit_pattern(&pod) {
     Ok(unsafe { transmute!(pod) })
   } else {
     Err(CheckedCastError::InvalidBitPattern)
