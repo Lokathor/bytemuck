@@ -51,7 +51,7 @@ impl Derivable for Pod {
   fn asserts(input: &DeriveInput) -> Result<TokenStream> {
     let repr = get_repr(&input.attrs)?;
 
-    let completly_packed = repr.packed == Some(1);
+    let completly_packed = repr.packed == Some(1) || repr.repr == Repr::Transparent;
 
     if !completly_packed && !input.generics.params.is_empty() {
       bail!("\
