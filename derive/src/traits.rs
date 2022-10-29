@@ -19,12 +19,9 @@ macro_rules! bail {
 }
 
 pub trait Derivable {
-  fn ident() -> TokenStream;
+  fn ident(input: &DeriveInput) -> Result<syn::Path>;
   fn implies_trait() -> Option<TokenStream> {
     None
-  }
-  fn generic_params(_input: &DeriveInput) -> Result<TokenStream> {
-    Ok(quote!())
   }
   fn asserts(_input: &DeriveInput) -> Result<TokenStream> {
     Ok(quote!())
@@ -44,8 +41,8 @@ pub trait Derivable {
 pub struct Pod;
 
 impl Derivable for Pod {
-  fn ident() -> TokenStream {
-    quote!(::bytemuck::Pod)
+  fn ident(_: &DeriveInput) -> Result<syn::Path> {
+    Ok(syn::parse_quote!(::bytemuck::Pod))
   }
 
   fn asserts(input: &DeriveInput) -> Result<TokenStream> {
@@ -69,7 +66,7 @@ impl Derivable for Pod {
           None
         };
         let assert_fields_are_pod =
-          generate_fields_are_trait(input, Self::ident())?;
+          generate_fields_are_trait(input, Self::ident(input)?)?;
 
         Ok(quote!(
           #assert_no_padding
@@ -98,8 +95,8 @@ impl Derivable for Pod {
 pub struct AnyBitPattern;
 
 impl Derivable for AnyBitPattern {
-  fn ident() -> TokenStream {
-    quote!(::bytemuck::AnyBitPattern)
+  fn ident(_: &DeriveInput) -> Result<syn::Path> {
+    Ok(syn::parse_quote!(::bytemuck::AnyBitPattern))
   }
 
   fn implies_trait() -> Option<TokenStream> {
@@ -109,7 +106,7 @@ impl Derivable for AnyBitPattern {
   fn asserts(input: &DeriveInput) -> Result<TokenStream> {
     match &input.data {
       Data::Union(_) => Ok(quote!()), // unions are always `AnyBitPattern`
-      Data::Struct(_) => generate_fields_are_trait(input, Self::ident()),
+      Data::Struct(_) => generate_fields_are_trait(input, Self::ident(input)?),
       Data::Enum(_) => bail!("Deriving AnyBitPattern is not supported for enums"),
     }
   }
@@ -118,14 +115,14 @@ impl Derivable for AnyBitPattern {
 pub struct Zeroable;
 
 impl Derivable for Zeroable {
-  fn ident() -> TokenStream {
-    quote!(::bytemuck::Zeroable)
+  fn ident(_: &DeriveInput) -> Result<syn::Path> {
+    Ok(syn::parse_quote!(::bytemuck::Zeroable))
   }
 
   fn asserts(input: &DeriveInput) -> Result<TokenStream> {
     match &input.data {
       Data::Union(_) => Ok(quote!()), // unions are always `Zeroable`
-      Data::Struct(_) => generate_fields_are_trait(input, Self::ident()),
+      Data::Struct(_) => generate_fields_are_trait(input, Self::ident(input)?),
       Data::Enum(_) => bail!("Deriving Zeroable is not supported for enums"),
     }
   }
@@ -134,8 +131,8 @@ impl Derivable for Zeroable {
 pub struct NoUninit;
 
 impl Derivable for NoUninit {
-  fn ident() -> TokenStream {
-    quote!(::bytemuck::NoUninit)
+  fn ident(_: &DeriveInput) -> Result<syn::Path> {
+    Ok(syn::parse_quote!(::bytemuck::NoUninit))
   }
 
   fn check_attributes(
@@ -165,7 +162,7 @@ impl Derivable for NoUninit {
       Data::Struct(DataStruct { .. }) => {
         let assert_no_padding = generate_assert_no_padding(&input)?;
         let assert_fields_are_no_padding =
-          generate_fields_are_trait(&input, Self::ident())?;
+          generate_fields_are_trait(&input, Self::ident(input)?)?;
 
         Ok(quote!(
             #assert_no_padding
@@ -193,8 +190,8 @@ impl Derivable for NoUninit {
 pub struct CheckedBitPattern;
 
 impl Derivable for CheckedBitPattern {
-  fn ident() -> TokenStream {
-    quote!(::bytemuck::CheckedBitPattern)
+  fn ident(_: &DeriveInput) -> Result<syn::Path> {
+    Ok(syn::parse_quote!(::bytemuck::CheckedBitPattern))
   }
 
   fn check_attributes(
@@ -223,7 +220,7 @@ impl Derivable for CheckedBitPattern {
     match &input.data {
       Data::Struct(DataStruct { .. }) => {
         let assert_fields_are_maybe_pod =
-          generate_fields_are_trait(&input, Self::ident())?;
+          generate_fields_are_trait(&input, Self::ident(input)?)?;
 
         Ok(assert_fields_are_maybe_pod)
       }
@@ -266,20 +263,18 @@ impl TransparentWrapper {
 }
 
 impl Derivable for TransparentWrapper {
-  fn ident() -> TokenStream {
-    quote!(::bytemuck::TransparentWrapper)
-  }
-
-  fn generic_params(input: &DeriveInput) -> Result<TokenStream> {
+  fn ident(input: &DeriveInput) -> Result<syn::Path> {
     let fields = get_struct_fields(input)?;
-
-    match Self::get_wrapper_type(&input.attrs, &fields) {
-      | Some(ty) => Ok(quote!(<#ty>)),
+    
+    let ty = match Self::get_wrapper_type(&input.attrs, &fields) {
+      | Some(ty) => ty,
       | None => bail!("\
         when deriving TransparentWrapper for a struct with more than one field \
         you need to specify the transparent field using #[transparent(T)]\
       "),
-    }
+    };
+
+    Ok(syn::parse_quote!(::bytemuck::TransparentWrapper<#ty>))
   }
 
   fn asserts(input: &DeriveInput) -> Result<TokenStream> {
@@ -318,8 +313,8 @@ impl Derivable for TransparentWrapper {
 pub struct Contiguous;
 
 impl Derivable for Contiguous {
-  fn ident() -> TokenStream {
-    quote!(::bytemuck::Contiguous)
+  fn ident(_: &DeriveInput) -> Result<syn::Path> {
+    Ok(syn::parse_quote!(::bytemuck::Contiguous))
   }
 
   fn trait_impl(
@@ -529,7 +524,7 @@ fn generate_assert_no_padding(
 
 /// Check that all fields implement a given trait
 fn generate_fields_are_trait(
-  input: &DeriveInput, trait_: TokenStream,
+  input: &DeriveInput, trait_: syn::Path,
 ) -> Result<TokenStream> {
   let (impl_generics, _ty_generics, where_clause) =
     input.generics.split_for_impl();

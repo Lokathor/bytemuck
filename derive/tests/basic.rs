@@ -141,6 +141,21 @@ struct AnyBitPatternTest {
   b: u16
 }
 
+/// ```compile_fail
+/// use bytemuck::{Pod, Zeroable};
+/// 
+/// #[derive(Pod, Zeroable)]
+/// #[repr(transparent)]
+/// struct TransparentSingle<T>(T);
+/// 
+/// struct NotPod(u32);
+/// 
+/// let _: u32 = bytemuck::cast(TransparentSingle(NotPod(0u32)));
+/// ```
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Pod, Zeroable, TransparentWrapper)]
+#[repr(transparent)]
+struct NewtypeWrapperTest<T>(T);
+
 #[test]
 fn fails_cast_contiguous() {
   let can_cast = CheckedBitPatternEnumWithValues::is_valid_bit_pattern(&5);

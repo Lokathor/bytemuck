@@ -228,17 +228,19 @@ fn derive_marker_trait<Trait: Derivable>(input: DeriveInput) -> TokenStream {
 }
 
 fn derive_marker_trait_inner<Trait: Derivable>(
-  input: DeriveInput,
+  mut input: DeriveInput,
 ) -> Result<TokenStream> {
+  // Enforce Pod on all generic fields.
+  let trait_ = Trait::ident(&input)?;
+  add_trait_marker(&mut input.generics, &trait_);
+
   let name = &input.ident;
 
   let (impl_generics, ty_generics, where_clause) =
     input.generics.split_for_impl();
 
-  let trait_ = Trait::ident();
   Trait::check_attributes(&input.data, &input.attrs)?;
   let asserts = Trait::asserts(&input)?;
-  let trait_params = Trait::generic_params(&input)?;
   let (trait_impl_extras, trait_impl) = Trait::trait_impl(&input)?;
 
   let implies_trait = if let Some(implies_trait) = Trait::implies_trait() {
@@ -252,10 +254,57 @@ fn derive_marker_trait_inner<Trait: Derivable>(
 
     #trait_impl_extras
 
-    unsafe impl #impl_generics #trait_ #trait_params for #name #ty_generics #where_clause {
+    unsafe impl #impl_generics #trait_ for #name #ty_generics #where_clause {
       #trait_impl
     }
 
     #implies_trait
   })
+}
+
+/// Add a trait marker to the generics if it is not already present
+fn add_trait_marker(
+  generics: &mut syn::Generics,
+  trait_name: &syn::Path
+) {
+  // Get each generic type parameter.
+  let type_params =generics.type_params().map(|param| &param.ident).cloned().collect::<Vec<_>>();
+
+  // Add a where clause if it doesn't already exist.
+  let where_clause = generics.where_clause.get_or_insert_with(|| syn::WhereClause {
+    where_token: Default::default(),
+    predicates: Default::default(),
+  });
+
+  // For each type parameter, add a where clause that the type implements the trait.
+  where_clause.predicates.extend(
+    type_params
+      .iter()
+      .map(|type_param| syn::WherePredicate::Type(syn::PredicateType {
+        bounded_ty: syn::Type::Path(syn::TypePath {
+          qself: None,
+          path: path_from_ident(&type_param),
+        }),
+        bounds: vec![syn::TypeParamBound::Trait(syn::TraitBound {
+          paren_token: None,
+          modifier: syn::TraitBoundModifier::None,
+          lifetimes: None,
+          path: trait_name.clone(),
+        })].into_iter().collect(),
+        lifetimes: None,
+        colon_token: Default::default(),
+      }))
+  );
+}
+
+fn path_from_ident(ident: &syn::Ident) -> syn::Path {
+  syn::Path {
+    leading_colon: None,
+    segments: vec![syn::PathSegment {
+      ident: ident.clone(),
+      arguments: syn::PathArguments::None,
+    }]
+    .into_iter()
+    .collect(),
+  }
 }
