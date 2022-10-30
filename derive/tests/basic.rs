@@ -186,6 +186,21 @@ fn anybitpattern_implies_zeroable() {
   assert_eq!(test, AnyBitPatternTest { a: 0, b: 0 });
 }
 
+#[test]
+fn checkedbitpattern_try_pod_read_unaligned() {
+  let pod = [0u8];
+  let res = bytemuck::checked::try_pod_read_unaligned::<
+    CheckedBitPatternEnumWithValues,
+  >(&pod);
+  assert!(res.is_ok());
+
+  let pod = [5u8];
+  let res = bytemuck::checked::try_pod_read_unaligned::<
+    CheckedBitPatternEnumWithValues,
+  >(&pod);
+  assert!(res.is_err());
+}
+
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 #[repr(C, align(16))]
 struct Issue127 {}
