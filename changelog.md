@@ -1,5 +1,14 @@
 # `bytemuck` changelog
 
+## 1.12.2
+
+* Fixes `try_pod_read_unaligned` bug that made it always fail unless the target
+  type was exactly pointer sized in which case UB *could* happen. The
+  `CheckedBitPattern::is_valid_bit_pattern` was being asked to check that a
+  *reference* to the `pod` value was a valid bit pattern, rather than the actual
+  bit pattern itself, and so the check could in some cases be illegally
+  bypassed.
+
 ## 1.12.1
 
 * Patch bumped the required `bytemuck_derive` version because of a regression in
