@@ -1,7 +1,8 @@
 #![allow(dead_code)]
 
 use bytemuck::{
-  AnyBitPattern, Contiguous, CheckedBitPattern, NoUninit, Pod, TransparentWrapper, Zeroable,
+  AnyBitPattern, CheckedBitPattern, Contiguous, NoUninit, Pod,
+  TransparentWrapper, Zeroable,
 };
 use std::marker::PhantomData;
 
@@ -138,21 +139,23 @@ struct CheckedBitPatternStruct {
 #[repr(C)]
 struct AnyBitPatternTest {
   a: u16,
-  b: u16
+  b: u16,
 }
 
 /// ```compile_fail
 /// use bytemuck::{Pod, Zeroable};
-/// 
+///
 /// #[derive(Pod, Zeroable)]
 /// #[repr(transparent)]
 /// struct TransparentSingle<T>(T);
-/// 
+///
 /// struct NotPod(u32);
-/// 
+///
 /// let _: u32 = bytemuck::cast(TransparentSingle(NotPod(0u32)));
 /// ```
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Pod, Zeroable, TransparentWrapper)]
+#[derive(
+  Debug, Copy, Clone, PartialEq, Eq, Pod, Zeroable, TransparentWrapper,
+)]
 #[repr(transparent)]
 struct NewtypeWrapperTest<T>(T);
 
@@ -164,7 +167,8 @@ fn fails_cast_contiguous() {
 
 #[test]
 fn passes_cast_contiguous() {
-  let res = bytemuck::checked::from_bytes::<CheckedBitPatternEnumWithValues>(&[2u8]);
+  let res =
+    bytemuck::checked::from_bytes::<CheckedBitPatternEnumWithValues>(&[2u8]);
   assert_eq!(*res, CheckedBitPatternEnumWithValues::C);
 }
 
@@ -177,7 +181,9 @@ fn fails_cast_noncontiguous() {
 #[test]
 fn passes_cast_noncontiguous() {
   let res =
-    bytemuck::checked::from_bytes::<CheckedBitPatternEnumNonContiguous>(&[56u8]);
+    bytemuck::checked::from_bytes::<CheckedBitPatternEnumNonContiguous>(&[
+      56u8,
+    ]);
   assert_eq!(*res, CheckedBitPatternEnumNonContiguous::E);
 }
 
@@ -192,7 +198,10 @@ fn fails_cast_struct() {
 fn passes_cast_struct() {
   let pod = [0u8, 8u8];
   let res = bytemuck::checked::from_bytes::<CheckedBitPatternStruct>(&pod);
-  assert_eq!(*res, CheckedBitPatternStruct { a: 0, b: CheckedBitPatternEnumNonContiguous::B });
+  assert_eq!(
+    *res,
+    CheckedBitPatternStruct { a: 0, b: CheckedBitPatternEnumNonContiguous::B }
+  );
 }
 
 #[test]

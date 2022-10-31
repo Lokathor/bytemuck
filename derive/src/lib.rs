@@ -9,7 +9,8 @@ use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Result};
 
 use crate::traits::{
-  AnyBitPattern, Contiguous, Derivable, CheckedBitPattern, NoUninit, Pod, TransparentWrapper, Zeroable,
+  AnyBitPattern, CheckedBitPattern, Contiguous, Derivable, NoUninit, Pod,
+  TransparentWrapper, Zeroable,
 };
 
 /// Derive the `Pod` trait for a struct
@@ -56,8 +57,9 @@ pub fn derive_pod(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 pub fn derive_anybitpattern(
   input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-  let expanded =
-    derive_marker_trait::<AnyBitPattern>(parse_macro_input!(input as DeriveInput));
+  let expanded = derive_marker_trait::<AnyBitPattern>(parse_macro_input!(
+    input as DeriveInput
+  ));
 
   proc_macro::TokenStream::from(expanded)
 }
@@ -99,8 +101,8 @@ pub fn derive_zeroable(
 /// for the `NoUninit` trait.
 ///
 /// The following constraints need to be satisfied for the macro to succeed
-/// (the rest of the constraints are guaranteed by the `NoUninit` subtrait bounds,
-/// i.e. the type must be `Sized + Copy + 'static`):
+/// (the rest of the constraints are guaranteed by the `NoUninit` subtrait
+/// bounds, i.e. the type must be `Sized + Copy + 'static`):
 ///
 /// If applied to a struct:
 /// - All fields in the struct must implement `NoUninit`
@@ -129,9 +131,9 @@ pub fn derive_no_uninit(
 /// definition and `is_valid_bit_pattern` method for the type automatically.
 ///
 /// The following constraints need to be satisfied for the macro to succeed
-/// (the rest of the constraints are guaranteed by the `CheckedBitPattern` subtrait bounds,
-/// i.e. are guaranteed by the requirements of the `NoUninit` trait which `CheckedBitPattern`
-/// is a subtrait of):
+/// (the rest of the constraints are guaranteed by the `CheckedBitPattern`
+/// subtrait bounds, i.e. are guaranteed by the requirements of the `NoUninit`
+/// trait which `CheckedBitPattern` is a subtrait of):
 ///
 /// If applied to a struct:
 /// - All fields must implement `CheckedBitPattern`
@@ -142,8 +144,9 @@ pub fn derive_no_uninit(
 pub fn derive_maybe_pod(
   input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-  let expanded =
-    derive_marker_trait::<CheckedBitPattern>(parse_macro_input!(input as DeriveInput));
+  let expanded = derive_marker_trait::<CheckedBitPattern>(parse_macro_input!(
+    input as DeriveInput
+  ));
 
   proc_macro::TokenStream::from(expanded)
 }
@@ -263,48 +266,14 @@ fn derive_marker_trait_inner<Trait: Derivable>(
 }
 
 /// Add a trait marker to the generics if it is not already present
-fn add_trait_marker(
-  generics: &mut syn::Generics,
-  trait_name: &syn::Path
-) {
+fn add_trait_marker(generics: &mut syn::Generics, trait_name: &syn::Path) {
   // Get each generic type parameter.
-  let type_params =generics.type_params().map(|param| &param.ident).cloned().collect::<Vec<_>>();
+  let type_params = generics
+    .type_params()
+    .map(|param| &param.ident)
+    .map(|param| syn::parse_quote!(
+      #param: #trait_name
+    )).collect::<Vec<syn::WherePredicate>>();
 
-  // Add a where clause if it doesn't already exist.
-  let where_clause = generics.where_clause.get_or_insert_with(|| syn::WhereClause {
-    where_token: Default::default(),
-    predicates: Default::default(),
-  });
-
-  // For each type parameter, add a where clause that the type implements the trait.
-  where_clause.predicates.extend(
-    type_params
-      .iter()
-      .map(|type_param| syn::WherePredicate::Type(syn::PredicateType {
-        bounded_ty: syn::Type::Path(syn::TypePath {
-          qself: None,
-          path: path_from_ident(&type_param),
-        }),
-        bounds: vec![syn::TypeParamBound::Trait(syn::TraitBound {
-          paren_token: None,
-          modifier: syn::TraitBoundModifier::None,
-          lifetimes: None,
-          path: trait_name.clone(),
-        })].into_iter().collect(),
-        lifetimes: None,
-        colon_token: Default::default(),
-      }))
-  );
-}
-
-fn path_from_ident(ident: &syn::Ident) -> syn::Path {
-  syn::Path {
-    leading_colon: None,
-    segments: vec![syn::PathSegment {
-      ident: ident.clone(),
-      arguments: syn::PathArguments::None,
-    }]
-    .into_iter()
-    .collect(),
-  }
+  generics.make_where_clause().predicates.extend(type_params);
 }
