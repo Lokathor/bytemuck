@@ -77,7 +77,7 @@ fn test_transparent_wrapper() {
   #[cfg(feature = "extern_crate_alloc")]
   {
     use bytemuck::allocation::TransparentWrapperAlloc;
-    use std::{rc::Rc, sync::Arc};
+    use std::rc::Rc;
 
     let a: Vec<Foreign> = vec![Foreign::default(); 2];
 
@@ -101,11 +101,16 @@ fn test_transparent_wrapper() {
     let i: Rc<Foreign> = Wrapper::peel_rc(h);
     assert_eq!(&*i, &0);
 
-    let j: Arc<Foreign> = Arc::new(Foreign::default());
+    #[cfg(target_has_atomic = "ptr")]
+    {
+      use std::sync::Arc;
 
-    let k: Arc<Wrapper> = Wrapper::wrap_arc(j);
-    assert_eq!(&*k, &0);
-    let l: Arc<Foreign> = Wrapper::peel_arc(k);
-    assert_eq!(&*l, &0);
+      let j: Arc<Foreign> = Arc::new(Foreign::default());
+
+      let k: Arc<Wrapper> = Wrapper::wrap_arc(j);
+      assert_eq!(&*k, &0);
+      let l: Arc<Foreign> = Wrapper::peel_arc(k);
+      assert_eq!(&*l, &0);
+    }
   }
 }

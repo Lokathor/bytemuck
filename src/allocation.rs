@@ -10,11 +10,12 @@
 //! ["extern_crate_alloc"]}`
 
 use super::*;
+#[cfg(target_has_atomic = "ptr")]
+use alloc::sync::Arc;
 use alloc::{
   alloc::{alloc_zeroed, Layout},
   boxed::Box,
   rc::Rc,
-  sync::Arc,
   vec,
   vec::Vec,
 };
@@ -355,6 +356,7 @@ pub fn try_cast_rc<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(
 
 /// As [`try_cast_arc`](try_cast_arc), but unwraps for you.
 #[inline]
+#[cfg(target_has_atomic = "ptr")]
 pub fn cast_arc<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(
   input: Arc<A>,
 ) -> Arc<B> {
@@ -375,6 +377,7 @@ pub fn cast_arc<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(
 ///   alignment.
 /// * The start and end size of the `Arc` must have the exact same size.
 #[inline]
+#[cfg(target_has_atomic = "ptr")]
 pub fn try_cast_arc<
   A: NoUninit + AnyBitPattern,
   B: NoUninit + AnyBitPattern,
@@ -456,6 +459,7 @@ pub fn try_cast_slice_rc<
 
 /// As [`try_cast_slice_arc`](try_cast_slice_arc), but unwraps for you.
 #[inline]
+#[cfg(target_has_atomic = "ptr")]
 pub fn cast_slice_arc<
   A: NoUninit + AnyBitPattern,
   B: NoUninit + AnyBitPattern,
@@ -480,6 +484,7 @@ pub fn cast_slice_arc<
 /// * The start and end content size in bytes of the `Arc<[T]>` must be the
 ///   exact same.
 #[inline]
+#[cfg(target_has_atomic = "ptr")]
 pub fn try_cast_slice_arc<
   A: NoUninit + AnyBitPattern,
   B: NoUninit + AnyBitPattern,
@@ -590,6 +595,7 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
   /// Convert an [`Arc`](alloc::sync::Arc) to the inner type into an `Arc` to
   /// the wrapper type.
   #[inline]
+  #[cfg(target_has_atomic = "ptr")]
   fn wrap_arc(s: Arc<Inner>) -> Arc<Self> {
     assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
 
@@ -679,6 +685,7 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
   /// Convert an [`Arc`](alloc::sync::Arc) to the wrapper type into an `Arc` to
   /// the inner type.
   #[inline]
+  #[cfg(target_has_atomic = "ptr")]
   fn peel_arc(s: Arc<Self>) -> Arc<Inner> {
     assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
 
