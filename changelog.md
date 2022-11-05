@@ -1,5 +1,13 @@
 # `bytemuck` changelog
 
+## 1.12.3
+
+* This bugfix makes the crate do stuff with `Arc` or not based on the
+  `target_has_atomic` config. Previously, some targets that have allocation but
+  not atomics were getting errors. This raises the MSRV of the
+  `extern_crate_alloc` feature to 1.60, but opt-in features are *not* considered
+  to be hard locked to 1.34 like the basic build of the crate is.
+
 ## 1.12.2
 
 * Fixes `try_pod_read_unaligned` bug that made it always fail unless the target
