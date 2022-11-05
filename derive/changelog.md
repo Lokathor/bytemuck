@@ -1,6 +1,10 @@
 
 ## `bytemuck_derive` changelog
 
+## 1.3.0
+
+* Allow `repr(transparent)` to be used generically in `derive(Pod)`.
+
 ## 1.2.1
 
 * Fixed a regression of the `align(N)` attribute that occured during otherwise
