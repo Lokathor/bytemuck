@@ -113,8 +113,8 @@ pub use transparent::*;
 
 #[cfg(feature = "derive")]
 pub use bytemuck_derive::{
-  AnyBitPattern, CheckedBitPattern, Contiguous, NoUninit, Pod,
-  TransparentWrapper, Zeroable,
+  AnyBitPattern, ByteEq, ByteHash, CheckedBitPattern, Contiguous, NoUninit,
+  Pod, TransparentWrapper, Zeroable,
 };
 
 /// The things that can go wrong when casting between [`Pod`] data forms.

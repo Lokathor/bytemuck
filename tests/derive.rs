@@ -1,9 +1,9 @@
 #![cfg(feature = "derive")]
 #![allow(dead_code)]
 
-use bytemuck::{Pod, TransparentWrapper, Zeroable};
+use bytemuck::{ByteEq, ByteHash, Pod, TransparentWrapper, Zeroable};
 
-#[derive(Copy, Clone, Pod, Zeroable)]
+#[derive(Copy, Clone, Pod, Zeroable, ByteEq, ByteHash)]
 #[repr(C)]
 struct Test {
   a: u16,
