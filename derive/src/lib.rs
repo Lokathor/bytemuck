@@ -233,7 +233,9 @@ pub fn derive_contiguous(
 ///
 /// Since this implements a byte wise comparison, the behavior of floating point
 /// numbers does not match their usual comparison behavior. Additionally other
-/// custom comparison behaviors of the individual fields are also ignored.
+/// custom comparison behaviors of the individual fields are also ignored. This
+/// also does not implement `StructuralPartialEq` / `StructuralEq` like
+/// `PartialEq` / `Eq` would. This means you can't pattern match on the values.
 ///
 /// ## Example
 ///
@@ -256,6 +258,8 @@ pub fn derive_byte_eq(
 
   proc_macro::TokenStream::from(quote! {
     impl ::core::cmp::PartialEq for #ident {
+      #[inline]
+      #[must_use]
       fn eq(&self, other: &Self) -> bool {
         ::bytemuck::bytes_of(self) == ::bytemuck::bytes_of(other)
       }
@@ -294,10 +298,12 @@ pub fn derive_byte_hash(
 
   proc_macro::TokenStream::from(quote! {
     impl ::core::hash::Hash for #ident {
+      #[inline]
       fn hash<H: ::core::hash::Hasher>(&self, state: &mut H) {
         ::core::hash::Hash::hash_slice(::bytemuck::bytes_of(self), state)
       }
 
+      #[inline]
       fn hash_slice<H: ::core::hash::Hasher>(data: &[Self], state: &mut H) {
         ::core::hash::Hash::hash_slice(::bytemuck::cast_slice::<_, u8>(data), state)
       }
