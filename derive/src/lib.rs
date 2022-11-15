@@ -252,6 +252,12 @@ fn derive_marker_trait_inner<Trait: Derivable>(
     quote!()
   };
 
+  let where_clause = if Trait::requires_where_clause() {
+    where_clause
+  } else {
+    None
+  };
+
   Ok(quote! {
     #asserts
 

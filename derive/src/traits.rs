@@ -32,6 +32,9 @@ pub trait Derivable {
   fn trait_impl(_input: &DeriveInput) -> Result<(TokenStream, TokenStream)> {
     Ok((quote!(), quote!()))
   }
+  fn requires_where_clause() -> bool {
+    true
+  }
 }
 
 pub struct Pod;
@@ -299,6 +302,10 @@ impl Derivable for TransparentWrapper {
         )
       }
     }
+  }
+
+  fn requires_where_clause() -> bool {
+    false
   }
 }
 
