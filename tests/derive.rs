@@ -23,3 +23,29 @@ struct TransparentWithZeroSized {
   a: u16,
   b: (),
 }
+
+#[derive(TransparentWrapper)]
+#[repr(transparent)]
+struct TransparentWithGeneric<T> {
+  a: T,
+}
+
+/// Ensuring that no additional bounds are emitted.
+/// See https://github.com/Lokathor/bytemuck/issues/145
+fn test_generic<T>(x: T) -> TransparentWithGeneric<T> {
+  TransparentWithGeneric::wrap(x)
+}
+
+#[derive(TransparentWrapper)]
+#[repr(transparent)]
+#[transparent(T)]
+struct TransparentWithGenericAndZeroSized<T> {
+  a: T,
+  b: ()
+}
+
+/// Ensuring that no additional bounds are emitted.
+/// See https://github.com/Lokathor/bytemuck/issues/145
+fn test_generic_with_zst<T>(x: T) -> TransparentWithGenericAndZeroSized<T> {
+  TransparentWithGenericAndZeroSized::wrap(x)
+}
