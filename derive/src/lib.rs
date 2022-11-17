@@ -224,6 +224,93 @@ pub fn derive_contiguous(
   proc_macro::TokenStream::from(expanded)
 }
 
+/// Derive the `PartialEq` and `Eq` trait for a type
+///
+/// The macro implements `PartialEq` and `Eq` by casting both sides of the
+/// comparison to a byte slice and then compares those.
+///
+/// ## Warning
+///
+/// Since this implements a byte wise comparison, the behavior of floating point
+/// numbers does not match their usual comparison behavior. Additionally other
+/// custom comparison behaviors of the individual fields are also ignored. This
+/// also does not implement `StructuralPartialEq` / `StructuralEq` like
+/// `PartialEq` / `Eq` would. This means you can't pattern match on the values.
+///
+/// ## Example
+///
+/// ```rust
+/// # use bytemuck_derive::{ByteEq, NoUninit};
+/// #[derive(Copy, Clone, NoUninit, ByteEq)]
+/// #[repr(C)]
+/// struct Test {
+///   a: u32,
+///   b: char,
+///   c: f32,
+/// }
+/// ```
+#[proc_macro_derive(ByteEq)]
+pub fn derive_byte_eq(
+  input: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+  let input = parse_macro_input!(input as DeriveInput);
+  let ident = input.ident;
+
+  proc_macro::TokenStream::from(quote! {
+    impl ::core::cmp::PartialEq for #ident {
+      #[inline]
+      #[must_use]
+      fn eq(&self, other: &Self) -> bool {
+        ::bytemuck::bytes_of(self) == ::bytemuck::bytes_of(other)
+      }
+    }
+    impl ::core::cmp::Eq for #ident { }
+  })
+}
+
+/// Derive the `Hash` trait for a type
+///
+/// The macro implements `Hash` by casting the value to a byte slice and hashing
+/// that.
+///
+/// ## Warning
+///
+/// The hash does not match the standard library's `Hash` derive.
+///
+/// ## Example
+///
+/// ```rust
+/// # use bytemuck_derive::{ByteHash, NoUninit};
+/// #[derive(Copy, Clone, NoUninit, ByteHash)]
+/// #[repr(C)]
+/// struct Test {
+///   a: u32,
+///   b: char,
+///   c: f32,
+/// }
+/// ```
+#[proc_macro_derive(ByteHash)]
+pub fn derive_byte_hash(
+  input: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+  let input = parse_macro_input!(input as DeriveInput);
+  let ident = input.ident;
+
+  proc_macro::TokenStream::from(quote! {
+    impl ::core::hash::Hash for #ident {
+      #[inline]
+      fn hash<H: ::core::hash::Hasher>(&self, state: &mut H) {
+        ::core::hash::Hash::hash_slice(::bytemuck::bytes_of(self), state)
+      }
+
+      #[inline]
+      fn hash_slice<H: ::core::hash::Hasher>(data: &[Self], state: &mut H) {
+        ::core::hash::Hash::hash_slice(::bytemuck::cast_slice::<_, u8>(data), state)
+      }
+    }
+  })
+}
+
 /// Basic wrapper for error handling
 fn derive_marker_trait<Trait: Derivable>(input: DeriveInput) -> TokenStream {
   derive_marker_trait_inner::<Trait>(input)
