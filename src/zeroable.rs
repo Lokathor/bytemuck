@@ -47,6 +47,7 @@ unsafe impl<T> Zeroable for *const T {}
 unsafe impl<T: Zeroable> Zeroable for PhantomData<T> {}
 unsafe impl Zeroable for PhantomPinned {}
 unsafe impl<T: Zeroable> Zeroable for ManuallyDrop<T> {}
+unsafe impl<T: Zeroable> Zeroable for core::cell::UnsafeCell<T> {}
 
 #[cfg(feature = "zeroable_maybe_uninit")]
 unsafe impl<T> Zeroable for core::mem::MaybeUninit<T> {}
