@@ -41,6 +41,7 @@ unsafe impl Zeroable for i128 {}
 unsafe impl Zeroable for f32 {}
 unsafe impl Zeroable for f64 {}
 unsafe impl<T: Zeroable> Zeroable for Wrapping<T> {}
+unsafe impl<T: Zeroable> Zeroable for core::cmp::Reverse<T> {}
 
 unsafe impl<T> Zeroable for *mut T {}
 unsafe impl<T> Zeroable for *const T {}
