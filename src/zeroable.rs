@@ -41,6 +41,7 @@ unsafe impl Zeroable for i128 {}
 unsafe impl Zeroable for f32 {}
 unsafe impl Zeroable for f64 {}
 unsafe impl<T: Zeroable> Zeroable for Wrapping<T> {}
+unsafe impl<T: Zeroable> Zeroable for core::cmp::Reverse<T> {}
 
 unsafe impl<T> Zeroable for *mut T {}
 unsafe impl<T> Zeroable for *const T {}
@@ -48,6 +49,7 @@ unsafe impl<T: Zeroable> Zeroable for PhantomData<T> {}
 unsafe impl Zeroable for PhantomPinned {}
 unsafe impl<T: Zeroable> Zeroable for ManuallyDrop<T> {}
 unsafe impl<T: Zeroable> Zeroable for core::cell::UnsafeCell<T> {}
+unsafe impl<T: Zeroable> Zeroable for core::cell::Cell<T> {}
 
 #[cfg(feature = "zeroable_maybe_uninit")]
 unsafe impl<T> Zeroable for core::mem::MaybeUninit<T> {}
