@@ -170,6 +170,35 @@ unsafe impl CheckedBitPattern for bool {
   }
 }
 
+macro_rules! impl_checked_for_nonzero {
+  ($($nonzero:ty: $primitive:ty),* $(,)?) => {
+    $(
+      unsafe impl CheckedBitPattern for $nonzero {
+        type Bits = $primitive;
+
+        #[inline]
+        fn is_valid_bit_pattern(bits: &Self::Bits) -> bool {
+          *bits != 0
+        }
+      }
+    )*
+  };
+}
+impl_checked_for_nonzero!{
+  core::num::NonZeroU8: u8,
+  core::num::NonZeroI8: i8,
+  core::num::NonZeroU16: u16,
+  core::num::NonZeroI16: i16,
+  core::num::NonZeroU32: u32,
+  core::num::NonZeroI32: i32,
+  core::num::NonZeroU64: u64,
+  core::num::NonZeroI64: i64,
+  core::num::NonZeroI128: i128,
+  core::num::NonZeroU128: u128,
+  core::num::NonZeroUsize: usize,
+  core::num::NonZeroIsize: isize,
+}
+
 /// The things that can go wrong when casting between [`CheckedBitPattern`] data
 /// forms.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
