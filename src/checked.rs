@@ -404,7 +404,7 @@ pub fn from_bytes_mut<T: NoUninit + CheckedBitPattern>(s: &mut [u8]) -> &mut T {
 /// ## Panics
 /// * This is like `try_pod_read_unaligned` but will panic on failure.
 #[inline]
-pub fn pod_read_unaligned<T: AnyBitPattern>(bytes: &[u8]) -> T {
+pub fn pod_read_unaligned<T: CheckedBitPattern>(bytes: &[u8]) -> T {
   match try_pod_read_unaligned(bytes) {
     Ok(t) => t,
     Err(e) => something_went_wrong("pod_read_unaligned", e),
