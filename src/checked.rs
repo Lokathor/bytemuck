@@ -395,7 +395,7 @@ pub fn try_cast_slice_mut<
 
   if pod.iter().all(|pod| <B as CheckedBitPattern>::is_valid_bit_pattern(pod)) {
     Ok(unsafe {
-      core::slice::from_raw_parts_mut(pod.as_ptr() as *mut B, pod.len())
+      core::slice::from_raw_parts_mut(pod.as_mut_ptr() as *mut B, pod.len())
     })
   } else {
     Err(CheckedCastError::InvalidBitPattern)
