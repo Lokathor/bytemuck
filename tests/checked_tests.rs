@@ -5,7 +5,7 @@ use bytemuck::{*, checked::CheckedCastError};
 #[test]
 fn test_try_cast_slice() {
   // some align4 data
-  let nonzero_u32_slice: &[NonZeroU32] = &[4, 5, 6].map(|n| NonZeroU32::new(n).unwrap());
+  let nonzero_u32_slice: &[NonZeroU32] = &[NonZeroU32::new(4).unwrap(), NonZeroU32::new(5).unwrap(), NonZeroU32::new(6).unwrap()];
 
   // contains bytes with invalid bitpattern for NonZeroU8
   assert_eq!(
@@ -145,7 +145,7 @@ fn test_try_pod_read_unaligned() {
 
 #[test]
 fn test_try_from_bytes() {
-  let nonzero_u32s = [0xaabbccdd, 0x11223344_u32].map(|x| NonZeroU32::new(x).unwrap());
+  let nonzero_u32s = [NonZeroU32::new(0xaabbccdd).unwrap(), NonZeroU32::new(0x11223344).unwrap()];
   let bytes = bytemuck::checked::cast_slice::<NonZeroU32, u8>(&nonzero_u32s);
   assert_eq!(checked::try_from_bytes::<NonZeroU32>(&bytes[..4]), Ok(&nonzero_u32s[0]));
   assert_eq!(
@@ -286,7 +286,7 @@ fn test_char() {
   assert_eq!(checked::try_cast::<u32, char>(0xe000), Ok('\u{e000}'));
   assert_eq!(checked::try_cast::<u32, char>(0x10ffff), Ok('\u{10ffff}'));
   assert_eq!(checked::try_cast::<u32, char>(0x110000), Err(CheckedCastError::InvalidBitPattern));
-  assert_eq!(checked::try_cast::<u32, char>(u32::MAX), Err(CheckedCastError::InvalidBitPattern));
+  assert_eq!(checked::try_cast::<u32, char>(-1i32 as u32), Err(CheckedCastError::InvalidBitPattern));
 }
 
 
