@@ -170,6 +170,42 @@ unsafe impl CheckedBitPattern for bool {
   }
 }
 
+macro_rules! impl_checked_for_nonzero {
+  ($($nonzero:ty: $primitive:ty),* $(,)?) => {
+    $(
+      unsafe impl CheckedBitPattern for $nonzero {
+        type Bits = $primitive;
+
+        #[inline]
+        fn is_valid_bit_pattern(bits: &Self::Bits) -> bool {
+          // Note(zachs18): The size and alignment check are almost certainly
+          // not necessary, but Rust currently doesn't explicitly document that
+          // NonZero[int] has the same layout as [int], so we check it to be safe.
+          // In a const to reduce debug-profile overhead.
+          const LAYOUT_SAME: bool =
+            core::mem::size_of::<$nonzero>() == core::mem::size_of::<$primitive>()
+            && core::mem::align_of::<$nonzero>() == core::mem::align_of::<$primitive>();
+          LAYOUT_SAME && *bits != 0
+        }
+      }
+    )*
+  };
+}
+impl_checked_for_nonzero! {
+  core::num::NonZeroU8: u8,
+  core::num::NonZeroI8: i8,
+  core::num::NonZeroU16: u16,
+  core::num::NonZeroI16: i16,
+  core::num::NonZeroU32: u32,
+  core::num::NonZeroI32: i32,
+  core::num::NonZeroU64: u64,
+  core::num::NonZeroI64: i64,
+  core::num::NonZeroI128: i128,
+  core::num::NonZeroU128: u128,
+  core::num::NonZeroUsize: usize,
+  core::num::NonZeroIsize: isize,
+}
+
 /// The things that can go wrong when casting between [`CheckedBitPattern`] data
 /// forms.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -366,7 +402,7 @@ pub fn try_cast_slice_mut<
 
   if pod.iter().all(|pod| <B as CheckedBitPattern>::is_valid_bit_pattern(pod)) {
     Ok(unsafe {
-      core::slice::from_raw_parts_mut(pod.as_ptr() as *mut B, pod.len())
+      core::slice::from_raw_parts_mut(pod.as_mut_ptr() as *mut B, pod.len())
     })
   } else {
     Err(CheckedCastError::InvalidBitPattern)
