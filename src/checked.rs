@@ -178,13 +178,20 @@ macro_rules! impl_checked_for_nonzero {
 
         #[inline]
         fn is_valid_bit_pattern(bits: &Self::Bits) -> bool {
-          *bits != 0
+          // Note(zachs18): The size and alignment check are almost certainly
+          // not necessary, but Rust currently doesn't explicitly document that
+          // NonZero[int] has the same layout as [int], so we check it to be safe.
+          // In a const to reduce debug-profile overhead.
+          const LAYOUT_SAME: bool =
+            core::mem::size_of::<$nonzero>() == core::mem::size_of::<$primitive>()
+            && core::mem::align_of::<$nonzero>() == core::mem::align_of::<$primitive>();
+          LAYOUT_SAME && *bits != 0
         }
       }
     )*
   };
 }
-impl_checked_for_nonzero!{
+impl_checked_for_nonzero! {
   core::num::NonZeroU8: u8,
   core::num::NonZeroI8: i8,
   core::num::NonZeroU16: u16,

@@ -302,3 +302,27 @@ fn test_bool() {
   assert_eq!(checked::try_from_bytes::<bool>(&[3]), Err(CheckedCastError::InvalidBitPattern));
   assert_eq!(checked::try_from_bytes::<bool>(&[0, 1]), Err(CheckedCastError::PodCastError(PodCastError::SizeMismatch)));
 }
+
+#[test]
+fn test_all_nonzero() {
+  use core::num::*;
+  macro_rules! test_nonzero {
+    ($nonzero:ty: $primitive:ty) => {
+      assert_eq!(checked::try_cast::<$primitive, $nonzero>(0), Err(CheckedCastError::InvalidBitPattern));
+      assert_eq!(checked::try_cast::<$primitive, $nonzero>(1), Ok(<$nonzero>::new(1).unwrap()));
+    };
+  }
+
+  test_nonzero!(NonZeroU8: u8);
+  test_nonzero!(NonZeroI8: i8);
+  test_nonzero!(NonZeroU16: u16);
+  test_nonzero!(NonZeroI16: i16);
+  test_nonzero!(NonZeroU32: u32);
+  test_nonzero!(NonZeroI32: i32);
+  test_nonzero!(NonZeroU64: u64);
+  test_nonzero!(NonZeroI64: i64);
+  test_nonzero!(NonZeroU128: u128);
+  test_nonzero!(NonZeroI128: i128);
+  test_nonzero!(NonZeroUsize: usize);
+  test_nonzero!(NonZeroIsize: isize);
+}
