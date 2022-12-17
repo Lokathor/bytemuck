@@ -2,6 +2,7 @@
 #![warn(missing_docs)]
 #![allow(clippy::match_like_matches_macro)]
 #![cfg_attr(feature = "nightly_portable_simd", feature(portable_simd))]
+#![cfg_attr(feature = "nightly_stdsimd", feature(stdsimd))]
 
 //! This crate gives small utilities for casting between plain data types.
 //!
