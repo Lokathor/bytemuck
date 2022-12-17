@@ -321,3 +321,29 @@ where
   core::simd::LaneCount<N>: core::simd::SupportedLaneCount,
 {
 }
+
+#[cfg(all(target_arch = "x86", feature = "nightly_stdsimd"))]
+unsafe impl Pod for x86::__m128bh {}
+#[cfg(all(target_arch = "x86", feature = "nightly_stdsimd"))]
+unsafe impl Pod for x86::__m256bh {}
+#[cfg(all(target_arch = "x86", feature = "nightly_stdsimd"))]
+unsafe impl Pod for x86::__m512 {}
+#[cfg(all(target_arch = "x86", feature = "nightly_stdsimd"))]
+unsafe impl Pod for x86::__m512bh {}
+#[cfg(all(target_arch = "x86", feature = "nightly_stdsimd"))]
+unsafe impl Pod for x86::__m512d {}
+#[cfg(all(target_arch = "x86", feature = "nightly_stdsimd"))]
+unsafe impl Pod for x86::__m512i {}
+
+#[cfg(all(target_arch = "x86_64", feature = "nightly_stdsimd"))]
+unsafe impl Pod for x86_64::__m128bh {}
+#[cfg(all(target_arch = "x86_64", feature = "nightly_stdsimd"))]
+unsafe impl Pod for x86_64::__m256bh {}
+#[cfg(all(target_arch = "x86_64", feature = "nightly_stdsimd"))]
+unsafe impl Pod for x86_64::__m512 {}
+#[cfg(all(target_arch = "x86_64", feature = "nightly_stdsimd"))]
+unsafe impl Pod for x86_64::__m512bh {}
+#[cfg(all(target_arch = "x86_64", feature = "nightly_stdsimd"))]
+unsafe impl Pod for x86_64::__m512d {}
+#[cfg(all(target_arch = "x86_64", feature = "nightly_stdsimd"))]
+unsafe impl Pod for x86_64::__m512i {}
