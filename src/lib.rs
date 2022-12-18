@@ -72,6 +72,18 @@ macro_rules! transmute {
   };
 }
 
+/// A macro to implement marker traits for various simd types.
+/// #[allow(unused)] because the impls are only compiled on relevant platforms
+/// with relevant cargo features enabled.
+#[allow(unused)]
+macro_rules! impl_unsafe_marker_for_simd {
+  (unsafe impl $trait:ident for $platform:ident :: {}) => {};
+  (unsafe impl $trait:ident for $platform:ident :: { $first_type:ident $(, $types:ident)* $(,)? }) => {
+    unsafe impl $trait for $platform::$first_type {}
+    impl_unsafe_marker_for_simd!(unsafe impl $trait for $platform::{ $( $types ),* });
+  };
+}
+
 #[cfg(feature = "extern_crate_std")]
 extern crate std;
 
