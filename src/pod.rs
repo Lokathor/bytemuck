@@ -77,242 +77,51 @@ impl_unsafe_marker_for_array!(
 );
 
 #[cfg(all(target_arch = "wasm32", feature = "wasm_simd"))]
-unsafe impl Pod for wasm32::v128 {}
+impl_unsafe_marker_for_simd!(
+    unsafe impl Pod for wasm32::{v128}
+);
 
 #[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float32x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float32x2x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float32x2x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float32x2x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float32x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float32x4x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float32x4x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float32x4x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float64x1_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float64x1x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float64x1x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float64x1x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float64x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float64x2x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float64x2x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::float64x2x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int16x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int16x4x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int16x4x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int16x4x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int16x8_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int16x8x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int16x8x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int16x8x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int32x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int32x2x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int32x2x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int32x2x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int32x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int32x4x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int32x4x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int32x4x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int64x1_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int64x1x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int64x1x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int64x1x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int64x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int64x2x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int64x2x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int64x2x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int8x16_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int8x16x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int8x16x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int8x16x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int8x8_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int8x8x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int8x8x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::int8x8x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly16x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly16x4x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly16x4x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly16x4x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly16x8_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly16x8x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly16x8x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly16x8x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly64x1_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly64x1x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly64x1x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly64x1x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly64x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly64x2x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly64x2x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly64x2x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly8x16_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly8x16x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly8x16x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly8x16x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly8x8_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly8x8x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly8x8x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::poly8x8x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint16x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint16x4x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint16x4x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint16x4x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint16x8_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint16x8x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint16x8x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint16x8x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint32x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint32x2x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint32x2x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint32x2x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint32x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint32x4x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint32x4x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint32x4x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint64x1_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint64x1x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint64x1x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint64x1x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint64x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint64x2x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint64x2x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint64x2x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint8x16_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint8x16x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint8x16x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint8x16x4_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint8x8_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint8x8x2_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint8x8x3_t {}
-#[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
-unsafe impl Pod for aarch64::uint8x8x4_t {}
+impl_unsafe_marker_for_simd!(
+    unsafe impl Pod for aarch64::{
+        float32x2_t, float32x2x2_t, float32x2x3_t, float32x2x4_t, float32x4_t,
+        float32x4x2_t, float32x4x3_t, float32x4x4_t, float64x1_t, float64x1x2_t,
+        float64x1x3_t, float64x1x4_t, float64x2_t, float64x2x2_t, float64x2x3_t,
+        float64x2x4_t, int16x4_t, int16x4x2_t, int16x4x3_t, int16x4x4_t, int16x8_t,
+        int16x8x2_t, int16x8x3_t, int16x8x4_t, int32x2_t, int32x2x2_t, int32x2x3_t,
+        int32x2x4_t, int32x4_t, int32x4x2_t, int32x4x3_t, int32x4x4_t, int64x1_t,
+        int64x1x2_t, int64x1x3_t, int64x1x4_t, int64x2_t, int64x2x2_t, int64x2x3_t,
+        int64x2x4_t, int8x16_t, int8x16x2_t, int8x16x3_t, int8x16x4_t, int8x8_t,
+        int8x8x2_t, int8x8x3_t, int8x8x4_t, poly16x4_t, poly16x4x2_t, poly16x4x3_t,
+        poly16x4x4_t, poly16x8_t, poly16x8x2_t, poly16x8x3_t, poly16x8x4_t,
+        poly64x1_t, poly64x1x2_t, poly64x1x3_t, poly64x1x4_t, poly64x2_t,
+        poly64x2x2_t, poly64x2x3_t, poly64x2x4_t, poly8x16_t, poly8x16x2_t,
+        poly8x16x3_t, poly8x16x4_t, poly8x8_t, poly8x8x2_t, poly8x8x3_t, poly8x8x4_t,
+        uint16x4_t, uint16x4x2_t, uint16x4x3_t, uint16x4x4_t, uint16x8_t,
+        uint16x8x2_t, uint16x8x3_t, uint16x8x4_t, uint32x2_t, uint32x2x2_t,
+        uint32x2x3_t, uint32x2x4_t, uint32x4_t, uint32x4x2_t, uint32x4x3_t,
+        uint32x4x4_t, uint64x1_t, uint64x1x2_t, uint64x1x3_t, uint64x1x4_t,
+        uint64x2_t, uint64x2x2_t, uint64x2x3_t, uint64x2x4_t, uint8x16_t,
+        uint8x16x2_t, uint8x16x3_t, uint8x16x4_t, uint8x8_t, uint8x8x2_t,
+        uint8x8x3_t, uint8x8x4_t,
+      }
+);
 
 #[cfg(target_arch = "x86")]
-unsafe impl Pod for x86::__m128i {}
-#[cfg(target_arch = "x86")]
-unsafe impl Pod for x86::__m128 {}
-#[cfg(target_arch = "x86")]
-unsafe impl Pod for x86::__m128d {}
-#[cfg(target_arch = "x86")]
-unsafe impl Pod for x86::__m256i {}
-#[cfg(target_arch = "x86")]
-unsafe impl Pod for x86::__m256 {}
-#[cfg(target_arch = "x86")]
-unsafe impl Pod for x86::__m256d {}
+impl_unsafe_marker_for_simd!(
+    unsafe impl Pod for x86::{
+        __m128i, __m128, __m128d,
+        __m256i, __m256, __m256d,
+    }
+);
 
 #[cfg(target_arch = "x86_64")]
-unsafe impl Pod for x86_64::__m128i {}
-#[cfg(target_arch = "x86_64")]
-unsafe impl Pod for x86_64::__m128 {}
-#[cfg(target_arch = "x86_64")]
-unsafe impl Pod for x86_64::__m128d {}
-#[cfg(target_arch = "x86_64")]
-unsafe impl Pod for x86_64::__m256i {}
-#[cfg(target_arch = "x86_64")]
-unsafe impl Pod for x86_64::__m256 {}
-#[cfg(target_arch = "x86_64")]
-unsafe impl Pod for x86_64::__m256d {}
+impl_unsafe_marker_for_simd!(
+    unsafe impl Pod for x86_64::{
+        __m128i, __m128, __m128d,
+        __m256i, __m256, __m256d,
+    }
+);
 
 #[cfg(feature = "nightly_portable_simd")]
 unsafe impl<T, const N: usize> Pod for core::simd::Simd<T, N>
@@ -323,27 +132,17 @@ where
 }
 
 #[cfg(all(target_arch = "x86", feature = "nightly_stdsimd"))]
-unsafe impl Pod for x86::__m128bh {}
-#[cfg(all(target_arch = "x86", feature = "nightly_stdsimd"))]
-unsafe impl Pod for x86::__m256bh {}
-#[cfg(all(target_arch = "x86", feature = "nightly_stdsimd"))]
-unsafe impl Pod for x86::__m512 {}
-#[cfg(all(target_arch = "x86", feature = "nightly_stdsimd"))]
-unsafe impl Pod for x86::__m512bh {}
-#[cfg(all(target_arch = "x86", feature = "nightly_stdsimd"))]
-unsafe impl Pod for x86::__m512d {}
-#[cfg(all(target_arch = "x86", feature = "nightly_stdsimd"))]
-unsafe impl Pod for x86::__m512i {}
+impl_unsafe_marker_for_simd!(
+    unsafe impl Pod for x86::{
+        __m128bh, __m256bh, __m512,
+        __m512bh, __m512d, __m512i,
+    }
+);
 
 #[cfg(all(target_arch = "x86_64", feature = "nightly_stdsimd"))]
-unsafe impl Pod for x86_64::__m128bh {}
-#[cfg(all(target_arch = "x86_64", feature = "nightly_stdsimd"))]
-unsafe impl Pod for x86_64::__m256bh {}
-#[cfg(all(target_arch = "x86_64", feature = "nightly_stdsimd"))]
-unsafe impl Pod for x86_64::__m512 {}
-#[cfg(all(target_arch = "x86_64", feature = "nightly_stdsimd"))]
-unsafe impl Pod for x86_64::__m512bh {}
-#[cfg(all(target_arch = "x86_64", feature = "nightly_stdsimd"))]
-unsafe impl Pod for x86_64::__m512d {}
-#[cfg(all(target_arch = "x86_64", feature = "nightly_stdsimd"))]
-unsafe impl Pod for x86_64::__m512i {}
+impl_unsafe_marker_for_simd!(
+    unsafe impl Pod for x86_64::{
+        __m128bh, __m256bh, __m512,
+        __m512bh, __m512d, __m512i,
+    }
+);
