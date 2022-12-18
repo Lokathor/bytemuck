@@ -128,6 +128,16 @@ enum CheckedBitPatternEnumNonContiguous {
   E = 56,
 }
 
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, NoUninit, CheckedBitPattern, PartialEq, Eq)]
+enum CheckedBitPatternEnumByteLit {
+  A = b'A',
+  B = b'B',
+  C = b'C',
+  D = b'D',
+  E = b'E',
+}
+
 #[derive(Debug, Copy, Clone, NoUninit, CheckedBitPattern, PartialEq, Eq)]
 #[repr(C)]
 struct CheckedBitPatternStruct {
@@ -185,6 +195,19 @@ fn passes_cast_noncontiguous() {
       56u8,
     ]);
   assert_eq!(*res, CheckedBitPatternEnumNonContiguous::E);
+}
+
+#[test]
+fn fails_cast_bytelit() {
+  let can_cast = CheckedBitPatternEnumByteLit::is_valid_bit_pattern(&b'a');
+  assert!(!can_cast);
+}
+
+#[test]
+fn passes_cast_bytelit() {
+  let res =
+    bytemuck::checked::cast_slice::<u8, CheckedBitPatternEnumByteLit>(b"CAB");
+  assert_eq!(res, [CheckedBitPatternEnumByteLit::C, CheckedBitPatternEnumByteLit::A, CheckedBitPatternEnumByteLit::B]);
 }
 
 #[test]

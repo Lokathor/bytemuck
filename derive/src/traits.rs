@@ -766,6 +766,7 @@ fn parse_int_expr(expr: &Expr) -> Result<i64> {
       parse_int_expr(expr).map(|int| -int)
     }
     Expr::Lit(ExprLit { lit: Lit::Int(int), .. }) => int.base10_parse(),
+    Expr::Lit(ExprLit { lit: Lit::Byte(byte), .. }) => Ok(byte.value().into()),
     _ => bail!("Not an integer expression"),
   }
 }
