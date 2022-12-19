@@ -51,6 +51,19 @@ unsafe impl<T: Zeroable> Zeroable for ManuallyDrop<T> {}
 unsafe impl<T: Zeroable> Zeroable for core::cell::UnsafeCell<T> {}
 unsafe impl<T: Zeroable> Zeroable for core::cell::Cell<T> {}
 
+unsafe impl Zeroable for core::sync::atomic::AtomicBool {}
+unsafe impl Zeroable for core::sync::atomic::AtomicU8 {}
+unsafe impl Zeroable for core::sync::atomic::AtomicI8 {}
+unsafe impl Zeroable for core::sync::atomic::AtomicU16 {}
+unsafe impl Zeroable for core::sync::atomic::AtomicI16 {}
+unsafe impl Zeroable for core::sync::atomic::AtomicU32 {}
+unsafe impl Zeroable for core::sync::atomic::AtomicI32 {}
+unsafe impl Zeroable for core::sync::atomic::AtomicU64 {}
+unsafe impl Zeroable for core::sync::atomic::AtomicI64 {}
+unsafe impl Zeroable for core::sync::atomic::AtomicUsize {}
+unsafe impl Zeroable for core::sync::atomic::AtomicIsize {}
+unsafe impl<T> Zeroable for core::sync::atomic::AtomicPtr<T> {}
+
 #[cfg(feature = "zeroable_maybe_uninit")]
 unsafe impl<T> Zeroable for core::mem::MaybeUninit<T> {}
 
