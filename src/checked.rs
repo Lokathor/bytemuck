@@ -211,11 +211,15 @@ impl_checked_for_nonzero! {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CheckedCastError {
   /// An error occurred during a true-[`Pod`] cast
+  ///
+  /// [`Pod`]: crate::Pod
   PodCastError(crate::PodCastError),
   /// When casting to a [`CheckedBitPattern`] type, it is possible that the
   /// original data contains an invalid bit pattern. If so, the cast will
   /// fail and this error will be returned. Will never happen on casts
   /// between [`Pod`] types.
+  ///
+  /// [`Pod`]: crate::Pod
   InvalidBitPattern,
 }
 
@@ -338,7 +342,7 @@ pub fn try_cast_ref<A: NoUninit, B: CheckedBitPattern>(
 
 /// Try to convert a `&mut T` into `&mut U`.
 ///
-/// As [`checked_cast_ref`], but `mut`.
+/// As [`try_cast_ref`], but `mut`.
 #[inline]
 pub fn try_cast_mut<
   A: NoUninit + AnyBitPattern,
@@ -390,7 +394,7 @@ pub fn try_cast_slice<A: NoUninit, B: CheckedBitPattern>(
 /// Try to convert `&mut [A]` into `&mut [B]` (possibly with a change in
 /// length).
 ///
-/// As [`checked_cast_slice`], but `&mut`.
+/// As [`try_cast_slice`], but `&mut`.
 #[inline]
 pub fn try_cast_slice_mut<
   A: NoUninit + AnyBitPattern,
