@@ -53,8 +53,17 @@ unsafe impl Zeroable for f64 {}
 unsafe impl<T: Zeroable> Zeroable for Wrapping<T> {}
 unsafe impl<T: Zeroable> Zeroable for core::cmp::Reverse<T> {}
 
+// Note: we can't implement this for all `T: ?Sized` types because it would
+// create NULL pointers for vtables.
+// Maybe one day this could be changed to be implemented for
+// `T: ?Sized where <T as core::ptr::Pointee>::Metadata: Zeroable`.
 unsafe impl<T> Zeroable for *mut T {}
 unsafe impl<T> Zeroable for *const T {}
+unsafe impl<T> Zeroable for *mut [T] {}
+unsafe impl<T> Zeroable for *const [T] {}
+unsafe impl Zeroable for *mut str {}
+unsafe impl Zeroable for *const str {}
+
 unsafe impl<T: Zeroable> Zeroable for PhantomData<T> {}
 unsafe impl Zeroable for PhantomPinned {}
 unsafe impl<T: Zeroable> Zeroable for ManuallyDrop<T> {}

@@ -25,4 +25,10 @@ unsafe impl ZeroableInOption for NonZeroU64 {}
 unsafe impl ZeroableInOption for NonZeroU128 {}
 unsafe impl ZeroableInOption for NonZeroUsize {}
 
-unsafe impl<T> ZeroableInOption for NonNull<T> {}
+// Note: this does not create NULL vtable because we get `None` anyway.
+unsafe impl<T: ?Sized> ZeroableInOption for NonNull<T> {}
+unsafe impl<T: ?Sized> ZeroableInOption for &'_ T {}
+unsafe impl<T: ?Sized> ZeroableInOption for &'_ mut T {}
+
+#[cfg(feature = "extern_crate_alloc")]
+unsafe impl<T: ?Sized> ZeroableInOption for alloc::boxed::Box<T> {}
