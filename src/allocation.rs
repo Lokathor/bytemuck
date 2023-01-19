@@ -19,7 +19,6 @@ use alloc::{
   vec,
   vec::Vec,
 };
-use core::convert::TryInto;
 
 /// As [`try_cast_box`](try_cast_box), but unwraps for you.
 #[inline]
@@ -64,23 +63,11 @@ pub fn try_cast_box<A: NoUninit, B: AnyBitPattern>(
 #[inline]
 pub fn try_zeroed_box<T: Zeroable>() -> Result<Box<T>, ()> {
   if size_of::<T>() == 0 {
-    // This will not allocate but simple create a dangling slice pointer.
-    // NB: We go the way via a push to `Vec<T>` to ensure the compiler
-    // does not allocate space for T on the stack even if the branch
-    // would not be taken.
-    let mut vec = Vec::with_capacity(1);
-    vec.resize_with(1, || T::zeroed());
-    let ptr: Box<[T; 1]> = vec.into_boxed_slice().try_into().ok().unwrap();
-    debug_assert!(
-      align_of::<[T; 1]>() == align_of::<T>()
-        && size_of::<[T; 1]>() == size_of::<T>()
-    );
-    // NB: We basically do the same as in try_cast_box here:
-    let ptr: Box<T> = unsafe { Box::from_raw(Box::into_raw(ptr) as *mut _) };
-    return Ok(ptr);
+    // This will not allocate but simply create a dangling pointer.
+    let dangling = core::ptr::NonNull::dangling().as_ptr();
+    return Ok(unsafe { Box::from_raw(dangling) });
   }
-  let layout =
-    Layout::from_size_align(size_of::<T>(), align_of::<T>()).unwrap();
+  let layout = Layout::new::<T>();
   let ptr = unsafe { alloc_zeroed(layout) };
   if ptr.is_null() {
     // we don't know what the error is because `alloc_zeroed` is a dumb API
@@ -132,15 +119,11 @@ pub fn zeroed_vec<T: Zeroable>(length: usize) -> Vec<T> {
 pub fn try_zeroed_slice_box<T: Zeroable>(
   length: usize,
 ) -> Result<Box<[T]>, ()> {
-  if size_of::<T>() == 0 {
-    // This will not allocate but simple create a dangling slice pointer.
-    let mut vec = Vec::with_capacity(length);
-    vec.resize_with(length, || T::zeroed());
-    return Ok(vec.into_boxed_slice());
-  }
-  if length == 0 {
-    // This will also not allocate.
-    return Ok(Vec::new().into_boxed_slice());
+  if size_of::<T>() == 0 || length == 0 {
+    // This will not allocate but simply create a dangling slice pointer.
+    let dangling = core::ptr::NonNull::dangling().as_ptr();
+    let dangling_slice = core::ptr::slice_from_raw_parts_mut(dangling, length);
+    return Ok(unsafe { Box::from_raw(dangling_slice) });
   }
   let layout = core::alloc::Layout::array::<T>(length).map_err(|_| ())?;
   let ptr = unsafe { alloc_zeroed(layout) };
