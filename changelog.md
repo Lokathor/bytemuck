@@ -1,5 +1,10 @@
 # `bytemuck` changelog
 
+## 1.12.4
+
+* This has additional impls for existing traits and cleans up some internal code,
+  but there's no new functions so I guess it counts as just a patch release.
+
 ## 1.12.3
 
 * This bugfix makes the crate do stuff with `Arc` or not based on the
