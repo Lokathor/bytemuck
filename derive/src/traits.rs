@@ -707,7 +707,10 @@ macro_rules! mk_repr {(
           Repr::$Xn => Some(quote!($xn)),
         )*
       };
-      let packed = self.packed.map(|p| quote!(packed(#p)));
+      let packed = self.packed.map(|p| {
+        let lit = LitInt::new(&p.to_string(), Span::call_site());
+        quote!(packed(#lit))
+      });
       let comma = if packed.is_some() && repr.is_some() {
         Some(quote!(,))
       } else {
