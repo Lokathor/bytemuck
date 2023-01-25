@@ -432,7 +432,7 @@ fn generate_checked_bit_pattern_struct(
         #[inline]
         #[allow(clippy::double_comparisons)]
         fn is_valid_bit_pattern(bits: &#bits_ty) -> bool {
-            #(<#field_ty as ::bytemuck::CheckedBitPattern>::is_valid_bit_pattern(&bits.#field_name) && )* true
+            #(<#field_ty as ::bytemuck::CheckedBitPattern>::is_valid_bit_pattern(&{ bits.#field_name }) && )* true
         }
     },
   ))
