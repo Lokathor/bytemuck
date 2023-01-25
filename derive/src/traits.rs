@@ -609,6 +609,8 @@ mk_repr! {
   I64 => i64,
   I128 => i128,
   U128 => u128,
+  Usize => usize,
+  Isize => isize,
 }
 // where
 macro_rules! mk_repr {(
