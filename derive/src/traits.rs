@@ -432,7 +432,7 @@ fn generate_checked_bit_pattern_struct(
         #[inline]
         #[allow(clippy::double_comparisons)]
         fn is_valid_bit_pattern(bits: &#bits_ty) -> bool {
-            #(<#field_ty as ::bytemuck::CheckedBitPattern>::is_valid_bit_pattern(&bits.#field_name) && )* true
+            #(<#field_ty as ::bytemuck::CheckedBitPattern>::is_valid_bit_pattern(&{ bits.#field_name }) && )* true
         }
     },
   ))
@@ -609,6 +609,8 @@ mk_repr! {
   I64 => i64,
   I128 => i128,
   U128 => u128,
+  Usize => usize,
+  Isize => isize,
 }
 // where
 macro_rules! mk_repr {(
@@ -705,7 +707,10 @@ macro_rules! mk_repr {(
           Repr::$Xn => Some(quote!($xn)),
         )*
       };
-      let packed = self.packed.map(|p| quote!(packed(#p)));
+      let packed = self.packed.map(|p| {
+        let lit = LitInt::new(&p.to_string(), Span::call_site());
+        quote!(packed(#lit))
+      });
       let comma = if packed.is_some() && repr.is_some() {
         Some(quote!(,))
       } else {
