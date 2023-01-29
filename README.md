@@ -46,7 +46,7 @@ operations that are 100% safe will be added.
 * The crate is 1.0 and I consider this it to be "basically done". New features
   are usually being accepted when other people want to put in the work, but
   myself I wanna move on to using `bytemuck` in bigger projects.
-* The defatult build of the `bytemuck` crate will continue to work with `rustc-1.34`
+* The default build of the `bytemuck` crate will continue to work with `rustc-1.34`
   for at least the rest of the `1.y.z` versions.
 * Any other cargo features of the crate **are not** held to the same standard, and
   may work only on the latest Stable or even only on latest Nightly.

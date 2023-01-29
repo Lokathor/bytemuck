@@ -15,7 +15,7 @@ use crate::{
 /// To do this, we define a `Bits` type which is a type with equivalent layout
 /// to `Self` other than the invalid bit patterns which disallow `Self` from
 /// being [`AnyBitPattern`]. This `Bits` type must itself implement
-/// [`AnyBitPattern`]. Then, we implement a function that checks wheter a
+/// [`AnyBitPattern`]. Then, we implement a function that checks whether a
 /// certain instance of the `Bits` is also a valid bit pattern of `Self`. If
 /// this check passes, then we can allow casting from the `Bits` to `Self` (and
 /// therefore, any type which is able to be cast to `Bits` is also able to be

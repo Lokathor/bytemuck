@@ -12,7 +12,7 @@
 
 ## 1.2.1
 
-* Fixed a regression of the `align(N)` attribute that occured during otherwise
+* Fixed a regression of the `align(N)` attribute that occurred during otherwise
   routine cleanup.
 
 ## 1.2.0
