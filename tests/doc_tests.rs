@@ -103,7 +103,7 @@ fn test_offsetof_nonpod() {
   // Note: offsets are in bytes.
   let as_bytes = &foo as *const _ as *const u8;
 
-  // we're using wrapping_offset here becasue it's not worth
+  // We're using wrapping_offset here because it's not worth
   // the unsafe block, but it would be valid to use `add` instead,
   // as it cannot overflow.
   assert_eq!(
