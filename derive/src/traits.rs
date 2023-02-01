@@ -237,19 +237,27 @@ impl Derivable for CheckedBitPattern {
 
 pub struct TransparentWrapper;
 
+struct WrappedType {
+  wrapped_type: syn::Type,
+  /// Was the type given with a #[transparent(Type)] attribute.
+  explicit: bool,
+}
+
 impl TransparentWrapper {
-  fn get_wrapper_type(
+  fn get_wrapped_type(
     attributes: &[Attribute], fields: &Fields,
-  ) -> Option<TokenStream> {
-    let transparent_param = get_simple_attr(attributes, "transparent");
-    transparent_param.map(|ident| ident.to_token_stream()).or_else(|| {
+  ) -> Option<WrappedType> {
+    let transparent_param = get_type_from_simple_attr(attributes, "transparent").map(|wrapped_type| WrappedType {
+      wrapped_type, explicit: true,
+    });
+    transparent_param.or_else(|| {
       let mut types = get_field_types(&fields);
       let first_type = types.next();
       if let Some(_) = types.next() {
         // can't guess param type if there is more than one field
         return None;
       } else {
-        first_type.map(|ty| ty.to_token_stream())
+        first_type.cloned().map(|wrapped_type| WrappedType { wrapped_type, explicit: false })
       }
     })
   }
@@ -259,7 +267,7 @@ impl Derivable for TransparentWrapper {
   fn ident(input: &DeriveInput) -> Result<syn::Path> {
     let fields = get_struct_fields(input)?;
 
-    let ty = match Self::get_wrapper_type(&input.attrs, &fields) {
+    let WrappedType { wrapped_type: ty, .. } = match Self::get_wrapped_type(&input.attrs, &fields) {
       Some(ty) => ty,
       None => bail!(
         "\
@@ -274,15 +282,23 @@ impl Derivable for TransparentWrapper {
 
   fn asserts(input: &DeriveInput) -> Result<TokenStream> {
     let fields = get_struct_fields(input)?;
-    let wrapped_type = match Self::get_wrapper_type(&input.attrs, &fields) {
-      Some(wrapped_type) => wrapped_type.to_string(),
+    let (wrapped_type, explicit) = match Self::get_wrapped_type(&input.attrs, &fields) {
+      Some(WrappedType { wrapped_type, explicit }) => (wrapped_type.to_token_stream().to_string(), explicit),
       None => unreachable!(), /* other code will already reject this derive */
     };
+    dbg!(&wrapped_type);
     let mut wrapped_fields = fields
       .iter()
-      .filter(|field| field.ty.to_token_stream().to_string() == wrapped_type);
+      .filter(|field| dbg!(field.ty.to_token_stream().to_string()) == wrapped_type);
     if let None = wrapped_fields.next() {
-      bail!("TransparentWrapper must have one field of the wrapped type");
+      if explicit {
+        bail!("TransparentWrapper must have one field of the wrapped type. \
+               The type given in `#[transparent(Type)]` must match tokenwise\
+               with the type in the struct definition, not just be the same type");
+      } else {
+        bail!("TransparentWrapper must have one field of the wrapped type");
+      }
+      
     };
     if let Some(_) = wrapped_fields.next() {
       bail!("TransparentWrapper can only have one field of the wrapped type")
@@ -541,24 +557,31 @@ fn generate_fields_are_trait(
   })
 }
 
-fn get_ident_from_stream(tokens: TokenStream) -> Option<Ident> {
-  match tokens.into_iter().next() {
-    Some(TokenTree::Group(group)) => get_ident_from_stream(group.stream()),
-    Some(TokenTree::Ident(ident)) => Some(ident),
-    _ => None,
+fn get_wrapped_type_from_stream(tokens: TokenStream) -> Option<syn::Type> {
+  let mut tokens = tokens.into_iter().peekable();
+  match tokens.peek() {
+    Some(TokenTree::Group(group)) => {
+      let res = get_wrapped_type_from_stream(group.stream());
+      tokens.next();
+      match tokens.next() {
+        // If there were more tokens, the input was invalid
+        Some(_) => None,
+        None => res,
+    }
+    },
+    _ => syn::parse2(tokens.collect()).ok(),
   }
 }
 
-/// get a simple #[foo(bar)] attribute, returning "bar"
-fn get_simple_attr(attributes: &[Attribute], attr_name: &str) -> Option<Ident> {
+/// get a simple `#[foo(bar)]` attribute, returning `bar`
+fn get_type_from_simple_attr(attributes: &[Attribute], attr_name: &str) -> Option<syn::Type> {
   for attr in attributes {
-    if let (AttrStyle::Outer, Some(outer_ident), Some(inner_ident)) = (
+    if let (AttrStyle::Outer, Some(outer_ident)) = (
       &attr.style,
       attr.path.get_ident(),
-      get_ident_from_stream(attr.tokens.clone()),
     ) {
       if outer_ident.to_string() == attr_name {
-        return Some(inner_ident);
+        return get_wrapped_type_from_stream(attr.tokens.clone());
       }
     }
   }
