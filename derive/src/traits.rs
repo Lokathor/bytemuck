@@ -746,25 +746,24 @@ macro_rules! mk_repr {(
 
   impl ToTokens for Representation {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-      let repr = match self.repr {
-        Repr::Rust => None,
-        Repr::C => Some(quote!(C)),
-        Repr::Transparent => Some(quote!(transparent)),
+      let mut meta = Punctuated::<_, Token![,]>::new();
+
+      match self.repr {
+        Repr::Rust => {},
+        Repr::C => meta.push(quote!(C)),
+        Repr::Transparent => meta.push(quote!(transparent)),
         $(
-          Repr::$Xn => Some(quote!($xn)),
+          Repr::$Xn => meta.push(quote!($xn)),
         )*
-      };
-      let packed = self.packed.map(|p| {
-        let lit = LitInt::new(&p.to_string(), Span::call_site());
-        quote!(packed(#lit))
-      });
-      let comma = if packed.is_some() && repr.is_some() {
-        Some(quote!(,))
-      } else {
-        None
-      };
+      }
+
+      if let Some(packed) = self.packed.as_ref() {
+        let lit = LitInt::new(&packed.to_string(), Span::call_site());
+        meta.push(quote!(packed(#lit)));
+      }
+
       tokens.extend(quote!(
-        #[repr( #repr #comma #packed )]
+        #[repr(#meta)]
       ));
     }
   }
