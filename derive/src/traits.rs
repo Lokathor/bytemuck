@@ -1,5 +1,5 @@
 #![allow(unused_imports)]
-use std::cmp;
+use std::{cmp, convert::TryFrom};
 
 use proc_macro2::{Ident, Span, TokenStream, TokenTree};
 use quote::{quote, quote_spanned, ToTokens};
@@ -349,7 +349,7 @@ impl Derivable for Contiguous {
   fn trait_impl(input: &DeriveInput) -> Result<(TokenStream, TokenStream)> {
     let repr = get_repr(&input.attrs)?;
 
-    let integer_ty = if let Some(integer_ty) = repr.repr.as_integer_type() {
+    let integer_ty = if let Some(integer_ty) = repr.repr.as_integer() {
       integer_ty
     } else {
       bail!("Contiguous requires the enum to be #[repr(Int)]");
@@ -532,11 +532,11 @@ fn generate_checked_bit_pattern_enum(
   };
 
   let repr = get_repr(&input.attrs)?;
-  let integer_ty = repr.repr.as_integer_type().unwrap(); // should be checked in attr check already
+  let integer = repr.repr.as_integer().unwrap(); // should be checked in attr check already
   Ok((
     quote!(),
     quote! {
-        type Bits = #integer_ty;
+        type Bits = #integer;
 
         #[inline]
         #[allow(clippy::double_comparisons)]
@@ -668,115 +668,144 @@ macro_rules! mk_repr {(
   ),* $(,)?
 ) => (
   #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-  enum Repr {
-    Rust,
-    C,
-    Transparent,
+  enum IntegerRepr {
     $($Xn),*
   }
 
-  impl Repr {
-    fn is_integer(self) -> bool {
-      match self {
-        Repr::Rust | Repr::C | Repr::Transparent => false,
-        _ => true,
-      }
-    }
+  impl<'a> TryFrom<&'a str> for IntegerRepr {
+    type Error = &'a str;
 
-    fn as_integer_type(self) -> Option<TokenStream> {
-      match self {
-        Repr::Rust | Repr::C | Repr::Transparent => None,
+    fn try_from(value: &'a str) -> std::result::Result<Self, &'a str> {
+      match value {
         $(
-          Repr::$Xn => Some(quote! { ::core::primitive::$xn }),
+          stringify!($xn) => Ok(Self::$Xn),
         )*
+        _ => Err(value),
       }
     }
   }
 
-  #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-  struct Representation {
-    packed: Option<u32>,
-    align: Option<u32>,
-    repr: Repr,
-  }
-
-  impl Default for Representation {
-    fn default() -> Self {
-      Self { packed: None, align: None, repr: Repr::Rust }
-    }
-  }
-
-  impl Parse for Representation {
-    fn parse(input: ParseStream<'_>) -> Result<Representation> {
-      let mut ret = Representation::default();
-      while !input.is_empty() {
-        let keyword = input.parse::<Ident>()?;
-        // preëmptively call `.to_string()` *once* (rather than on `is_ident()`)
-        let keyword_str = keyword.to_string();
-        let new_repr = match keyword_str.as_str() {
-          "C" => Repr::C,
-          "transparent" => Repr::Transparent,
-          "packed" => {
-            ret.packed = Some(if input.peek(token::Paren) {
-              let contents; parenthesized!(contents in input);
-              LitInt::base10_parse::<u32>(&contents.parse()?)?
-            } else {
-              1
-            });
-            let _: Option<Token![,]> = input.parse()?;
-            continue;
-          },
-          "align" => {
-            let contents; parenthesized!(contents in input);
-            let new_align = LitInt::base10_parse::<u32>(&contents.parse()?)?;
-            ret.align = Some(ret.align.map_or(new_align, |old_align| cmp::max(old_align, new_align)));
-            let _: Option<Token![,]> = input.parse()?;
-            continue;
-          },
-        $(
-          stringify!($xn) => Repr::$Xn,
-        )*
-          _ => return Err(input.error("unrecognized representation hint"))
-        };
-        if ::core::mem::replace(&mut ret.repr, new_repr) != Repr::Rust {
-          return Err(input.error("duplicate representation hint"));
-        }
-        let _: Option<Token![,]> = input.parse()?;
-      }
-      Ok(ret)
-    }
-  }
-
-  impl ToTokens for Representation {
+  impl ToTokens for IntegerRepr {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-      let mut meta = Punctuated::<_, Token![,]>::new();
-
-      match self.repr {
-        Repr::Rust => {},
-        Repr::C => meta.push(quote!(C)),
-        Repr::Transparent => meta.push(quote!(transparent)),
+      match self {
         $(
-          Repr::$Xn => meta.push(quote!($xn)),
+          Self::$Xn => tokens.extend(quote!($xn)),
         )*
       }
-
-      if let Some(packed) = self.packed.as_ref() {
-        let lit = LitInt::new(&packed.to_string(), Span::call_site());
-        meta.push(quote!(packed(#lit)));
-      }
-
-      if let Some(align) = self.align.as_ref() {
-        let lit = LitInt::new(&align.to_string(), Span::call_site());
-        meta.push(quote!(align(#lit)));
-      }
-
-      tokens.extend(quote!(
-        #[repr(#meta)]
-      ));
     }
   }
 )}
 use mk_repr;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Repr {
+  Rust,
+  C,
+  Transparent,
+  Integer(IntegerRepr),
+}
+
+impl Repr {
+  fn is_integer(&self) -> bool {
+    matches!(self, Self::Integer(..))
+  }
+
+  fn as_integer(&self) -> Option<IntegerRepr> {
+    if let Self::Integer(v) = self {
+      Some(*v)
+    } else {
+      None
+    }
+  }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Representation {
+  packed: Option<u32>,
+  align: Option<u32>,
+  repr: Repr,
+}
+
+impl Default for Representation {
+  fn default() -> Self {
+    Self { packed: None, align: None, repr: Repr::Rust }
+  }
+}
+
+impl Parse for Representation {
+  fn parse(input: ParseStream<'_>) -> Result<Representation> {
+    let mut ret = Representation::default();
+    while !input.is_empty() {
+      let keyword = input.parse::<Ident>()?;
+      // preëmptively call `.to_string()` *once* (rather than on `is_ident()`)
+      let keyword_str = keyword.to_string();
+      let new_repr = match keyword_str.as_str() {
+        "C" => Repr::C,
+        "transparent" => Repr::Transparent,
+        "packed" => {
+          ret.packed = Some(if input.peek(token::Paren) {
+            let contents;
+            parenthesized!(contents in input);
+            LitInt::base10_parse::<u32>(&contents.parse()?)?
+          } else {
+            1
+          });
+          let _: Option<Token![,]> = input.parse()?;
+          continue;
+        }
+        "align" => {
+          let contents;
+          parenthesized!(contents in input);
+          let new_align = LitInt::base10_parse::<u32>(&contents.parse()?)?;
+          ret.align = Some(
+            ret
+              .align
+              .map_or(new_align, |old_align| cmp::max(old_align, new_align)),
+          );
+          let _: Option<Token![,]> = input.parse()?;
+          continue;
+        }
+        ident => {
+          let primitive = IntegerRepr::try_from(ident)
+            .map_err(|_| input.error("unrecognized representation hint"))?;
+          Repr::Integer(primitive)
+        }
+      };
+      if ::core::mem::replace(&mut ret.repr, new_repr) != Repr::Rust {
+        return Err(input.error("duplicate representation hint"));
+      }
+      let _: Option<Token![,]> = input.parse()?;
+    }
+    Ok(ret)
+  }
+}
+
+impl ToTokens for Representation {
+  fn to_tokens(&self, tokens: &mut TokenStream) {
+    let mut meta = Punctuated::<_, Token![,]>::new();
+
+    match self.repr {
+      Repr::Rust => {}
+      Repr::C => meta.push(quote!(C)),
+      Repr::Transparent => meta.push(quote!(transparent)),
+      Repr::Integer(primitive) => meta.push(quote!(#primitive)),
+    }
+
+    if let Some(packed) = self.packed.as_ref() {
+      let lit = LitInt::new(&packed.to_string(), Span::call_site());
+      meta.push(quote!(packed(#lit)));
+    }
+
+    if let Some(align) = self.align.as_ref() {
+      let lit = LitInt::new(&align.to_string(), Span::call_site());
+      meta.push(quote!(align(#lit)));
+    }
+
+    tokens.extend(quote!(
+      #[repr(#meta)]
+    ));
+  }
+}
 
 struct VariantDiscriminantIterator<'a, I: Iterator<Item = &'a Variant> + 'a> {
   inner: I,
@@ -834,7 +863,7 @@ fn parse_int_expr(expr: &Expr) -> Result<i64> {
 mod tests {
   use syn::parse_quote;
 
-  use super::{get_repr, Repr, Representation};
+  use super::{get_repr, IntegerRepr, Repr, Representation};
 
   #[test]
   fn parse_basic_repr() {
@@ -851,7 +880,13 @@ mod tests {
 
     let attr = parse_quote!(#[repr(u8)]);
     let repr = get_repr(&[attr]).unwrap();
-    assert_eq!(repr, Representation { repr: Repr::U8, ..Default::default() });
+    assert_eq!(
+      repr,
+      Representation {
+        repr: Repr::Integer(IntegerRepr::U8),
+        ..Default::default()
+      }
+    );
 
     let attr = parse_quote!(#[repr(packed)]);
     let repr = get_repr(&[attr]).unwrap();
