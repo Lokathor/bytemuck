@@ -206,11 +206,19 @@ impl Derivable for CheckedBitPattern {
         Repr::C | Repr::Transparent => Ok(()),
         _ => bail!("CheckedBitPattern derive requires the struct to be #[repr(C)] or #[repr(transparent)]"),
       },
-      Data::Enum(_) => if repr.repr.is_integer() {
-        Ok(())
-      } else {
-        bail!("CheckedBitPattern requires the enum to be an explicit #[repr(Int)]")
-      },
+      Data::Enum(DataEnum { variants,.. }) => {
+        if !enum_has_fields(variants.iter()){
+          if repr.repr.is_integer() {
+            Ok(())
+          } else {
+            bail!("CheckedBitPattern requires the enum to be an explicit #[repr(Int)]")
+          }
+        } else if matches!(repr.repr, Repr::Rust) {
+          bail!("the default Rust repr doesn't have a specified type layout")
+        } else {
+          Ok(())
+        }
+      }
       Data::Union(_) => bail!("CheckedBitPattern can only be derived on enums and structs")
     }
   }
@@ -237,7 +245,9 @@ impl Derivable for CheckedBitPattern {
       Data::Struct(DataStruct { fields, .. }) => {
         generate_checked_bit_pattern_struct(&input.ident, fields, &input.attrs)
       }
-      Data::Enum(_) => generate_checked_bit_pattern_enum(input),
+      Data::Enum(DataEnum { variants, .. }) => {
+        generate_checked_bit_pattern_enum(input, variants)
+      }
       Data::Union(_) => bail!("Internal error in CheckedBitPattern derive"), /* shouldn't be possible since we already error in attribute check for this case */
     }
   }
@@ -356,6 +366,13 @@ impl Derivable for Contiguous {
     };
 
     let variants = get_enum_variants(input)?;
+    if enum_has_fields(variants.clone()) {
+      return Err(Error::new_spanned(
+        &input,
+        "Only fieldless enums are supported",
+      ));
+    }
+
     let mut variants_with_discriminator =
       VariantDiscriminantIterator::new(variants);
 
@@ -428,7 +445,7 @@ fn get_fields(input: &DeriveInput) -> Result<Fields> {
 
 fn get_enum_variants<'a>(
   input: &'a DeriveInput,
-) -> Result<impl Iterator<Item = &'a Variant> + 'a> {
+) -> Result<impl Iterator<Item = &'a Variant> + Clone + 'a> {
   if let Data::Enum(DataEnum { variants, .. }) = &input.data {
     Ok(variants.iter())
   } else {
@@ -488,11 +505,21 @@ fn generate_checked_bit_pattern_struct(
 }
 
 fn generate_checked_bit_pattern_enum(
-  input: &DeriveInput,
+  input: &DeriveInput, variants: &Punctuated<Variant, Token![,]>,
+) -> Result<(TokenStream, TokenStream)> {
+  if enum_has_fields(variants.iter()) {
+    generate_checked_bit_pattern_enum_with_fields(input, variants)
+  } else {
+    generate_checked_bit_pattern_enum_without_fields(input, variants)
+  }
+}
+
+fn generate_checked_bit_pattern_enum_without_fields(
+  input: &DeriveInput, variants: &Punctuated<Variant, Token![,]>,
 ) -> Result<(TokenStream, TokenStream)> {
   let span = input.span();
   let mut variants_with_discriminant =
-    VariantDiscriminantIterator::new(get_enum_variants(input)?);
+    VariantDiscriminantIterator::new(variants.iter());
 
   let (min, max, count) = variants_with_discriminant.try_fold(
     (i64::max_value(), i64::min_value(), 0),
@@ -516,13 +543,12 @@ fn generate_checked_bit_pattern_enum(
     quote!(*bits >= #min_lit && *bits <= #max_lit)
   } else {
     // not contiguous range, check for each
-    let variant_lits =
-      VariantDiscriminantIterator::new(get_enum_variants(input)?)
-        .map(|res| {
-          let variant = res?;
-          Ok(LitInt::new(&format!("{}", variant), span))
-        })
-        .collect::<Result<Vec<_>>>()?;
+    let variant_lits = VariantDiscriminantIterator::new(variants.iter())
+      .map(|res| {
+        let variant = res?;
+        Ok(LitInt::new(&format!("{}", variant), span))
+      })
+      .collect::<Result<Vec<_>>>()?;
 
     // count is at least 1
     let first = &variant_lits[0];
@@ -545,6 +571,225 @@ fn generate_checked_bit_pattern_enum(
         }
     },
   ))
+}
+
+fn generate_checked_bit_pattern_enum_with_fields(
+  input: &DeriveInput, variants: &Punctuated<Variant, Token![,]>,
+) -> Result<(TokenStream, TokenStream)> {
+  let representation = get_repr(&input.attrs)?;
+  let vis = &input.vis;
+
+  let derive_dbg =
+    quote!(#[cfg_attr(not(target_arch = "spirv"), derive(Debug))]);
+
+  match representation.repr {
+    Repr::Rust => unreachable!(),
+    repr @ (Repr::C | Repr::CWithDiscriminant(_)) => {
+      let integer = match repr {
+        Repr::C => quote!(::core::ffi::c_int),
+        Repr::CWithDiscriminant(integer) => quote!(#integer),
+        _ => unreachable!(),
+      };
+
+      let bits_repr = Representation { repr: Repr::C, ..representation };
+
+      let bits_ty = Ident::new(&format!("{}Bits", input.ident), input.span());
+      let fields_ty =
+        Ident::new(&format!("{}Fields", input.ident), input.span());
+
+      let variant_struct = variants
+        .iter()
+        .map(|v| Ident::new(&format!("{fields_ty}{}", v.ident), v.span()));
+
+      let variant_struct_definitions =
+        variant_struct.clone().zip(variants.iter()).map(|(variant_ty, v)| {
+          let fields = v.fields.iter().map(|v| &v.ty);
+
+          quote! {
+            #[derive(::core::clone::Clone, ::core::marker::Copy, ::bytemuck::CheckedBitPattern)]
+            #[repr(C)]
+            #vis struct #variant_ty(#(#fields),*);
+          }
+        });
+
+      let union_fields =
+        variant_struct.clone().zip(variants.iter()).map(|(variant_ty, v)| {
+          let variant_ty =
+            Ident::new(&format!("{variant_ty}Bits"), input.span());
+          let field_ident = &v.ident;
+          quote! {
+            #field_ident: #variant_ty
+          }
+        });
+
+      let variant_checks = variant_struct
+        .clone()
+        .zip(VariantDiscriminantIterator::new(variants.iter()))
+        .zip(variants.iter())
+        .map(|((variant_ty, discriminant), v)| -> Result<_> {
+          let discriminant = discriminant?;
+          let discriminant = LitInt::new(&discriminant.to_string(), v.span());
+          let ident = &v.ident;
+          Ok(quote! {
+            #discriminant => {
+              let payload = unsafe { &bits.payload.#ident };
+              <#variant_ty as ::bytemuck::CheckedBitPattern>::is_valid_bit_pattern(payload)
+            }
+          })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+      Ok((
+        quote! {
+          #[derive(::core::clone::Clone, ::core::marker::Copy, ::bytemuck::AnyBitPattern)]
+          #derive_dbg
+          #bits_repr
+          #vis struct #bits_ty {
+            tag: #integer,
+            payload: #fields_ty,
+          }
+
+          #[derive(::core::clone::Clone, ::core::marker::Copy, ::bytemuck::AnyBitPattern)]
+          #[repr(C)]
+          #[allow(non_snake_case)]
+          #vis union #fields_ty {
+            #(#union_fields,)*
+          }
+
+          #[cfg(not(target_arch = "spirv"))]
+          impl ::core::fmt::Debug for #fields_ty {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+              let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#fields_ty));
+              ::core::fmt::DebugStruct::finish_non_exhaustive(&mut debug_struct)
+            }
+          }
+
+          #(#variant_struct_definitions)*
+        },
+        quote! {
+          type Bits = #bits_ty;
+
+          #[inline]
+          #[allow(clippy::double_comparisons)]
+          fn is_valid_bit_pattern(bits: &Self::Bits) -> bool {
+            match bits.tag {
+              #(#variant_checks)*
+              _ => false,
+            }
+          }
+        },
+      ))
+    }
+    Repr::Transparent => {
+      if variants.len() != 1 {
+        bail!("enums with more than one variant cannot be transparent")
+      }
+
+      let variant = &variants[0];
+
+      let bits_ty = Ident::new(&format!("{}Bits", input.ident), input.span());
+      let fields = variant.fields.iter().map(|v| &v.ty);
+
+      Ok((
+        quote! {
+          #[derive(::core::clone::Clone, ::core::marker::Copy, ::bytemuck::CheckedBitPattern)]
+          #[repr(C)]
+          #vis struct #bits_ty(#(#fields),*);
+        },
+        quote! {
+          type Bits = <#bits_ty as ::bytemuck::CheckedBitPattern>::Bits;
+
+          #[inline]
+          #[allow(clippy::double_comparisons)]
+          fn is_valid_bit_pattern(bits: &Self::Bits) -> bool {
+            <#bits_ty as ::bytemuck::CheckedBitPattern>::is_valid_bit_pattern(bits)
+          }
+        },
+      ))
+    }
+    Repr::Integer(integer) => {
+      let bits_repr = Representation { repr: Repr::C, ..representation };
+
+      let bits_ty = Ident::new(&format!("{}Bits", input.ident), input.span());
+
+      let variant_struct = variants
+        .iter()
+        .map(|v| Ident::new(&format!("{bits_ty}{}", v.ident), v.span()));
+
+      let variant_struct_definitions =
+        variant_struct.clone().zip(variants.iter()).map(|(variant_ty, v)| {
+          let fields = v.fields.iter().map(|v| &v.ty);
+
+          quote! {
+            #[derive(::core::clone::Clone, ::core::marker::Copy, ::bytemuck::CheckedBitPattern)]
+            #[repr(C)]
+            #vis struct #variant_ty(#integer, #(#fields),*);
+          }
+        });
+
+      let union_fields =
+        variant_struct.clone().zip(variants.iter()).map(|(variant_ty, v)| {
+          let variant_ty =
+            Ident::new(&format!("{variant_ty}Bits"), input.span());
+          let field_ident = &v.ident;
+          quote! {
+            #field_ident: #variant_ty
+          }
+        });
+
+      let variant_checks = variant_struct
+        .clone()
+        .zip(VariantDiscriminantIterator::new(variants.iter()))
+        .zip(variants.iter())
+        .map(|((variant_ty, discriminant), v)| -> Result<_> {
+          let discriminant = discriminant?;
+          let discriminant = LitInt::new(&discriminant.to_string(), v.span());
+          let ident = &v.ident;
+          Ok(quote! {
+            #discriminant => {
+              let payload = unsafe { &bits.#ident };
+              <#variant_ty as ::bytemuck::CheckedBitPattern>::is_valid_bit_pattern(payload)
+            }
+          })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+      Ok((
+        quote! {
+          #[derive(::core::clone::Clone, ::core::marker::Copy, ::bytemuck::AnyBitPattern)]
+          #bits_repr
+          #[allow(non_snake_case)]
+          #vis union #bits_ty {
+            __tag: #integer,
+            #(#union_fields,)*
+          }
+
+          #[cfg(not(target_arch = "spirv"))]
+          impl ::core::fmt::Debug for #bits_ty {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+              let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#bits_ty));
+              ::core::fmt::DebugStruct::field(&mut debug_struct, "tag", unsafe { &self.__tag });
+              ::core::fmt::DebugStruct::finish_non_exhaustive(&mut debug_struct)
+            }
+          }
+
+          #(#variant_struct_definitions)*
+        },
+        quote! {
+          type Bits = #bits_ty;
+
+          #[inline]
+          #[allow(clippy::double_comparisons)]
+          fn is_valid_bit_pattern(bits: &Self::Bits) -> bool {
+            match unsafe { bits.__tag } {
+              #(#variant_checks)*
+              _ => false,
+            }
+          }
+        },
+      ))
+    }
+  }
 }
 
 /// Check that a struct has no padding by asserting that the size of the struct
@@ -824,6 +1069,12 @@ impl ToTokens for Representation {
   }
 }
 
+fn enum_has_fields<'a>(
+  mut variants: impl Iterator<Item = &'a Variant>,
+) -> bool {
+  variants.any(|v| matches!(v.fields, Fields::Named(_) | Fields::Unnamed(_)))
+}
+
 struct VariantDiscriminantIterator<'a, I: Iterator<Item = &'a Variant> + 'a> {
   inner: I,
   last_value: i64,
@@ -844,12 +1095,6 @@ impl<'a, I: Iterator<Item = &'a Variant> + 'a> Iterator
 
   fn next(&mut self) -> Option<Self::Item> {
     let variant = self.inner.next()?;
-    if !variant.fields.is_empty() {
-      return Some(Err(Error::new_spanned(
-        &variant.fields,
-        "Only fieldless enums are supported",
-      )));
-    }
 
     if let Some((_, discriminant)) = &variant.discriminant {
       let discriminant_value = match parse_int_expr(discriminant) {
