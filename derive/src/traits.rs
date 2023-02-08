@@ -665,7 +665,7 @@ macro_rules! mk_repr {(
     $Xn:ident => $xn:ident
   ),* $(,)?
 ) => (
-  #[derive(Clone, Copy, PartialEq)]
+  #[derive(Debug, Clone, Copy, PartialEq, Eq)]
   enum Repr {
     Rust,
     C,
@@ -691,7 +691,7 @@ macro_rules! mk_repr {(
     }
   }
 
-  #[derive(Clone, Copy)]
+  #[derive(Debug, Clone, Copy, PartialEq, Eq)]
   struct Representation {
     packed: Option<u32>,
     align: Option<u32>,
@@ -824,5 +824,46 @@ fn parse_int_expr(expr: &Expr) -> Result<i64> {
     Expr::Lit(ExprLit { lit: Lit::Int(int), .. }) => int.base10_parse(),
     Expr::Lit(ExprLit { lit: Lit::Byte(byte), .. }) => Ok(byte.value().into()),
     _ => bail!("Not an integer expression"),
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use syn::parse_quote;
+
+  use super::{get_repr, Repr, Representation};
+
+  #[test]
+  fn parse_basic_repr() {
+    let attr = parse_quote!(#[repr(C)]);
+    let repr = get_repr(&[attr]).unwrap();
+    assert_eq!(repr, Representation { repr: Repr::C, ..Default::default() });
+
+    let attr = parse_quote!(#[repr(transparent)]);
+    let repr = get_repr(&[attr]).unwrap();
+    assert_eq!(
+      repr,
+      Representation { repr: Repr::Transparent, ..Default::default() }
+    );
+
+    let attr = parse_quote!(#[repr(u8)]);
+    let repr = get_repr(&[attr]).unwrap();
+    assert_eq!(repr, Representation { repr: Repr::U8, ..Default::default() });
+
+    let attr = parse_quote!(#[repr(packed)]);
+    let repr = get_repr(&[attr]).unwrap();
+    assert_eq!(repr, Representation { packed: Some(1), ..Default::default() });
+
+    let attr = parse_quote!(#[repr(packed(1))]);
+    let repr = get_repr(&[attr]).unwrap();
+    assert_eq!(repr, Representation { packed: Some(1), ..Default::default() });
+
+    let attr = parse_quote!(#[repr(packed(2))]);
+    let repr = get_repr(&[attr]).unwrap();
+    assert_eq!(repr, Representation { packed: Some(2), ..Default::default() });
+
+    let attr = parse_quote!(#[repr(align(2))]);
+    let repr = get_repr(&[attr]).unwrap();
+    assert_eq!(repr, Representation { align: Some(2), ..Default::default() });
   }
 }
