@@ -1,4 +1,6 @@
 #![allow(unused_imports)]
+use std::cmp;
+
 use proc_macro2::{Ident, Span, TokenStream, TokenTree};
 use quote::{quote, quote_spanned, ToTokens};
 use syn::{
@@ -637,9 +639,9 @@ fn get_repr(attributes: &[Attribute]) -> Result<Representation> {
           _ => bail!("conflicting representation hints"),
         },
         align: match (a.align, b.align) {
+          (Some(a), Some(b)) => Some(cmp::max(a, b)),
           (a, None) => a,
           (None, b) => b,
-          _ => bail!("conflicting representation hints"),
         },
       })
     })
@@ -726,7 +728,8 @@ macro_rules! mk_repr {(
           },
           "align" => {
             let contents; parenthesized!(contents in input);
-            ret.align = Some(LitInt::base10_parse::<u32>(&contents.parse()?)?);
+            let new_align = LitInt::base10_parse::<u32>(&contents.parse()?)?;
+            ret.align = Some(ret.align.map_or(new_align, |old_align| cmp::max(old_align, new_align)));
             let _: Option<Token![,]> = input.parse()?;
             continue;
           },
@@ -865,5 +868,18 @@ mod tests {
     let attr = parse_quote!(#[repr(align(2))]);
     let repr = get_repr(&[attr]).unwrap();
     assert_eq!(repr, Representation { align: Some(2), ..Default::default() });
+  }
+
+  #[test]
+  fn parse_advanced_repr() {
+    let attr = parse_quote!(#[repr(align(4), align(2))]);
+    let repr = get_repr(&[attr]).unwrap();
+    assert_eq!(repr, Representation { align: Some(4), ..Default::default() });
+
+    let attr1 = parse_quote!(#[repr(align(1))]);
+    let attr2 = parse_quote!(#[repr(align(4))]);
+    let attr3 = parse_quote!(#[repr(align(2))]);
+    let repr = get_repr(&[attr1, attr2, attr3]).unwrap();
+    assert_eq!(repr, Representation { align: Some(4), ..Default::default() });
   }
 }
