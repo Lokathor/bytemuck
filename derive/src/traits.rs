@@ -703,6 +703,7 @@ enum Repr {
   C,
   Transparent,
   Integer(IntegerRepr),
+  CWithDiscriminant(IntegerRepr),
 }
 
 impl Repr {
@@ -771,9 +772,21 @@ impl Parse for Representation {
           Repr::Integer(primitive)
         }
       };
-      if ::core::mem::replace(&mut ret.repr, new_repr) != Repr::Rust {
-        return Err(input.error("duplicate representation hint"));
-      }
+      ret.repr = match (ret.repr, new_repr) {
+        (Repr::Rust, new_repr) => {
+          // This is the first explicit repr.
+          new_repr
+        }
+        (Repr::C, Repr::Integer(integer))
+        | (Repr::Integer(integer), Repr::C) => {
+          // Both the C repr and an integer repr have been specified
+          // -> merge into a C wit discriminant.
+          Repr::CWithDiscriminant(integer)
+        }
+        (_, _) => {
+          return Err(input.error("duplicate representation hint"));
+        }
+      };
       let _: Option<Token![,]> = input.parse()?;
     }
     Ok(ret)
@@ -789,6 +802,10 @@ impl ToTokens for Representation {
       Repr::C => meta.push(quote!(C)),
       Repr::Transparent => meta.push(quote!(transparent)),
       Repr::Integer(primitive) => meta.push(quote!(#primitive)),
+      Repr::CWithDiscriminant(primitive) => {
+        meta.push(quote!(C));
+        meta.push(quote!(#primitive));
+      }
     }
 
     if let Some(packed) = self.packed.as_ref() {
@@ -916,5 +933,25 @@ mod tests {
     let attr3 = parse_quote!(#[repr(align(2))]);
     let repr = get_repr(&[attr1, attr2, attr3]).unwrap();
     assert_eq!(repr, Representation { align: Some(4), ..Default::default() });
+
+    let attr = parse_quote!(#[repr(C, u8)]);
+    let repr = get_repr(&[attr]).unwrap();
+    assert_eq!(
+      repr,
+      Representation {
+        repr: Repr::CWithDiscriminant(IntegerRepr::U8),
+        ..Default::default()
+      }
+    );
+
+    let attr = parse_quote!(#[repr(u8, C)]);
+    let repr = get_repr(&[attr]).unwrap();
+    assert_eq!(
+      repr,
+      Representation {
+        repr: Repr::CWithDiscriminant(IntegerRepr::U8),
+        ..Default::default()
+      }
+    );
   }
 }
