@@ -160,6 +160,29 @@ struct AnyBitPatternTest<A: AnyBitPattern, B: AnyBitPattern> {
   b: B,
 }
 
+#[derive(Clone, Copy, CheckedBitPattern)]
+#[repr(C, align(8))]
+struct CheckedBitPatternAlignedStruct {
+  a: u16,
+}
+
+/// ```compile_fail
+/// use bytemuck::{Pod, Zeroable};
+///
+/// #[derive(Pod, Zeroable)]
+/// #[repr(transparent)]
+/// struct TransparentSingle<T>(T);
+///
+/// struct NotPod(u32);
+///
+/// let _: u32 = bytemuck::cast(TransparentSingle(NotPod(0u32)));
+/// ```
+#[derive(
+  Debug, Copy, Clone, PartialEq, Eq, Pod, Zeroable, TransparentWrapper,
+)]
+#[repr(transparent)]
+struct NewtypeWrapperTest<T>(T);
+
 #[test]
 fn fails_cast_contiguous() {
   let can_cast = CheckedBitPatternEnumWithValues::is_valid_bit_pattern(&5);
@@ -244,6 +267,12 @@ fn checkedbitpattern_try_pod_read_unaligned() {
     CheckedBitPatternEnumWithValues,
   >(&pod);
   assert!(res.is_err());
+}
+
+#[test]
+fn checkedbitpattern_aligned_struct() {
+  let pod = [0u8; 8];
+  bytemuck::checked::pod_read_unaligned::<CheckedBitPatternAlignedStruct>(&pod);
 }
 
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]

@@ -762,6 +762,11 @@ macro_rules! mk_repr {(
         meta.push(quote!(packed(#lit)));
       }
 
+      if let Some(align) = self.align.as_ref() {
+        let lit = LitInt::new(&align.to_string(), Span::call_site());
+        meta.push(quote!(align(#lit)));
+      }
+
       tokens.extend(quote!(
         #[repr(#meta)]
       ));
