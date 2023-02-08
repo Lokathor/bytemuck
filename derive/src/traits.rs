@@ -739,7 +739,7 @@ macro_rules! mk_repr {(
           _ => return Err(input.error("unrecognized representation hint"))
         };
         if ::core::mem::replace(&mut ret.repr, new_repr) != Repr::Rust {
-          input.error("duplicate representation hint");
+          return Err(input.error("duplicate representation hint"));
         }
         let _: Option<Token![,]> = input.parse()?;
       }
