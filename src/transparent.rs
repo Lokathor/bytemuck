@@ -23,7 +23,9 @@ use super::*;
 ///    the only non-ZST field.
 ///
 /// 2. Any fields *other* than the `Inner` field must be trivially constructable
-///    ZSTs, for example `PhantomData`, `PhantomPinned`, etc.
+///    ZSTs, for example `PhantomData`, `PhantomPinned`, etc. (When deriving
+///    `TransparentWrapper` on a type with ZST fields, the ZST fields must be
+///    [`Zeroable`]).
 ///
 /// 3. The `Wrapper` may not impose additional alignment requirements over
 ///    `Inner`.
@@ -83,6 +85,43 @@ use super::*;
 ///
 /// let mut buf = [1, 2, 3u8];
 /// let sm = Slice::wrap_mut(&mut buf);
+/// ```
+///
+/// ## Deriving
+///
+/// When deriving, the non-wrapped fields must uphold all the normal requirements,
+/// and must also be `Zeroable`.
+///
+#[cfg_attr(feature = "derive", doc = "```")]
+#[cfg_attr(
+  not(feature = "derive"),
+  doc = "```ignore
+// This example requires the `derive` feature."
+)]
+/// use bytemuck::TransparentWrapper;
+/// use std::marker::PhantomData;
+///
+/// #[derive(TransparentWrapper)]
+/// #[repr(transparent)]
+/// #[transparent(usize)]
+/// struct Wrapper<T: ?Sized>(usize, PhantomData<T>); // PhantomData<T> implements Zeroable for all T
+/// ```
+///
+/// Here, an error will occur, because `MyZst` does not implement `Zeroable`.
+///
+#[cfg_attr(feature = "derive", doc = "```compile_fail")]
+#[cfg_attr(
+  not(feature = "derive"),
+  doc = "```ignore
+// This example requires the `derive` feature."
+)]
+/// use bytemuck::TransparentWrapper;
+/// struct MyZst;
+///
+/// #[derive(TransparentWrapper)]
+/// #[repr(transparent)]
+/// #[transparent(usize)]
+/// struct Wrapper(usize, MyZst); // MyZst does not implement Zeroable
 /// ```
 pub unsafe trait TransparentWrapper<Inner: ?Sized> {
   /// Convert the inner type into the wrapper type.

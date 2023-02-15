@@ -7,3 +7,4 @@ Cargo.lock
 **/*.rs.bk
 
 /derive/target/
+/derive/.vscode/

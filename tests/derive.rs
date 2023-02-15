@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 
 use bytemuck::{ByteEq, ByteHash, Pod, TransparentWrapper, Zeroable};
+use std::marker::PhantomData;
 
 #[derive(Copy, Clone, Pod, Zeroable, ByteEq, ByteHash)]
 #[repr(C)]
@@ -26,7 +27,7 @@ struct TransparentWithZeroSized {
 
 #[derive(TransparentWrapper)]
 #[repr(transparent)]
-struct TransparentWithGeneric<T> {
+struct TransparentWithGeneric<T: ?Sized> {
   a: T,
 }
 
@@ -39,13 +40,38 @@ fn test_generic<T>(x: T) -> TransparentWithGeneric<T> {
 #[derive(TransparentWrapper)]
 #[repr(transparent)]
 #[transparent(T)]
-struct TransparentWithGenericAndZeroSized<T> {
-  a: T,
-  b: ()
+struct TransparentWithGenericAndZeroSized<T: ?Sized> {
+  a: (),
+  b: T,
 }
 
 /// Ensuring that no additional bounds are emitted.
 /// See https://github.com/Lokathor/bytemuck/issues/145
 fn test_generic_with_zst<T>(x: T) -> TransparentWithGenericAndZeroSized<T> {
   TransparentWithGenericAndZeroSized::wrap(x)
+}
+
+#[derive(TransparentWrapper)]
+#[repr(transparent)]
+struct TransparentUnsized {
+  a: dyn std::fmt::Debug,
+}
+
+type DynDebug = dyn std::fmt::Debug;
+
+#[derive(TransparentWrapper)]
+#[repr(transparent)]
+#[transparent(DynDebug)]
+struct TransparentUnsizedWithZeroSized {
+  a: (),
+  b: DynDebug,
+}
+
+#[derive(TransparentWrapper)]
+#[repr(transparent)]
+#[transparent(DynDebug)]
+struct TransparentUnsizedWithGenericZeroSizeds<T: ?Sized, U: ?Sized> {
+  a: PhantomData<T>,
+  b: PhantomData<U>,
+  c: DynDebug,
 }
