@@ -218,8 +218,7 @@ impl Derivable for CheckedBitPattern {
 
         Ok(assert_fields_are_maybe_pod)
       }
-      Data::Enum(_) => Ok(quote!()), /* nothing needed, already guaranteed
-                                       * OK by NoUninit */
+      Data::Enum(_) => Ok(quote!()), /* nothing needed, already guaranteed OK by NoUninit */
       Data::Union(_) => bail!("Internal error in CheckedBitPattern derive"), /* shouldn't be possible since we already error in attribute check for this case */
     }
   }
@@ -273,21 +272,43 @@ impl Derivable for TransparentWrapper {
   }
 
   fn asserts(input: &DeriveInput) -> Result<TokenStream> {
+    let (impl_generics, _ty_generics, where_clause) =
+      input.generics.split_for_impl();
     let fields = get_struct_fields(input)?;
     let wrapped_type = match Self::get_wrapper_type(&input.attrs, &fields) {
       Some(wrapped_type) => wrapped_type.to_string(),
       None => unreachable!(), /* other code will already reject this derive */
     };
-    let mut wrapped_fields = fields
-      .iter()
-      .filter(|field| field.ty.to_token_stream().to_string() == wrapped_type);
-    if let None = wrapped_fields.next() {
-      bail!("TransparentWrapper must have one field of the wrapped type");
-    };
-    if let Some(_) = wrapped_fields.next() {
-      bail!("TransparentWrapper can only have one field of the wrapped type")
+    let mut wrapped_field_ty = None;
+    let mut nonwrapped_field_tys = vec![];
+    for field in fields.iter() {
+      let field_ty = &field.ty;
+      if field_ty.to_token_stream().to_string() == wrapped_type {
+        if wrapped_field_ty.is_some() {
+          bail!(
+            "TransparentWrapper can only have one field of the wrapped type"
+          );
+        }
+        wrapped_field_ty = Some(field_ty);
+      } else {
+        nonwrapped_field_tys.push(field_ty);
+      }
+    }
+    if let Some(wrapped_field_ty) = wrapped_field_ty {
+      Ok(quote!(
+        const _: () = {
+          #[repr(transparent)]
+          struct AssertWrappedIsWrapped #impl_generics((u8, ::core::marker::PhantomData<#wrapped_field_ty>), #(#nonwrapped_field_tys),*) #where_clause;
+          fn assert_zeroable<Z: ::bytemuck::Zeroable>() {}
+          fn check #impl_generics () #where_clause {
+            #(
+              assert_zeroable::<#nonwrapped_field_tys>();
+            )*
+          }
+        };
+      ))
     } else {
-      Ok(quote!())
+      bail!("TransparentWrapper must have one field of the wrapped type")
     }
   }
 

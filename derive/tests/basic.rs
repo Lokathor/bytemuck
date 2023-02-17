@@ -4,7 +4,7 @@ use bytemuck::{
   AnyBitPattern, CheckedBitPattern, Contiguous, NoUninit, Pod,
   TransparentWrapper, Zeroable,
 };
-use std::marker::PhantomData;
+use std::marker::{PhantomData, PhantomPinned};
 
 #[derive(Copy, Clone, Pod, Zeroable)]
 #[repr(C)]
@@ -63,6 +63,14 @@ struct TransparentWithZeroSized<T> {
   a: u16,
   b: PhantomData<T>,
 }
+
+struct MyZst<T>(PhantomData<T>, [u8; 0], PhantomPinned);
+unsafe impl<T> Zeroable for MyZst<T> {}
+
+#[derive(TransparentWrapper)]
+#[repr(transparent)]
+#[transparent(u16)]
+struct TransparentTupleWithCustomZeroSized<T>(u16, MyZst<T>);
 
 #[repr(u8)]
 #[derive(Clone, Copy, Contiguous)]
@@ -169,6 +177,21 @@ struct AnyBitPatternTest {
 #[repr(transparent)]
 struct NewtypeWrapperTest<T>(T);
 
+/// ```compile_fail
+/// use bytemuck::TransparentWrapper;
+///
+/// struct NonTransparentSafeZST;
+///
+/// #[derive(TransparentWrapper)]
+/// #[repr(transparent)]
+/// struct Wrapper<T>(T, NonTransparentSafeZST);
+/// ```
+#[derive(
+  Debug, Copy, Clone, PartialEq, Eq, Pod, Zeroable, TransparentWrapper,
+)]
+#[repr(transparent)]
+struct TransarentWrapperZstTest<T>(T);
+
 #[test]
 fn fails_cast_contiguous() {
   let can_cast = CheckedBitPatternEnumWithValues::is_valid_bit_pattern(&5);
@@ -207,7 +230,14 @@ fn fails_cast_bytelit() {
 fn passes_cast_bytelit() {
   let res =
     bytemuck::checked::cast_slice::<u8, CheckedBitPatternEnumByteLit>(b"CAB");
-  assert_eq!(res, [CheckedBitPatternEnumByteLit::C, CheckedBitPatternEnumByteLit::A, CheckedBitPatternEnumByteLit::B]);
+  assert_eq!(
+    res,
+    [
+      CheckedBitPatternEnumByteLit::C,
+      CheckedBitPatternEnumByteLit::A,
+      CheckedBitPatternEnumByteLit::B
+    ]
+  );
 }
 
 #[test]
