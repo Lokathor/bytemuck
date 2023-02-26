@@ -130,6 +130,19 @@ pub(crate) unsafe fn pod_read_unaligned<T: Copy>(bytes: &[u8]) -> T {
   }
 }
 
+/// Checks if `ptr` is aligned to an `align` memory boundary.
+///
+/// ## Panics
+/// * If `align` is not a power of two. This includes when `align` is zero.
+#[inline]
+pub(crate) fn is_aligned_to(ptr: *const (), align: usize) -> bool {
+  // This is in a way better than `ptr as usize % align == 0`,
+  // because casting a pointer to an integer has the side effect that it exposes
+  // the pointer's provenance, which may theoretically inhibit some compiler
+  // optimizations.
+  ptr.align_offset(align) == 0
+}
+
 /// Re-interprets `&[u8]` as `&T`.
 ///
 /// ## Failure
@@ -142,7 +155,7 @@ pub(crate) unsafe fn try_from_bytes<T: Copy>(
 ) -> Result<&T, PodCastError> {
   if s.len() != size_of::<T>() {
     Err(PodCastError::SizeMismatch)
-  } else if (s.as_ptr() as usize) % align_of::<T>() != 0 {
+  } else if !is_aligned_to(s.as_ptr() as *const (), align_of::<T>()) {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else {
     Ok(unsafe { &*(s.as_ptr() as *const T) })
@@ -161,7 +174,7 @@ pub(crate) unsafe fn try_from_bytes_mut<T: Copy>(
 ) -> Result<&mut T, PodCastError> {
   if s.len() != size_of::<T>() {
     Err(PodCastError::SizeMismatch)
-  } else if (s.as_ptr() as usize) % align_of::<T>() != 0 {
+  } else if !is_aligned_to(s.as_ptr() as *const (), align_of::<T>()) {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else {
     Ok(unsafe { &mut *(s.as_mut_ptr() as *mut T) })
@@ -284,7 +297,7 @@ pub(crate) unsafe fn try_cast_ref<A: Copy, B: Copy>(
   // Note(Lokathor): everything with `align_of` and `size_of` will optimize away
   // after monomorphization.
   if align_of::<B>() > align_of::<A>()
-    && (a as *const A as usize) % align_of::<B>() != 0
+    && !is_aligned_to(a as *const A as *const (), align_of::<B>())
   {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else if size_of::<B>() == size_of::<A>() {
@@ -304,7 +317,7 @@ pub(crate) unsafe fn try_cast_mut<A: Copy, B: Copy>(
   // Note(Lokathor): everything with `align_of` and `size_of` will optimize away
   // after monomorphization.
   if align_of::<B>() > align_of::<A>()
-    && (a as *mut A as usize) % align_of::<B>() != 0
+    && !is_aligned_to(a as *const A as *const (), align_of::<B>())
   {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else if size_of::<B>() == size_of::<A>() {
@@ -336,7 +349,7 @@ pub(crate) unsafe fn try_cast_slice<A: Copy, B: Copy>(
   // Note(Lokathor): everything with `align_of` and `size_of` will optimize away
   // after monomorphization.
   if align_of::<B>() > align_of::<A>()
-    && (a.as_ptr() as usize) % align_of::<B>() != 0
+    && !is_aligned_to(a.as_ptr() as *const (), align_of::<B>())
   {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else if size_of::<B>() == size_of::<A>() {
@@ -362,7 +375,7 @@ pub(crate) unsafe fn try_cast_slice_mut<A: Copy, B: Copy>(
   // Note(Lokathor): everything with `align_of` and `size_of` will optimize away
   // after monomorphization.
   if align_of::<B>() > align_of::<A>()
-    && (a.as_mut_ptr() as usize) % align_of::<B>() != 0
+    && !is_aligned_to(a.as_ptr() as *const (), align_of::<B>())
   {
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   } else if size_of::<B>() == size_of::<A>() {
