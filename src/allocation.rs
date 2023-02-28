@@ -282,10 +282,7 @@ pub fn try_cast_vec<A: NoUninit, B: AnyBitPattern>(
 ///   assert_eq!(&vec_of_words[..], &[0x0005_0006, 0x0007_0008][..])
 /// }
 /// ```
-pub fn pod_collect_to_vec<
-  A: NoUninit + AnyBitPattern,
-  B: NoUninit + AnyBitPattern,
->(
+pub fn pod_collect_to_vec<A: NoUninit, B: NoUninit + AnyBitPattern>(
   src: &[A],
 ) -> Vec<B> {
   let src_size = size_of_val(src);
