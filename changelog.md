@@ -1,5 +1,17 @@
 # `bytemuck` changelog
 
+## 1.13.1
+
+* Remove the requirement for the *source* data type to be `AnyBitPattern` on
+  `pod_collect_to_vec`, allowing you to pod collect vecs of `char` into vecs of
+  `u32`, or whatever.
+
+## 1.13
+
+* Now depends on `bytemuck_derive-1.4.0`
+* Various small enhancements that would have been patch version updates, but
+  which have been rolled into this minor version update.
+
 ## 1.12.4
 
 * This has additional impls for existing traits and cleans up some internal code,
