@@ -1,6 +1,7 @@
 #![no_std]
 #![warn(missing_docs)]
 #![allow(clippy::match_like_matches_macro)]
+#![allow(clippy::uninlined_format_args)]
 #![cfg_attr(feature = "nightly_portable_simd", feature(portable_simd))]
 #![cfg_attr(feature = "nightly_stdsimd", feature(stdsimd))]
 
