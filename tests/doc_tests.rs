@@ -1,3 +1,5 @@
+#![allow(clippy::disallowed_names)]
+
 //! Cargo miri doesn't run doctests yet, so we duplicate these here. It's
 //! probably not that important to sweat keeping these perfectly up to date, but
 //! we should try to catch the cases where the primary tests are doctests.

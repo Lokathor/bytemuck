@@ -1,3 +1,4 @@
+#![allow(clippy::disallowed_names)]
 use bytemuck::{offset_of, Zeroable};
 
 #[test]

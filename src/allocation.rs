@@ -209,7 +209,7 @@ pub fn cast_vec<A: NoUninit, B: AnyBitPattern>(input: Vec<A>) -> Vec<B> {
 ///   alignment.
 /// * The start and end content size in bytes of the `Vec` must be the exact
 ///   same.
-/// * The start and end capacity in bytes of the `Vec` mest be the exact same.
+/// * The start and end capacity in bytes of the `Vec` must be the exact same.
 #[inline]
 pub fn try_cast_vec<A: NoUninit, B: AnyBitPattern>(
   input: Vec<A>,
@@ -282,10 +282,7 @@ pub fn try_cast_vec<A: NoUninit, B: AnyBitPattern>(
 ///   assert_eq!(&vec_of_words[..], &[0x0005_0006, 0x0007_0008][..])
 /// }
 /// ```
-pub fn pod_collect_to_vec<
-  A: NoUninit + AnyBitPattern,
-  B: NoUninit + AnyBitPattern,
->(
+pub fn pod_collect_to_vec<A: NoUninit, B: NoUninit + AnyBitPattern>(
   src: &[A],
 ) -> Vec<B> {
   let src_size = size_of_val(src);
