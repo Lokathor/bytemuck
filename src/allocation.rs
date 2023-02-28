@@ -209,7 +209,7 @@ pub fn cast_vec<A: NoUninit, B: AnyBitPattern>(input: Vec<A>) -> Vec<B> {
 ///   alignment.
 /// * The start and end content size in bytes of the `Vec` must be the exact
 ///   same.
-/// * The start and end capacity in bytes of the `Vec` mest be the exact same.
+/// * The start and end capacity in bytes of the `Vec` must be the exact same.
 #[inline]
 pub fn try_cast_vec<A: NoUninit, B: AnyBitPattern>(
   input: Vec<A>,
