@@ -573,13 +573,11 @@ fn get_ident_from_stream(tokens: TokenStream) -> Option<Ident> {
 /// get a simple #[foo(bar)] attribute, returning "bar"
 fn get_simple_attr(attributes: &[Attribute], attr_name: &str) -> Option<Ident> {
   for attr in attributes {
-    if let (AttrStyle::Outer, Some(outer_ident), Some(inner_ident)) = (
-      &attr.style,
-      attr.path.get_ident(),
-      get_ident_from_stream(attr.tokens.clone()),
-    ) {
-      if outer_ident.to_string() == attr_name {
-        return Some(inner_ident);
+    if let (AttrStyle::Outer, Meta::List(list)) = (&attr.style, &attr.meta) {
+      if list.path.is_ident(attr_name) {
+        if let Some(ident) = get_ident_from_stream(list.tokens.clone()) {
+          return Some(ident);
+        }
       }
     }
   }
@@ -591,7 +589,7 @@ fn get_repr(attributes: &[Attribute]) -> Result<Representation> {
   attributes
     .iter()
     .filter_map(|attr| {
-      if attr.path.is_ident("repr") {
+      if attr.path().is_ident("repr") {
         Some(attr.parse_args::<Representation>())
       } else {
         None
