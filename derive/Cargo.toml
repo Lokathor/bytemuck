@@ -16,7 +16,7 @@ proc-macro = true
 
 [dependencies]
 # syn seems to have broken backwards compatibility in this version https://github.com/dtolnay/syn/issues/1194
-syn = "1.0.99"
+syn = "2.0.1"
 quote = "1"
 proc-macro2 = "1"
 
