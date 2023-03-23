@@ -1,7 +1,7 @@
 [package]
 name = "bytemuck"
 description = "A crate for mucking around with piles of bytes."
-version = "1.9.1"
+version = "1.13.1"
 authors = ["Lokathor <zefria@gmail.com>"]
 repository = "https://github.com/Lokathor/bytemuck"
 readme = "README.md"
@@ -17,6 +17,7 @@ derive = ["bytemuck_derive"]
 extern_crate_alloc = []
 extern_crate_std = ["extern_crate_alloc"]
 zeroable_maybe_uninit = []
+zeroable_atomics = []
 min_const_generics = []
 wasm_simd = [] # Until >= 1.54.0 is MSRV this is an off-by-default feature.
 aarch64_simd = [] # Until >= 1.59.0 is MSRV this is an off-by-default feature.
@@ -26,30 +27,31 @@ unsound_ptr_pod_impl = []
 
 # NOT SEMVER SUPPORTED! TEMPORARY ONLY!
 nightly_portable_simd = []
+nightly_stdsimd = []
 
 [dependencies]
-# use the upper line for testing against bytemuck_derive changes, if any
-#bytemuck_derive = { path = "./derive", optional = true }
-bytemuck_derive = { version = "1.1", optional = true }
+bytemuck_derive = { version = "1.4", path = "derive", optional = true }
 
 [package.metadata.docs.rs]
-# Note(Lokathor): Don't use all-feautures or it would use `unsound_ptr_pod_impl` too.
+# Note(Lokathor): Don't use all-features or it would use `unsound_ptr_pod_impl` too.
 features = [
   "derive",
   "extern_crate_alloc",
   "extern_crate_std",
   "zeroable_maybe_uninit",
+  "zeroable_atomics",
   "min_const_generics",
   "wasm_simd",
 ]
 
 [package.metadata.playground]
-# Note(Lokathor): Don't use all-feautures or it would use `unsound_ptr_pod_impl` too.
+# Note(Lokathor): Don't use all-features or it would use `unsound_ptr_pod_impl` too.
 features = [
   "derive",
   "extern_crate_alloc",
   "extern_crate_std",
   "zeroable_maybe_uninit",
+  "zeroable_atomics",
   "min_const_generics",
   "wasm_simd",
 ]

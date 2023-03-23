@@ -140,7 +140,7 @@ fn test_try_from_bytes_mut() {
     Err(PodCastError::SizeMismatch)
   );
   assert_eq!(
-    try_from_bytes::<u32>(&mut bytes[1..5]),
+    try_from_bytes::<u32>(&bytes[1..5]),
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
   );
 }

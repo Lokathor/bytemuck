@@ -1,5 +1,71 @@
 # `bytemuck` changelog
 
+## 1.13.1
+
+* Remove the requirement for the *source* data type to be `AnyBitPattern` on
+  `pod_collect_to_vec`, allowing you to pod collect vecs of `char` into vecs of
+  `u32`, or whatever.
+
+## 1.13
+
+* Now depends on `bytemuck_derive-1.4.0`
+* Various small enhancements that would have been patch version updates, but
+  which have been rolled into this minor version update.
+
+## 1.12.4
+
+* This has additional impls for existing traits and cleans up some internal code,
+  but there's no new functions so I guess it counts as just a patch release.
+
+## 1.12.3
+
+* This bugfix makes the crate do stuff with `Arc` or not based on the
+  `target_has_atomic` config. Previously, some targets that have allocation but
+  not atomics were getting errors. This raises the MSRV of the
+  `extern_crate_alloc` feature to 1.60, but opt-in features are *not* considered
+  to be hard locked to 1.34 like the basic build of the crate is.
+
+## 1.12.2
+
+* Fixes `try_pod_read_unaligned` bug that made it always fail unless the target
+  type was exactly pointer sized in which case UB *could* happen. The
+  `CheckedBitPattern::is_valid_bit_pattern` was being asked to check that a
+  *reference* to the `pod` value was a valid bit pattern, rather than the actual
+  bit pattern itself, and so the check could in some cases be illegally
+  bypassed.
+
+## 1.12.1
+
+* Patch bumped the required `bytemuck_derive` version because of a regression in
+  how it handled `align(N)` attributes.
+
+## 1.12
+
+* This minor version bump is caused by a version bump in our `bytemuck_derive`
+  dependency, which is in turn caused by a mixup in the minimum version of `syn`
+  that `bytemuck_derive` uses. See [Issue
+  122](https://github.com/Lokathor/bytemuck/issues/122). There's not any
+  specific "new" API as you might normally expect from a minor version bump.
+* [pali](https://github.com/pali6) fixed a problem with SPIR-V builds being
+  broken. The error handling functions were trying to be generic over `Display`,
+  which the error types normally support, except on SPIR-V targets (which run on
+  the GPU and don't have text formatting).
+
+## 1.11
+
+* [WaffleLapkin](https://github.com/WaffleLapkin) added `wrap_box` and `peel_box`
+  to the `TransparentWrapperAlloc` trait. Default impls of these functions are
+  provided, and (as usual with the transparent trait stuff) you should not override
+  the default versions.
+
+## 1.10
+
+* [TheEdward162](https://github.com/TheEdward162) added the `ZeroableInOption`
+  and `PodInOption` traits. These are for types that are `Zeroable` or `Pod`
+  *when in an option*, but not on their own. We provide impls for the various
+  "NonZeroINTEGER" types in `core`, and if you need to newtype a NonZero value
+  then you can impl these traits when you use `repr(transparent)`.
+
 ## 1.9.1
 
 * Bumped the minimum `bytemuck_derive` dependency version from `1.0` to `1.1`.

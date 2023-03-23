@@ -1,7 +1,7 @@
 //! Internal implementation of casting functions not bound by marker traits
-//! and therefore marked as unsafe. This is used so that we don't need to duplicate
-//! the business logic contained in these functions between the versions exported in
-//! the crate root, `checked`, and `relaxed` modules.
+//! and therefore marked as unsafe. This is used so that we don't need to
+//! duplicate the business logic contained in these functions between the
+//! versions exported in the crate root, `checked`, and `relaxed` modules.
 #![allow(unused_unsafe)]
 
 use crate::PodCastError;
@@ -20,20 +20,28 @@ possibility code branch.
 */
 
 /// Immediately panics.
+#[cfg(not(target_arch = "spirv"))]
 #[cold]
 #[inline(never)]
-pub(crate) fn something_went_wrong<D: core::fmt::Display>(_src: &str, _err: D) -> ! {
+pub(crate) fn something_went_wrong<D: core::fmt::Display>(
+  _src: &str, _err: D,
+) -> ! {
   // Note(Lokathor): Keeping the panic here makes the panic _formatting_ go
   // here too, which helps assembly readability and also helps keep down
   // the inline pressure.
-  #[cfg(not(target_arch = "spirv"))]
   panic!("{src}>{err}", src = _src, err = _err);
+}
+
+/// Immediately panics.
+#[cfg(target_arch = "spirv")]
+#[cold]
+#[inline(never)]
+pub(crate) fn something_went_wrong<D>(_src: &str, _err: D) -> ! {
   // Note: On the spirv targets from [rust-gpu](https://github.com/EmbarkStudios/rust-gpu)
   // panic formatting cannot be used. We we just give a generic error message
   // The chance that the panicking version of these functions will ever get
   // called on spir-v targets with invalid inputs is small, but giving a
   // simple error message is better than no error message at all.
-  #[cfg(target_arch = "spirv")]
   panic!("Called a panicing helper from bytemuck which paniced");
 }
 
@@ -100,7 +108,9 @@ pub(crate) unsafe fn from_bytes_mut<T: Copy>(s: &mut [u8]) -> &mut T {
 /// ## Failure
 /// * If the `bytes` length is not equal to `size_of::<T>()`.
 #[inline]
-pub(crate) unsafe fn try_pod_read_unaligned<T: Copy>(bytes: &[u8]) -> Result<T, PodCastError> {
+pub(crate) unsafe fn try_pod_read_unaligned<T: Copy>(
+  bytes: &[u8],
+) -> Result<T, PodCastError> {
   if bytes.len() != size_of::<T>() {
     Err(PodCastError::SizeMismatch)
   } else {

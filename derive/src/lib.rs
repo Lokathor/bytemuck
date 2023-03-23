@@ -5,11 +5,12 @@ extern crate proc_macro;
 mod traits;
 
 use proc_macro2::TokenStream;
-use quote::{quote, quote_spanned};
-use syn::{parse_macro_input, DeriveInput, spanned::Spanned};
+use quote::quote;
+use syn::{parse_macro_input, DeriveInput, Result};
 
 use crate::traits::{
-  AnyBitPattern, Contiguous, Derivable, CheckedBitPattern, NoUninit, Pod, TransparentWrapper, Zeroable,
+  AnyBitPattern, CheckedBitPattern, Contiguous, Derivable, NoUninit, Pod,
+  TransparentWrapper, Zeroable,
 };
 
 /// Derive the `Pod` trait for a struct
@@ -51,13 +52,14 @@ pub fn derive_pod(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 ///
 /// The following constraints need to be satisfied for the macro to succeed
 ///
-/// - All fields ind the struct must to implement `AnyBitPattern`
+/// - All fields in the struct must to implement `AnyBitPattern`
 #[proc_macro_derive(AnyBitPattern)]
 pub fn derive_anybitpattern(
   input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-  let expanded =
-    derive_marker_trait::<AnyBitPattern>(parse_macro_input!(input as DeriveInput));
+  let expanded = derive_marker_trait::<AnyBitPattern>(parse_macro_input!(
+    input as DeriveInput
+  ));
 
   proc_macro::TokenStream::from(expanded)
 }
@@ -69,7 +71,7 @@ pub fn derive_anybitpattern(
 ///
 /// The following constraints need to be satisfied for the macro to succeed
 ///
-/// - All fields ind the struct must to implement `Zeroable`
+/// - All fields in the struct must to implement `Zeroable`
 ///
 /// ## Example
 ///
@@ -99,8 +101,8 @@ pub fn derive_zeroable(
 /// for the `NoUninit` trait.
 ///
 /// The following constraints need to be satisfied for the macro to succeed
-/// (the rest of the constraints are guaranteed by the `NoUninit` subtrait bounds,
-/// i.e. the type must be `Sized + Copy + 'static`):
+/// (the rest of the constraints are guaranteed by the `NoUninit` subtrait
+/// bounds, i.e. the type must be `Sized + Copy + 'static`):
 ///
 /// If applied to a struct:
 /// - All fields in the struct must implement `NoUninit`
@@ -129,9 +131,9 @@ pub fn derive_no_uninit(
 /// definition and `is_valid_bit_pattern` method for the type automatically.
 ///
 /// The following constraints need to be satisfied for the macro to succeed
-/// (the rest of the constraints are guaranteed by the `CheckedBitPattern` subtrait bounds,
-/// i.e. are guaranteed by the requirements of the `NoUninit` trait which `CheckedBitPattern`
-/// is a subtrait of):
+/// (the rest of the constraints are guaranteed by the `CheckedBitPattern`
+/// subtrait bounds, i.e. are guaranteed by the requirements of the `NoUninit`
+/// trait which `CheckedBitPattern` is a subtrait of):
 ///
 /// If applied to a struct:
 /// - All fields must implement `CheckedBitPattern`
@@ -142,8 +144,9 @@ pub fn derive_no_uninit(
 pub fn derive_maybe_pod(
   input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-  let expanded =
-    derive_marker_trait::<CheckedBitPattern>(parse_macro_input!(input as DeriveInput));
+  let expanded = derive_marker_trait::<CheckedBitPattern>(parse_macro_input!(
+    input as DeriveInput
+  ));
 
   proc_macro::TokenStream::from(expanded)
 }
@@ -221,28 +224,113 @@ pub fn derive_contiguous(
   proc_macro::TokenStream::from(expanded)
 }
 
-/// Basic wrapper for error handling
-fn derive_marker_trait<Trait: Derivable>(input: DeriveInput) -> TokenStream {
-  let span = input.span();
-  derive_marker_trait_inner::<Trait>(input).unwrap_or_else(|err| {
-    quote_spanned! { span =>
-      compile_error!(#err);
+/// Derive the `PartialEq` and `Eq` trait for a type
+///
+/// The macro implements `PartialEq` and `Eq` by casting both sides of the
+/// comparison to a byte slice and then compares those.
+///
+/// ## Warning
+///
+/// Since this implements a byte wise comparison, the behavior of floating point
+/// numbers does not match their usual comparison behavior. Additionally other
+/// custom comparison behaviors of the individual fields are also ignored. This
+/// also does not implement `StructuralPartialEq` / `StructuralEq` like
+/// `PartialEq` / `Eq` would. This means you can't pattern match on the values.
+///
+/// ## Example
+///
+/// ```rust
+/// # use bytemuck_derive::{ByteEq, NoUninit};
+/// #[derive(Copy, Clone, NoUninit, ByteEq)]
+/// #[repr(C)]
+/// struct Test {
+///   a: u32,
+///   b: char,
+///   c: f32,
+/// }
+/// ```
+#[proc_macro_derive(ByteEq)]
+pub fn derive_byte_eq(
+  input: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+  let input = parse_macro_input!(input as DeriveInput);
+  let ident = input.ident;
+
+  proc_macro::TokenStream::from(quote! {
+    impl ::core::cmp::PartialEq for #ident {
+      #[inline]
+      #[must_use]
+      fn eq(&self, other: &Self) -> bool {
+        ::bytemuck::bytes_of(self) == ::bytemuck::bytes_of(other)
+      }
+    }
+    impl ::core::cmp::Eq for #ident { }
+  })
+}
+
+/// Derive the `Hash` trait for a type
+///
+/// The macro implements `Hash` by casting the value to a byte slice and hashing
+/// that.
+///
+/// ## Warning
+///
+/// The hash does not match the standard library's `Hash` derive.
+///
+/// ## Example
+///
+/// ```rust
+/// # use bytemuck_derive::{ByteHash, NoUninit};
+/// #[derive(Copy, Clone, NoUninit, ByteHash)]
+/// #[repr(C)]
+/// struct Test {
+///   a: u32,
+///   b: char,
+///   c: f32,
+/// }
+/// ```
+#[proc_macro_derive(ByteHash)]
+pub fn derive_byte_hash(
+  input: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+  let input = parse_macro_input!(input as DeriveInput);
+  let ident = input.ident;
+
+  proc_macro::TokenStream::from(quote! {
+    impl ::core::hash::Hash for #ident {
+      #[inline]
+      fn hash<H: ::core::hash::Hasher>(&self, state: &mut H) {
+        ::core::hash::Hash::hash_slice(::bytemuck::bytes_of(self), state)
+      }
+
+      #[inline]
+      fn hash_slice<H: ::core::hash::Hasher>(data: &[Self], state: &mut H) {
+        ::core::hash::Hash::hash_slice(::bytemuck::cast_slice::<_, u8>(data), state)
+      }
     }
   })
 }
 
+/// Basic wrapper for error handling
+fn derive_marker_trait<Trait: Derivable>(input: DeriveInput) -> TokenStream {
+  derive_marker_trait_inner::<Trait>(input)
+    .unwrap_or_else(|err| err.into_compile_error())
+}
+
 fn derive_marker_trait_inner<Trait: Derivable>(
-  input: DeriveInput,
-) -> Result<TokenStream, &'static str> {
+  mut input: DeriveInput,
+) -> Result<TokenStream> {
+  // Enforce Pod on all generic fields.
+  let trait_ = Trait::ident(&input)?;
+  add_trait_marker(&mut input.generics, &trait_);
+
   let name = &input.ident;
 
   let (impl_generics, ty_generics, where_clause) =
     input.generics.split_for_impl();
 
-  let trait_ = Trait::ident();
   Trait::check_attributes(&input.data, &input.attrs)?;
   let asserts = Trait::asserts(&input)?;
-  let trait_params = Trait::generic_params(&input)?;
   let (trait_impl_extras, trait_impl) = Trait::trait_impl(&input)?;
 
   let implies_trait = if let Some(implies_trait) = Trait::implies_trait() {
@@ -251,15 +339,34 @@ fn derive_marker_trait_inner<Trait: Derivable>(
     quote!()
   };
 
+  let where_clause = if Trait::requires_where_clause() {
+    where_clause
+  } else {
+    None
+  };
+
   Ok(quote! {
     #asserts
 
     #trait_impl_extras
 
-    unsafe impl #impl_generics #trait_ #trait_params for #name #ty_generics #where_clause {
+    unsafe impl #impl_generics #trait_ for #name #ty_generics #where_clause {
       #trait_impl
     }
 
     #implies_trait
   })
+}
+
+/// Add a trait marker to the generics if it is not already present
+fn add_trait_marker(generics: &mut syn::Generics, trait_name: &syn::Path) {
+  // Get each generic type parameter.
+  let type_params = generics
+    .type_params()
+    .map(|param| &param.ident)
+    .map(|param| syn::parse_quote!(
+      #param: #trait_name
+    )).collect::<Vec<syn::WherePredicate>>();
+
+  generics.make_where_clause().predicates.extend(type_params);
 }

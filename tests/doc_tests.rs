@@ -1,3 +1,5 @@
+#![allow(clippy::disallowed_names)]
+
 //! Cargo miri doesn't run doctests yet, so we duplicate these here. It's
 //! probably not that important to sweat keeping these perfectly up to date, but
 //! we should try to catch the cases where the primary tests are doctests.
@@ -103,7 +105,7 @@ fn test_offsetof_nonpod() {
   // Note: offsets are in bytes.
   let as_bytes = &foo as *const _ as *const u8;
 
-  // we're using wrapping_offset here becasue it's not worth
+  // We're using wrapping_offset here because it's not worth
   // the unsafe block, but it would be valid to use `add` instead,
   // as it cannot overflow.
   assert_eq!(

@@ -1,6 +1,9 @@
 #![no_std]
 #![warn(missing_docs)]
+#![allow(clippy::match_like_matches_macro)]
+#![allow(clippy::uninlined_format_args)]
 #![cfg_attr(feature = "nightly_portable_simd", feature(portable_simd))]
+#![cfg_attr(feature = "nightly_stdsimd", feature(stdsimd))]
 
 //! This crate gives small utilities for casting between plain data types.
 //!
@@ -70,6 +73,18 @@ macro_rules! transmute {
   };
 }
 
+/// A macro to implement marker traits for various simd types.
+/// #[allow(unused)] because the impls are only compiled on relevant platforms
+/// with relevant cargo features enabled.
+#[allow(unused)]
+macro_rules! impl_unsafe_marker_for_simd {
+  (unsafe impl $trait:ident for $platform:ident :: {}) => {};
+  (unsafe impl $trait:ident for $platform:ident :: { $first_type:ident $(, $types:ident)* $(,)? }) => {
+    unsafe impl $trait for $platform::$first_type {}
+    impl_unsafe_marker_for_simd!(unsafe impl $trait for $platform::{ $( $types ),* });
+  };
+}
+
 #[cfg(feature = "extern_crate_std")]
 extern crate std;
 
@@ -90,9 +105,13 @@ mod internal;
 
 mod zeroable;
 pub use zeroable::*;
+mod zeroable_in_option;
+pub use zeroable_in_option::*;
 
 mod pod;
 pub use pod::*;
+mod pod_in_option;
+pub use pod_in_option::*;
 
 mod no_uninit;
 pub use no_uninit::*;
@@ -108,7 +127,8 @@ pub use transparent::*;
 
 #[cfg(feature = "derive")]
 pub use bytemuck_derive::{
-  AnyBitPattern, Contiguous, CheckedBitPattern, NoUninit, Pod, TransparentWrapper, Zeroable,
+  AnyBitPattern, ByteEq, ByteHash, CheckedBitPattern, Contiguous, NoUninit,
+  Pod, TransparentWrapper, Zeroable,
 };
 
 /// The things that can go wrong when casting between [`Pod`] data forms.
@@ -185,7 +205,9 @@ pub fn from_bytes_mut<T: NoUninit + AnyBitPattern>(s: &mut [u8]) -> &mut T {
 /// ## Failure
 /// * If the `bytes` length is not equal to `size_of::<T>()`.
 #[inline]
-pub fn try_pod_read_unaligned<T: AnyBitPattern>(bytes: &[u8]) -> Result<T, PodCastError> {
+pub fn try_pod_read_unaligned<T: AnyBitPattern>(
+  bytes: &[u8],
+) -> Result<T, PodCastError> {
   unsafe { internal::try_pod_read_unaligned(bytes) }
 }
 
@@ -238,7 +260,9 @@ pub fn cast<A: NoUninit, B: AnyBitPattern>(a: A) -> B {
 ///
 /// This is [`try_cast_mut`] but will panic on error.
 #[inline]
-pub fn cast_mut<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(a: &mut A) -> &mut B {
+pub fn cast_mut<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(
+  a: &mut A,
+) -> &mut B {
   unsafe { internal::cast_mut(a) }
 }
 
@@ -268,19 +292,29 @@ pub fn cast_slice<A: NoUninit, B: AnyBitPattern>(a: &[A]) -> &[B] {
 ///
 /// This is [`try_cast_slice_mut`] but will panic on error.
 #[inline]
-pub fn cast_slice_mut<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(a: &mut [A]) -> &mut [B] {
+pub fn cast_slice_mut<
+  A: NoUninit + AnyBitPattern,
+  B: NoUninit + AnyBitPattern,
+>(
+  a: &mut [A],
+) -> &mut [B] {
   unsafe { internal::cast_slice_mut(a) }
 }
 
 /// As `align_to`, but safe because of the [`Pod`] bound.
 #[inline]
-pub fn pod_align_to<T: NoUninit, U: AnyBitPattern>(vals: &[T]) -> (&[T], &[U], &[T]) {
+pub fn pod_align_to<T: NoUninit, U: AnyBitPattern>(
+  vals: &[T],
+) -> (&[T], &[U], &[T]) {
   unsafe { vals.align_to::<U>() }
 }
 
 /// As `align_to_mut`, but safe because of the [`Pod`] bound.
 #[inline]
-pub fn pod_align_to_mut<T: NoUninit + AnyBitPattern, U: NoUninit + AnyBitPattern>(
+pub fn pod_align_to_mut<
+  T: NoUninit + AnyBitPattern,
+  U: NoUninit + AnyBitPattern,
+>(
   vals: &mut [T],
 ) -> (&mut [T], &mut [U], &mut [T]) {
   unsafe { vals.align_to_mut::<U>() }
@@ -297,7 +331,9 @@ pub fn pod_align_to_mut<T: NoUninit + AnyBitPattern, U: NoUninit + AnyBitPattern
 ///
 /// * If the types don't have the same size this fails.
 #[inline]
-pub fn try_cast<A: NoUninit, B: AnyBitPattern>(a: A) -> Result<B, PodCastError> {
+pub fn try_cast<A: NoUninit, B: AnyBitPattern>(
+  a: A,
+) -> Result<B, PodCastError> {
   unsafe { internal::try_cast(a) }
 }
 
@@ -308,7 +344,9 @@ pub fn try_cast<A: NoUninit, B: AnyBitPattern>(a: A) -> Result<B, PodCastError> 
 /// * If the reference isn't aligned in the new type
 /// * If the source type and target type aren't the same size.
 #[inline]
-pub fn try_cast_ref<A: NoUninit, B: AnyBitPattern>(a: &A) -> Result<&B, PodCastError> {
+pub fn try_cast_ref<A: NoUninit, B: AnyBitPattern>(
+  a: &A,
+) -> Result<&B, PodCastError> {
   unsafe { internal::try_cast_ref(a) }
 }
 
@@ -316,7 +354,12 @@ pub fn try_cast_ref<A: NoUninit, B: AnyBitPattern>(a: &A) -> Result<&B, PodCastE
 ///
 /// As [`try_cast_ref`], but `mut`.
 #[inline]
-pub fn try_cast_mut<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(a: &mut A) -> Result<&mut B, PodCastError> {
+pub fn try_cast_mut<
+  A: NoUninit + AnyBitPattern,
+  B: NoUninit + AnyBitPattern,
+>(
+  a: &mut A,
+) -> Result<&mut B, PodCastError> {
   unsafe { internal::try_cast_mut(a) }
 }
 
@@ -336,7 +379,9 @@ pub fn try_cast_mut<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(a:
 /// * Similarly, you can't convert between a [ZST](https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
 ///   and a non-ZST.
 #[inline]
-pub fn try_cast_slice<A: NoUninit, B: AnyBitPattern>(a: &[A]) -> Result<&[B], PodCastError> {
+pub fn try_cast_slice<A: NoUninit, B: AnyBitPattern>(
+  a: &[A],
+) -> Result<&[B], PodCastError> {
   unsafe { internal::try_cast_slice(a) }
 }
 
@@ -345,7 +390,10 @@ pub fn try_cast_slice<A: NoUninit, B: AnyBitPattern>(a: &[A]) -> Result<&[B], Po
 ///
 /// As [`try_cast_slice`], but `&mut`.
 #[inline]
-pub fn try_cast_slice_mut<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(
+pub fn try_cast_slice_mut<
+  A: NoUninit + AnyBitPattern,
+  B: NoUninit + AnyBitPattern,
+>(
   a: &mut [A],
 ) -> Result<&mut [B], PodCastError> {
   unsafe { internal::try_cast_slice_mut(a) }
