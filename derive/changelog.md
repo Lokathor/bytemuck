@@ -1,6 +1,11 @@
 
 ## `bytemuck_derive` changelog
 
+## 1.4.1
+
+* Move the `syn` dependency to use version 2.
+  This should not affect the public API in any way.
+
 ## 1.4.0
 
 * ByteEq and ByteHash derives will make Eq and Hash impls that treat the value as a &[u8]. This provides a large codegen improvement for some types.
