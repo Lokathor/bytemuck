@@ -155,9 +155,9 @@ struct CheckedBitPatternStruct {
 
 #[derive(Debug, Copy, Clone, AnyBitPattern, PartialEq, Eq)]
 #[repr(C)]
-struct AnyBitPatternTest {
-  a: u16,
-  b: u16,
+struct AnyBitPatternTest<A: AnyBitPattern, B: AnyBitPattern> {
+  a: A,
+  b: B,
 }
 
 /// ```compile_fail
@@ -259,8 +259,8 @@ fn passes_cast_struct() {
 
 #[test]
 fn anybitpattern_implies_zeroable() {
-  let test = AnyBitPatternTest::zeroed();
-  assert_eq!(test, AnyBitPatternTest { a: 0, b: 0 });
+  let test = AnyBitPatternTest::<isize, usize>::zeroed();
+  assert_eq!(test, AnyBitPatternTest { a: 0isize, b: 0usize });
 }
 
 #[test]
