@@ -1,0 +1,98 @@
+warning: unused imports: `ReinterpretInner`, `TryReinterpretInner`
+ --> tests/ui/reinterpret_incompatible.rs:2:16
+  |
+2 |   Reinterpret, ReinterpretInner, TryReinterpret, TryReinterpretInner,
+  |                ^^^^^^^^^^^^^^^^                  ^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+error[E0599]: the method `reinterpret` exists for struct `Padded`, but its trait bounds were not satisfied
+  --> tests/ui/reinterpret_incompatible.rs:10:29
+   |
+7  | struct Padded(u16, u8);
+   | -------------
+   | |
+   | method `reinterpret` not found for this struct
+   | doesn't satisfy `Padded: NoUninit`
+   | doesn't satisfy `Padded: Reinterpret<_>`
+...
+10 |   let _: u32 = Padded(0, 0).reinterpret();
+   |                             ^^^^^^^^^^^ method cannot be called on `Padded` due to unsatisfied trait bounds
+   |
+   = note: the following trait bounds were not satisfied:
+           `Padded: NoUninit`
+           which is required by `Padded: Reinterpret<_>`
+           `&Padded: NoUninit`
+           which is required by `&Padded: Reinterpret<_>`
+           `&mut Padded: NoUninit`
+           which is required by `&mut Padded: Reinterpret<_>`
+note: the trait `NoUninit` must be implemented
+  --> $WORKSPACE/src/no_uninit.rs
+   |
+   | pub unsafe trait NoUninit: Sized + Copy + 'static {}
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0277]: the trait bound `NonZeroU32: Pod` is not satisfied
+  --> tests/ui/reinterpret_incompatible.rs:11:28
+   |
+11 |   let _: NonZeroU32 = 0u32.reinterpret();
+   |                            ^^^^^^^^^^^ the trait `Pod` is not implemented for `NonZeroU32`
+   |
+   = help: the following other types implement trait `Pod`:
+             ()
+             ManuallyDrop<T>
+             Option<T>
+             PhantomData<T>
+             PhantomPinned
+             Wrapping<T>
+             [T; 0]
+             [T; 1024]
+           and $N others
+   = note: required for `NonZeroU32` to implement `AnyBitPattern`
+   = note: required for `u32` to implement `Reinterpret<NonZeroU32>`
+
+error[E0599]: the method `try_reinterpret` exists for struct `Padded`, but its trait bounds were not satisfied
+  --> tests/ui/reinterpret_incompatible.rs:12:29
+   |
+7  | struct Padded(u16, u8);
+   | -------------
+   | |
+   | method `try_reinterpret` not found for this struct
+   | doesn't satisfy `Padded: NoUninit`
+   | doesn't satisfy `Padded: TryReinterpret<_>`
+...
+12 |   let _: u32 = Padded(0, 0).try_reinterpret().unwrap();
+   |                             ^^^^^^^^^^^^^^^ method cannot be called on `Padded` due to unsatisfied trait bounds
+   |
+   = note: the following trait bounds were not satisfied:
+           `Padded: NoUninit`
+           which is required by `Padded: TryReinterpret<_>`
+           `&Padded: NoUninit`
+           which is required by `&Padded: TryReinterpret<_>`
+           `&mut Padded: NoUninit`
+           which is required by `&mut Padded: TryReinterpret<_>`
+note: the trait `NoUninit` must be implemented
+  --> $WORKSPACE/src/no_uninit.rs
+   |
+   | pub unsafe trait NoUninit: Sized + Copy + 'static {}
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0277]: the trait bound `Padded: Pod` is not satisfied
+  --> tests/ui/reinterpret_incompatible.rs:13:24
+   |
+13 |   let _: Padded = 0u32.try_reinterpret().unwrap();
+   |                        ^^^^^^^^^^^^^^^ the trait `Pod` is not implemented for `Padded`
+   |
+   = help: the following other types implement trait `Pod`:
+             ()
+             ManuallyDrop<T>
+             Option<T>
+             PhantomData<T>
+             PhantomPinned
+             Wrapping<T>
+             [T; 0]
+             [T; 1024]
+           and $N others
+   = note: required for `Padded` to implement `AnyBitPattern`
+   = note: required for `Padded` to implement `CheckedBitPattern`
+   = note: required for `u32` to implement `TryReinterpret<Padded>`

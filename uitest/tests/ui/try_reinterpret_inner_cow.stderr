@@ -1,0 +1,89 @@
+error[E0080]: evaluation of `<*const u8 as bytemuck::cast::TryCastRaw<*const [u8; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     size_of::<Src>() == size_of::<Dst>(),
+  | |     "Attempted conversion between types of different sizes."
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between types of different sizes.', $WORKSPACE/src/cast.rs:1049:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+    --> $WORKSPACE/src/cast.rs
+     |
+     |   const ASSERT: () = <*const Src as TryCastRaw<*const Dst>>::ASSERT;
+     |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, u8> as bytemuck::TryReinterpretInner<'_, std::borrow::Cow<'_, [u8; 2]>>>::try_reinterpret_inner`
+ --> tests/ui/try_reinterpret_inner_cow.rs:5:25
+  |
+5 |   let _: Cow<[u8; 2]> = Cow::Borrowed(&0u8).try_reinterpret_inner().unwrap();
+  |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const u16 as bytemuck::cast::TryCastRaw<*const [u16; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     size_of::<Src>() == size_of::<Dst>(),
+  | |     "Attempted conversion between types of different sizes."
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between types of different sizes.', $WORKSPACE/src/cast.rs:1049:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, u16> as bytemuck::TryReinterpretInner<'_, std::borrow::Cow<'_, [u16; 2]>>>::try_reinterpret_inner`
+ --> tests/ui/try_reinterpret_inner_cow.rs:6:26
+  |
+6 |   let _: Cow<[u16; 2]> = Cow::Borrowed(&0u16).try_reinterpret_inner().unwrap();
+  |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const u64 as bytemuck::cast::TryCastRaw<*const [u64; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     size_of::<Src>() == size_of::<Dst>(),
+  | |     "Attempted conversion between types of different sizes."
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between types of different sizes.', $WORKSPACE/src/cast.rs:1049:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, u64> as bytemuck::TryReinterpretInner<'_, std::borrow::Cow<'_, [u64; 2]>>>::try_reinterpret_inner`
+ --> tests/ui/try_reinterpret_inner_cow.rs:7:26
+  |
+7 |   let _: Cow<[u64; 2]> = Cow::Borrowed(&0u64).try_reinterpret_inner().unwrap();
+  |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::RawSlice<u8> as bytemuck::cast::TryCastRaw<bytemuck::cast::RawSlice<()>>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     (size_of::<Dst>() == 0) == (size_of::<Src>() == 0),
+  | |     "Attempted conversion between a zero-sized type and a non-zero-sized type"
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between a zero-sized type and a non-zero-sized type', $WORKSPACE/src/cast.rs:1082:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+    --> $WORKSPACE/src/cast.rs
+     |
+     |   const ASSERT: () = <RawSlice<Src> as TryCastRaw<RawSlice<Dst>>>::ASSERT;
+     |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: erroneous constant used
+    --> $WORKSPACE/src/cast.rs
+     |
+     |   const ASSERT: () = <RawVec<Src> as TryCastRaw<RawVec<Dst>>>::ASSERT;
+     |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, [u8]> as bytemuck::TryReinterpretInner<'_, std::borrow::Cow<'_, [()]>>>::try_reinterpret_inner`
+  --> tests/ui/try_reinterpret_inner_cow.rs:17:5
+   |
+17 |     Cow::Borrowed([0u8; 1].as_slice()).try_reinterpret_inner().unwrap();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

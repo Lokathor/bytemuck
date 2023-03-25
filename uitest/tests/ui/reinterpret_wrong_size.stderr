@@ -1,0 +1,53 @@
+error[E0080]: evaluation of `<u8 as bytemuck::Reinterpret<u16>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     size_of::<Src>() == size_of::<Dst>(),
+  | |     "attempted conversion between types of different sizes"
+  | |   );
+  | |___^ the evaluated program panicked at 'attempted conversion between types of different sizes', $WORKSPACE/src/cast.rs:67:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <u8 as bytemuck::Reinterpret<u16>>::reinterpret`
+ --> tests/ui/reinterpret_wrong_size.rs:4:16
+  |
+4 |   let _: u16 = 0u8.reinterpret();
+  |                ^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<u16 as bytemuck::Reinterpret<u32>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     size_of::<Src>() == size_of::<Dst>(),
+  | |     "attempted conversion between types of different sizes"
+  | |   );
+  | |___^ the evaluated program panicked at 'attempted conversion between types of different sizes', $WORKSPACE/src/cast.rs:67:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <u16 as bytemuck::Reinterpret<u32>>::reinterpret`
+ --> tests/ui/reinterpret_wrong_size.rs:5:16
+  |
+5 |   let _: u32 = 0u16.reinterpret();
+  |                ^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<u64 as bytemuck::Reinterpret<u32>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     size_of::<Src>() == size_of::<Dst>(),
+  | |     "attempted conversion between types of different sizes"
+  | |   );
+  | |___^ the evaluated program panicked at 'attempted conversion between types of different sizes', $WORKSPACE/src/cast.rs:67:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <u64 as bytemuck::Reinterpret<u32>>::reinterpret`
+ --> tests/ui/reinterpret_wrong_size.rs:6:16
+  |
+6 |   let _: u32 = 0u64.reinterpret();
+  |                ^^^^^^^^^^^^^^^^^^

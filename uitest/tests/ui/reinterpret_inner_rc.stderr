@@ -1,0 +1,252 @@
+error[E0080]: evaluation of `<bytemuck::cast::RcT as bytemuck::cast::AssertClassContraints<[u8; 2], u16>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     Src::ALIGN == Dst::ALIGN,
+  | |     "Attempted conversion between `Rc` types with different alignments"
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between `Rc` types with different alignments', $WORKSPACE/src/cast.rs:1312:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0080]: evaluation of `<*const [u8; 2] as bytemuck::cast::CastRaw<*const u16>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       align_of::<Src>() >= align_of::<Dst>(),
+  | |       "Attempted conversion to a type with a stricter alignment"
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion to a type with a stricter alignment', $WORKSPACE/src/cast.rs:824:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::rc::Rc<[u8; 2]> as bytemuck::ReinterpretInner<'_, std::rc::Rc<u16>>>::reinterpret_inner`
+ --> tests/ui/reinterpret_inner_rc.rs:5:20
+  |
+5 |   let _: Rc<u16> = Rc::new([0u8; 2]).reinterpret_inner();
+  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::RcT as bytemuck::cast::AssertClassContraints<[u16; 2], u32>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     Src::ALIGN == Dst::ALIGN,
+  | |     "Attempted conversion between `Rc` types with different alignments"
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between `Rc` types with different alignments', $WORKSPACE/src/cast.rs:1312:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0080]: evaluation of `<*const [u16; 2] as bytemuck::cast::CastRaw<*const u32>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       align_of::<Src>() >= align_of::<Dst>(),
+  | |       "Attempted conversion to a type with a stricter alignment"
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion to a type with a stricter alignment', $WORKSPACE/src/cast.rs:824:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::rc::Rc<[u16; 2]> as bytemuck::ReinterpretInner<'_, std::rc::Rc<u32>>>::reinterpret_inner`
+ --> tests/ui/reinterpret_inner_rc.rs:6:20
+  |
+6 |   let _: Rc<u32> = Rc::new([0u16; 2]).reinterpret_inner();
+  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::RcT as bytemuck::cast::AssertClassContraints<u64, [u32; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     Src::ALIGN == Dst::ALIGN,
+  | |     "Attempted conversion between `Rc` types with different alignments"
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between `Rc` types with different alignments', $WORKSPACE/src/cast.rs:1312:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::rc::Rc<u64> as bytemuck::ReinterpretInner<'_, std::rc::Rc<[u32; 2]>>>::reinterpret_inner`
+ --> tests/ui/reinterpret_inner_rc.rs:7:25
+  |
+7 |   let _: Rc<[u32; 2]> = Rc::new(0u64).reinterpret_inner();
+  |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const u8 as bytemuck::cast::CastRaw<*const [u8; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       size_of::<Src>() == size_of::<Dst>(),
+  | |       "Attempted conversion between types of different sizes."
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion between types of different sizes.', $WORKSPACE/src/cast.rs:820:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::rc::Rc<u8> as bytemuck::ReinterpretInner<'_, std::rc::Rc<[u8; 2]>>>::reinterpret_inner`
+ --> tests/ui/reinterpret_inner_rc.rs:9:24
+  |
+9 |   let _: Rc<[u8; 2]> = Rc::new(0u8).reinterpret_inner();
+  |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const u16 as bytemuck::cast::CastRaw<*const [u16; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       size_of::<Src>() == size_of::<Dst>(),
+  | |       "Attempted conversion between types of different sizes."
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion between types of different sizes.', $WORKSPACE/src/cast.rs:820:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::rc::Rc<u16> as bytemuck::ReinterpretInner<'_, std::rc::Rc<[u16; 2]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_rc.rs:10:25
+   |
+10 |   let _: Rc<[u16; 2]> = Rc::new(0u16).reinterpret_inner();
+   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const u64 as bytemuck::cast::CastRaw<*const [u64; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       size_of::<Src>() == size_of::<Dst>(),
+  | |       "Attempted conversion between types of different sizes."
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion between types of different sizes.', $WORKSPACE/src/cast.rs:820:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::rc::Rc<u64> as bytemuck::ReinterpretInner<'_, std::rc::Rc<[u64; 2]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_rc.rs:11:25
+   |
+11 |   let _: Rc<[u64; 2]> = Rc::new(0u64).reinterpret_inner();
+   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::RcT as bytemuck::cast::AssertClassContraints<[[u8; 2]; 2], [u16]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     Src::ALIGN == Dst::ALIGN,
+  | |     "Attempted conversion between `Rc` types with different alignments"
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between `Rc` types with different alignments', $WORKSPACE/src/cast.rs:1312:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::rc::Rc<[[u8; 2]; 2]> as bytemuck::ReinterpretInner<'_, std::rc::Rc<[u16]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_rc.rs:13:22
+   |
+13 |   let _: Rc<[u16]> = Rc::new([[0u8; 2]; 2]).reinterpret_inner();
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::RcT as bytemuck::cast::AssertClassContraints<[[u16; 2]; 2], [u32]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     Src::ALIGN == Dst::ALIGN,
+  | |     "Attempted conversion between `Rc` types with different alignments"
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between `Rc` types with different alignments', $WORKSPACE/src/cast.rs:1312:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::rc::Rc<[[u16; 2]; 2]> as bytemuck::ReinterpretInner<'_, std::rc::Rc<[u32]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_rc.rs:14:22
+   |
+14 |   let _: Rc<[u32]> = Rc::new([[0u16; 2]; 2]).reinterpret_inner();
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::RcT as bytemuck::cast::AssertClassContraints<u64, [[u32; 2]]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     Src::ALIGN == Dst::ALIGN,
+  | |     "Attempted conversion between `Rc` types with different alignments"
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between `Rc` types with different alignments', $WORKSPACE/src/cast.rs:1312:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::rc::Rc<u64> as bytemuck::ReinterpretInner<'_, std::rc::Rc<[[u32; 2]]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_rc.rs:15:27
+   |
+15 |   let _: Rc<[[u32; 2]]> = Rc::new(0u64).reinterpret_inner();
+   |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const [u8; 1] as bytemuck::cast::CastRaw<bytemuck::cast::RawSlice<()>>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       size_of::<Src>() == size_of::<Dst>()
+  | |         || (size_of::<Dst>() != 0 && size_of::<Src>() % size_of::<Dst>() == 0),
+  | |       "Attempted conversion to a slice which cannot match the size of the item"
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion to a slice which cannot match the size of the item', $WORKSPACE/src/cast.rs:859:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::rc::Rc<[u8; 1]> as bytemuck::ReinterpretInner<'_, std::rc::Rc<[()]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_rc.rs:17:21
+   |
+17 |   let _: Rc<[()]> = Rc::new([0u8; 1]).reinterpret_inner();
+   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const [[u8; 3]; 3] as bytemuck::cast::CastRaw<bytemuck::cast::RawSlice<[u8; 2]>>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       size_of::<Src>() == size_of::<Dst>()
+  | |         || (size_of::<Dst>() != 0 && size_of::<Src>() % size_of::<Dst>() == 0),
+  | |       "Attempted conversion to a slice which cannot match the size of the item"
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion to a slice which cannot match the size of the item', $WORKSPACE/src/cast.rs:859:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::rc::Rc<[[u8; 3]; 3]> as bytemuck::ReinterpretInner<'_, std::rc::Rc<[[u8; 2]]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_rc.rs:18:26
+   |
+18 |   let _: Rc<[[u8; 2]]> = Rc::new([[0u8; 3]; 3]).reinterpret_inner();
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const [[u16; 5]; 1] as bytemuck::cast::CastRaw<bytemuck::cast::RawSlice<[u16; 2]>>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       size_of::<Src>() == size_of::<Dst>()
+  | |         || (size_of::<Dst>() != 0 && size_of::<Src>() % size_of::<Dst>() == 0),
+  | |       "Attempted conversion to a slice which cannot match the size of the item"
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion to a slice which cannot match the size of the item', $WORKSPACE/src/cast.rs:859:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::rc::Rc<[[u16; 5]; 1]> as bytemuck::ReinterpretInner<'_, std::rc::Rc<[[u16; 2]]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_rc.rs:19:27
+   |
+19 |   let _: Rc<[[u16; 2]]> = Rc::new([[0u16; 5]; 1]).reinterpret_inner();
+   |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const [[u32; 1]; 1] as bytemuck::cast::CastRaw<bytemuck::cast::RawSlice<[u32; 2]>>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       size_of::<Src>() == size_of::<Dst>()
+  | |         || (size_of::<Dst>() != 0 && size_of::<Src>() % size_of::<Dst>() == 0),
+  | |       "Attempted conversion to a slice which cannot match the size of the item"
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion to a slice which cannot match the size of the item', $WORKSPACE/src/cast.rs:859:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::rc::Rc<[[u32; 1]; 1]> as bytemuck::ReinterpretInner<'_, std::rc::Rc<[[u32; 2]]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_rc.rs:20:27
+   |
+20 |   let _: Rc<[[u32; 2]]> = Rc::new([[0u32; 1]; 1]).reinterpret_inner();
+   |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

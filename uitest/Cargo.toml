@@ -1,0 +1,15 @@
+[package]
+name = "uitest"
+version = "0.0.0"
+edition = "2018"
+publish = false
+rust-version = "1.63"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies.bytemuck]
+path = ".."
+features = ["extern_crate_alloc", "non_null_slice_cast", "unified_cast"]
+
+[dev-dependencies]
+trybuild = "1"
