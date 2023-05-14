@@ -538,6 +538,7 @@ fn generate_assert_no_padding(input: &DeriveInput) -> Result<TokenStream> {
   };
 
   Ok(quote_spanned! {span => const _: fn() = || {
+    #[doc(hidden)]
     struct TypeWithoutPadding([u8; #size_sum]);
     let _ = ::core::mem::transmute::<#struct_type, TypeWithoutPadding>;
   };})
@@ -554,6 +555,7 @@ fn generate_fields_are_trait(
   let field_types = get_field_types(&fields);
   Ok(quote_spanned! {span => #(const _: fn() = || {
       #[allow(clippy::missing_const_for_fn)]
+      #[doc(hidden)]
       fn check #impl_generics () #where_clause {
         fn assert_impl<T: #trait_>() {}
         assert_impl::<#field_types>();
