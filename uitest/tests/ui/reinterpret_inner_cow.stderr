@@ -1,0 +1,242 @@
+error[E0080]: evaluation of `<*const [u8; 2] as bytemuck::cast::CastRaw<*const u16>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       align_of::<Src>() >= align_of::<Dst>(),
+  | |       "Attempted conversion to a type with a stricter alignment"
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion to a type with a stricter alignment', $WORKSPACE/src/cast.rs:824:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+   --> $WORKSPACE/src/cast.rs
+    |
+    |   const ASSERT: () = <*const Src as CastRaw<*const Dst>>::ASSERT;
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, [u8; 2]> as bytemuck::ReinterpretInner<'_, std::borrow::Cow<'_, u16>>>::reinterpret_inner`
+ --> tests/ui/reinterpret_inner_cow.rs:5:21
+  |
+5 |   let _: Cow<u16> = Cow::Borrowed(&[0u8; 2]).reinterpret_inner();
+  |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const [u16; 2] as bytemuck::cast::CastRaw<*const u32>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       align_of::<Src>() >= align_of::<Dst>(),
+  | |       "Attempted conversion to a type with a stricter alignment"
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion to a type with a stricter alignment', $WORKSPACE/src/cast.rs:824:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, [u16; 2]> as bytemuck::ReinterpretInner<'_, std::borrow::Cow<'_, u32>>>::reinterpret_inner`
+ --> tests/ui/reinterpret_inner_cow.rs:6:21
+  |
+6 |   let _: Cow<u32> = Cow::Borrowed(&[0u16; 2]).reinterpret_inner();
+  |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const [u32; 2] as bytemuck::cast::CastRaw<*const u64>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       align_of::<Src>() >= align_of::<Dst>(),
+  | |       "Attempted conversion to a type with a stricter alignment"
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion to a type with a stricter alignment', $WORKSPACE/src/cast.rs:824:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, [u32; 2]> as bytemuck::ReinterpretInner<'_, std::borrow::Cow<'_, u64>>>::reinterpret_inner`
+ --> tests/ui/reinterpret_inner_cow.rs:7:21
+  |
+7 |   let _: Cow<u64> = Cow::Borrowed(&[0u32; 2]).reinterpret_inner();
+  |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const u8 as bytemuck::cast::CastRaw<*const [u8; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       size_of::<Src>() == size_of::<Dst>(),
+  | |       "Attempted conversion between types of different sizes."
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion between types of different sizes.', $WORKSPACE/src/cast.rs:820:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, u8> as bytemuck::ReinterpretInner<'_, std::borrow::Cow<'_, [u8; 2]>>>::reinterpret_inner`
+ --> tests/ui/reinterpret_inner_cow.rs:9:25
+  |
+9 |   let _: Cow<[u8; 2]> = Cow::Borrowed(&0u8).reinterpret_inner();
+  |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const u16 as bytemuck::cast::CastRaw<*const [u16; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       size_of::<Src>() == size_of::<Dst>(),
+  | |       "Attempted conversion between types of different sizes."
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion between types of different sizes.', $WORKSPACE/src/cast.rs:820:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, u16> as bytemuck::ReinterpretInner<'_, std::borrow::Cow<'_, [u16; 2]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_cow.rs:10:26
+   |
+10 |   let _: Cow<[u16; 2]> = Cow::Borrowed(&0u16).reinterpret_inner();
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const u64 as bytemuck::cast::CastRaw<*const [u64; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       size_of::<Src>() == size_of::<Dst>(),
+  | |       "Attempted conversion between types of different sizes."
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion between types of different sizes.', $WORKSPACE/src/cast.rs:820:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, u64> as bytemuck::ReinterpretInner<'_, std::borrow::Cow<'_, [u64; 2]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_cow.rs:11:26
+   |
+11 |   let _: Cow<[u64; 2]> = Cow::Borrowed(&0u64).reinterpret_inner();
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::RawSlice<[u8; 2]> as bytemuck::cast::CastRaw<bytemuck::cast::RawSlice<u16>>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       align_of::<Src>() >= align_of::<Dst>(),
+  | |       "Attempted conversion to a type with a stricter alignment"
+  | |     )
+  | |_____^ the evaluated program panicked at 'Attempted conversion to a type with a stricter alignment', $WORKSPACE/src/cast.rs:910:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+   --> $WORKSPACE/src/cast.rs
+    |
+    |   const ASSERT: () = <RawSlice<Src> as CastRaw<RawSlice<Dst>>>::ASSERT;
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: erroneous constant used
+    --> $WORKSPACE/src/cast.rs
+     |
+     |     <RawVec<Src> as CastRaw<RawVec<Dst>>>::ASSERT;
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, [[u8; 2]]> as bytemuck::ReinterpretInner<'_, std::borrow::Cow<'_, [u16]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_cow.rs:14:5
+   |
+14 |     Cow::Borrowed([[0u8; 2]; 2].as_slice()).reinterpret_inner();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::RawSlice<[u16; 2]> as bytemuck::cast::CastRaw<bytemuck::cast::RawSlice<u32>>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       align_of::<Src>() >= align_of::<Dst>(),
+  | |       "Attempted conversion to a type with a stricter alignment"
+  | |     )
+  | |_____^ the evaluated program panicked at 'Attempted conversion to a type with a stricter alignment', $WORKSPACE/src/cast.rs:910:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, [[u16; 2]]> as bytemuck::ReinterpretInner<'_, std::borrow::Cow<'_, [u32]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_cow.rs:16:5
+   |
+16 |     Cow::Borrowed([[0u16; 2]; 2].as_slice()).reinterpret_inner();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::RawCow<[u64]> as bytemuck::cast::CastRaw<bytemuck::cast::RawCow<[[u32; 2]]>>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       align_of::<Src>() == align_of::<Dst>(),
+  | |       "Attempted conversion between `Cow<[_]>` types with different alignments"
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion between `Cow<[_]>` types with different alignments', $WORKSPACE/src/cast.rs:1001:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, [u64]> as bytemuck::ReinterpretInner<'_, std::borrow::Cow<'_, [[u32; 2]]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_cow.rs:18:5
+   |
+18 |     Cow::Borrowed([0u64; 2].as_slice()).reinterpret_inner();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::RawSlice<u8> as bytemuck::cast::CastRaw<bytemuck::cast::RawSlice<()>>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       size_of::<Src>() == size_of::<Dst>()
+  | |         || (size_of::<Dst>() != 0 && size_of::<Src>() % size_of::<Dst>() == 0),
+  | |       "Attempted conversion between slice types which may not succeed"
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion between slice types which may not succeed', $WORKSPACE/src/cast.rs:905:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, [u8]> as bytemuck::ReinterpretInner<'_, std::borrow::Cow<'_, [()]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_cow.rs:20:22
+   |
+20 |   let _: Cow<[()]> = Cow::Borrowed([0u8; 1].as_slice()).reinterpret_inner();
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::RawSlice<[u8; 3]> as bytemuck::cast::CastRaw<bytemuck::cast::RawSlice<[u8; 2]>>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       size_of::<Src>() == size_of::<Dst>()
+  | |         || (size_of::<Dst>() != 0 && size_of::<Src>() % size_of::<Dst>() == 0),
+  | |       "Attempted conversion between slice types which may not succeed"
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion between slice types which may not succeed', $WORKSPACE/src/cast.rs:905:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, [[u8; 3]]> as bytemuck::ReinterpretInner<'_, std::borrow::Cow<'_, [[u8; 2]]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_cow.rs:22:5
+   |
+22 |     Cow::Borrowed([[0u8; 3]; 3].as_slice()).reinterpret_inner();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::RawSlice<[u16; 5]> as bytemuck::cast::CastRaw<bytemuck::cast::RawSlice<[u16; 2]>>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       size_of::<Src>() == size_of::<Dst>()
+  | |         || (size_of::<Dst>() != 0 && size_of::<Src>() % size_of::<Dst>() == 0),
+  | |       "Attempted conversion between slice types which may not succeed"
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion between slice types which may not succeed', $WORKSPACE/src/cast.rs:905:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, [[u16; 5]]> as bytemuck::ReinterpretInner<'_, std::borrow::Cow<'_, [[u16; 2]]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_cow.rs:24:5
+   |
+24 |     Cow::Borrowed([[0u16; 5]; 1].as_slice()).reinterpret_inner();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::RawSlice<[u32; 1]> as bytemuck::cast::CastRaw<bytemuck::cast::RawSlice<[u32; 2]>>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  | /     assert!(
+  | |       size_of::<Src>() == size_of::<Dst>()
+  | |         || (size_of::<Dst>() != 0 && size_of::<Src>() % size_of::<Dst>() == 0),
+  | |       "Attempted conversion between slice types which may not succeed"
+  | |     );
+  | |_____^ the evaluated program panicked at 'Attempted conversion between slice types which may not succeed', $WORKSPACE/src/cast.rs:905:5
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::borrow::Cow<'_, [[u32; 1]]> as bytemuck::ReinterpretInner<'_, std::borrow::Cow<'_, [[u32; 2]]>>>::reinterpret_inner`
+  --> tests/ui/reinterpret_inner_cow.rs:26:5
+   |
+26 |     Cow::Borrowed([[0u32; 1]; 1].as_slice()).reinterpret_inner();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

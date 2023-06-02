@@ -1,0 +1,107 @@
+error[E0080]: evaluation of `<bytemuck::cast::ArcWeakT as bytemuck::cast::AssertClassContraints<[u8; 2], u16>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     Src::ALIGN == Dst::ALIGN,
+  | |     "Attempted conversion between `sync::Weak` types with different alignments"
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between `sync::Weak` types with different alignments', $WORKSPACE/src/cast.rs:1335:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::sync::Weak<[u8; 2]> as bytemuck::TryReinterpretInner<'_, std::sync::Weak<u16>>>::try_reinterpret_inner`
+ --> tests/ui/try_reinterpret_inner_arc_weak.rs:6:5
+  |
+6 |     Arc::downgrade(&Arc::new([0u8; 2])).try_reinterpret_inner().unwrap();
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::ArcWeakT as bytemuck::cast::AssertClassContraints<[u16; 2], u32>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     Src::ALIGN == Dst::ALIGN,
+  | |     "Attempted conversion between `sync::Weak` types with different alignments"
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between `sync::Weak` types with different alignments', $WORKSPACE/src/cast.rs:1335:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::sync::Weak<[u16; 2]> as bytemuck::TryReinterpretInner<'_, std::sync::Weak<u32>>>::try_reinterpret_inner`
+ --> tests/ui/try_reinterpret_inner_arc_weak.rs:8:5
+  |
+8 |     Arc::downgrade(&Arc::new([0u16; 2])).try_reinterpret_inner().unwrap();
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::ArcWeakT as bytemuck::cast::AssertClassContraints<u64, [u32; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     Src::ALIGN == Dst::ALIGN,
+  | |     "Attempted conversion between `sync::Weak` types with different alignments"
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between `sync::Weak` types with different alignments', $WORKSPACE/src/cast.rs:1335:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::sync::Weak<u64> as bytemuck::TryReinterpretInner<'_, std::sync::Weak<[u32; 2]>>>::try_reinterpret_inner`
+  --> tests/ui/try_reinterpret_inner_arc_weak.rs:10:5
+   |
+10 |     Arc::downgrade(&Arc::new(0u64)).try_reinterpret_inner().unwrap();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const u8 as bytemuck::cast::TryCastRaw<*const [u8; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     size_of::<Src>() == size_of::<Dst>(),
+  | |     "Attempted conversion between types of different sizes."
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between types of different sizes.', $WORKSPACE/src/cast.rs:1049:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::sync::Weak<u8> as bytemuck::TryReinterpretInner<'_, std::sync::Weak<[u8; 2]>>>::try_reinterpret_inner`
+  --> tests/ui/try_reinterpret_inner_arc_weak.rs:13:5
+   |
+13 |     Arc::downgrade(&Arc::new(0u8)).try_reinterpret_inner().unwrap();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const u16 as bytemuck::cast::TryCastRaw<*const [u16; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     size_of::<Src>() == size_of::<Dst>(),
+  | |     "Attempted conversion between types of different sizes."
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between types of different sizes.', $WORKSPACE/src/cast.rs:1049:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::sync::Weak<u16> as bytemuck::TryReinterpretInner<'_, std::sync::Weak<[u16; 2]>>>::try_reinterpret_inner`
+  --> tests/ui/try_reinterpret_inner_arc_weak.rs:15:5
+   |
+15 |     Arc::downgrade(&Arc::new(0u16)).try_reinterpret_inner().unwrap();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const u64 as bytemuck::cast::TryCastRaw<*const [u64; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     size_of::<Src>() == size_of::<Dst>(),
+  | |     "Attempted conversion between types of different sizes."
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between types of different sizes.', $WORKSPACE/src/cast.rs:1049:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::sync::Weak<u64> as bytemuck::TryReinterpretInner<'_, std::sync::Weak<[u64; 2]>>>::try_reinterpret_inner`
+  --> tests/ui/try_reinterpret_inner_arc_weak.rs:17:5
+   |
+17 |     Arc::downgrade(&Arc::new(0u64)).try_reinterpret_inner().unwrap();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

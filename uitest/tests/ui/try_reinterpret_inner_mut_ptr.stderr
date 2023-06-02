@@ -1,0 +1,59 @@
+error[E0080]: evaluation of `<*const u8 as bytemuck::cast::TryCastRaw<*const [u8; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     size_of::<Src>() == size_of::<Dst>(),
+  | |     "Attempted conversion between types of different sizes."
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between types of different sizes.', $WORKSPACE/src/cast.rs:1049:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+    --> $WORKSPACE/src/cast.rs
+     |
+     |   const ASSERT: () = <*const Src as TryCastRaw<*const Dst>>::ASSERT;
+     |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: the above error was encountered while instantiating `fn <*mut u8 as bytemuck::TryReinterpretInner<'_, *mut [u8; 2]>>::try_reinterpret_inner`
+ --> tests/ui/try_reinterpret_inner_mut_ptr.rs:4:25
+  |
+4 |   let _: *mut [u8; 2] = (&mut 0u8 as *mut u8).try_reinterpret_inner().unwrap();
+  |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const u16 as bytemuck::cast::TryCastRaw<*const [u16; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     size_of::<Src>() == size_of::<Dst>(),
+  | |     "Attempted conversion between types of different sizes."
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between types of different sizes.', $WORKSPACE/src/cast.rs:1049:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <*mut u16 as bytemuck::TryReinterpretInner<'_, *mut [u16; 2]>>::try_reinterpret_inner`
+ --> tests/ui/try_reinterpret_inner_mut_ptr.rs:6:5
+  |
+6 |     (&mut 0u16 as *mut u16).try_reinterpret_inner().unwrap();
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<*const u64 as bytemuck::cast::TryCastRaw<*const [u64; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     size_of::<Src>() == size_of::<Dst>(),
+  | |     "Attempted conversion between types of different sizes."
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between types of different sizes.', $WORKSPACE/src/cast.rs:1049:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <*mut u64 as bytemuck::TryReinterpretInner<'_, *mut [u64; 2]>>::try_reinterpret_inner`
+ --> tests/ui/try_reinterpret_inner_mut_ptr.rs:8:5
+  |
+8 |     (&mut 0u64 as *mut u64).try_reinterpret_inner().unwrap();
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,0 +1,77 @@
+error[E0080]: evaluation of `<bytemuck::cast::VecT as bytemuck::cast::AssertClassContraints<[u8; 2], u16>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     Src::ALIGN == Dst::ALIGN,
+  | |     "Attempted conversion between `Vec` types with different alignments"
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between `Vec` types with different alignments', $WORKSPACE/src/cast.rs:1342:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::vec::Vec<[u8; 2]> as bytemuck::TryReinterpretInner<'_, std::vec::Vec<u16>>>::try_reinterpret_inner`
+ --> tests/ui/try_reinterpret_inner_vec.rs:4:21
+  |
+4 |   let _: Vec<u16> = vec![[0u8; 2]; 2].try_reinterpret_inner().unwrap();
+  |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::VecT as bytemuck::cast::AssertClassContraints<[u16; 2], u32>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     Src::ALIGN == Dst::ALIGN,
+  | |     "Attempted conversion between `Vec` types with different alignments"
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between `Vec` types with different alignments', $WORKSPACE/src/cast.rs:1342:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::vec::Vec<[u16; 2]> as bytemuck::TryReinterpretInner<'_, std::vec::Vec<u32>>>::try_reinterpret_inner`
+ --> tests/ui/try_reinterpret_inner_vec.rs:5:21
+  |
+5 |   let _: Vec<u32> = vec![[0u16; 2]; 2].try_reinterpret_inner().unwrap();
+  |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::VecT as bytemuck::cast::AssertClassContraints<u64, [u32; 2]>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     Src::ALIGN == Dst::ALIGN,
+  | |     "Attempted conversion between `Vec` types with different alignments"
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between `Vec` types with different alignments', $WORKSPACE/src/cast.rs:1342:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: the above error was encountered while instantiating `fn <std::vec::Vec<u64> as bytemuck::TryReinterpretInner<'_, std::vec::Vec<[u32; 2]>>>::try_reinterpret_inner`
+ --> tests/ui/try_reinterpret_inner_vec.rs:6:26
+  |
+6 |   let _: Vec<[u32; 2]> = vec![0u64; 2].try_reinterpret_inner().unwrap();
+  |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0080]: evaluation of `<bytemuck::cast::RawSlice<[u8; 1]> as bytemuck::cast::TryCastRaw<bytemuck::cast::RawSlice<()>>>::ASSERT` failed
+ --> $WORKSPACE/src/cast.rs
+  |
+  |     const ASSERT: () = assert!(
+  |  ______________________^
+  | |     (size_of::<Dst>() == 0) == (size_of::<Src>() == 0),
+  | |     "Attempted conversion between a zero-sized type and a non-zero-sized type"
+  | |   );
+  | |___^ the evaluated program panicked at 'Attempted conversion between a zero-sized type and a non-zero-sized type', $WORKSPACE/src/cast.rs:1082:22
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+    --> $WORKSPACE/src/cast.rs
+     |
+     |   const ASSERT: () = <RawSlice<Src> as TryCastRaw<RawSlice<Dst>>>::ASSERT;
+     |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: the above error was encountered while instantiating `fn <std::vec::Vec<[u8; 1]> as bytemuck::TryReinterpretInner<'_, std::vec::Vec<()>>>::try_reinterpret_inner`
+ --> tests/ui/try_reinterpret_inner_vec.rs:8:20
+  |
+8 |   let _: Vec<()> = vec![[0u8; 1]].try_reinterpret_inner().unwrap();
+  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
