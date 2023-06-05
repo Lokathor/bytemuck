@@ -398,3 +398,33 @@ pub fn try_cast_slice_mut<
 ) -> Result<&mut [B], PodCastError> {
   unsafe { internal::try_cast_slice_mut(a) }
 }
+
+/// Fill all bytes of `target` with zeroes (see [`Zeroable`]).
+///
+/// This is similar to `*target = Zeroable::zeroed()`, but guarantees that any
+/// padding bytes in `target` are zeroed as well.
+///
+/// See also [`fill_zero`], if you have a slice rather than a single value.
+#[inline]
+pub fn write_zero<T: Zeroable + Copy>(target: &mut T) {
+  unsafe {
+    core::ptr::write_bytes(
+      target as *mut T as *mut u8,
+      0u8,
+      core::mem::size_of::<T>(),
+    )
+  }
+}
+
+/// Fill all bytes of `slice` with zeroes (see [`Zeroable`]).
+///
+/// This is similar to `slice.fill(Zeroable::zeroed())`, but guarantees that any
+/// padding bytes in `slice` are zeroed as well.
+///
+/// See also [`write_zero`], which zeroes all bytes of a single value rather
+/// than a slice.
+#[inline]
+pub fn fill_zero<T: Zeroable + Copy>(slice: &mut [T]) {
+  let len = core::mem::size_of_val::<[T]>(slice);
+  unsafe { core::ptr::write_bytes(slice.as_mut_ptr() as *mut u8, 0u8, len) }
+}
