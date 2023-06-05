@@ -406,8 +406,9 @@ pub fn try_cast_slice_mut<
 ///
 /// See also [`fill_zero`], if you have a slice rather than a single value.
 #[inline]
-pub fn write_zero<T: Zeroable + Copy>(target: &mut T) {
+pub fn write_zero<T: Zeroable>(target: &mut T) {
   unsafe {
+    core::ptr::drop_in_place(target);
     core::ptr::write_bytes(
       target as *mut T as *mut u8,
       0u8,
@@ -424,7 +425,14 @@ pub fn write_zero<T: Zeroable + Copy>(target: &mut T) {
 /// See also [`write_zero`], which zeroes all bytes of a single value rather
 /// than a slice.
 #[inline]
-pub fn fill_zero<T: Zeroable + Copy>(slice: &mut [T]) {
-  let len = core::mem::size_of_val::<[T]>(slice);
-  unsafe { core::ptr::write_bytes(slice.as_mut_ptr() as *mut u8, 0u8, len) }
+pub fn fill_zero<T: Zeroable>(slice: &mut [T]) {
+  if core::mem::needs_drop::<T>() {
+    // If `T` needs to be dropped then we have to do this one item at a time, in
+    // case one of the intermediate drops does a panic.
+    slice.iter_mut().for_each(write_zero);
+  } else {
+    // Otherwise we can be really fast and just fill everthing with zeros.
+    let len = core::mem::size_of_val::<[T]>(slice);
+    unsafe { core::ptr::write_bytes(slice.as_mut_ptr() as *mut u8, 0u8, len) }
+  }
 }
