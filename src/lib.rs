@@ -113,6 +113,11 @@ pub use pod::*;
 mod pod_in_option;
 pub use pod_in_option::*;
 
+#[cfg(feature = "must_cast")]
+mod must;
+#[cfg(feature = "must_cast")]
+pub use must::*;
+
 mod no_uninit;
 pub use no_uninit::*;
 
