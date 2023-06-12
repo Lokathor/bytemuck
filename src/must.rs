@@ -8,9 +8,13 @@ use core::mem::{align_of, size_of};
 
 struct Cast<A, B>((A, B));
 impl<A, B> Cast<A, B> {
-  const ASSERT_ALIGN_GREATER_THAN_EQUAL : () = assert!(align_of::<A>() >= align_of::<B>());
-  const ASSERT_SIZE_EQUAL : () = assert!(size_of::<A>() == size_of::<B>());
-  const ASSERT_SIZE_MULTIPLE_OF : () = assert!((size_of::<A>() == 0) == (size_of::<B>() == 0) && (size_of::<A>() % size_of::<B>() == 0));
+  const ASSERT_ALIGN_GREATER_THAN_EQUAL: () =
+    assert!(align_of::<A>() >= align_of::<B>());
+  const ASSERT_SIZE_EQUAL: () = assert!(size_of::<A>() == size_of::<B>());
+  const ASSERT_SIZE_MULTIPLE_OF: () = assert!(
+    (size_of::<A>() == 0) == (size_of::<B>() == 0)
+      && (size_of::<A>() % size_of::<B>() == 0)
+  );
 }
 
 /// Cast `A` into `B` if infalliable, or fail to compile.
@@ -27,7 +31,7 @@ impl<A, B> Cast<A, B> {
 /// ## Examples
 /// ```
 /// // compiles:
-/// let bytes : [u8; 2] = bytemuck::must_cast(12_u16);
+/// let bytes: [u8; 2] = bytemuck::must_cast(12_u16);
 /// ```
 /// ```compile_fail,E0080
 /// // fails to compile (size mismatch):
@@ -49,7 +53,7 @@ pub fn must_cast<A: NoUninit, B: AnyBitPattern>(a: A) -> B {
 /// ## Examples
 /// ```
 /// // compiles:
-/// let bytes : &[u8; 2] = bytemuck::must_cast_ref(&12_u16);
+/// let bytes: &[u8; 2] = bytemuck::must_cast_ref(&12_u16);
 /// ```
 /// ```compile_fail,E0080
 /// // fails to compile (size mismatch):
@@ -74,7 +78,7 @@ pub fn must_cast_ref<A: NoUninit, B: AnyBitPattern>(a: &A) -> &B {
 /// ```
 /// let mut i = 12_u16;
 /// // compiles:
-/// let bytes : &mut [u8; 2] = bytemuck::must_cast_mut(&mut i);
+/// let bytes: &mut [u8; 2] = bytemuck::must_cast_mut(&mut i);
 /// ```
 /// ```compile_fail,E0080
 /// # let mut bytes : [u8; 2] = [1, 2];
@@ -99,7 +103,8 @@ pub fn must_cast_mut<
   unsafe { &mut *(a as *mut A as *mut B) }
 }
 
-/// Convert `&[A]` into `&[B]` (possibly with a change in length) if infalliable, or fail to compile.
+/// Convert `&[A]` into `&[B]` (possibly with a change in length) if
+/// infalliable, or fail to compile.
 ///
 /// * `input.as_ptr() as usize == output.as_ptr() as usize`
 /// * `input.len() * size_of::<A>() == output.len() * size_of::<B>()`
@@ -107,16 +112,16 @@ pub fn must_cast_mut<
 /// ## Failure
 ///
 /// * If the target type has a greater alignment requirement.
-/// * If the target element type doesn't evenly fit into the the current element type
-///   (eg: 3 `u16` values is 1.5 `u32` values, so that's a failure).
+/// * If the target element type doesn't evenly fit into the the current element
+///   type (eg: 3 `u16` values is 1.5 `u32` values, so that's a failure).
 /// * Similarly, you can't convert between a [ZST](https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
 ///   and a non-ZST.
 ///
 /// ## Examples
 /// ```
-/// let indicies : &[u16] = &[1, 2, 3];
+/// let indicies: &[u16] = &[1, 2, 3];
 /// // compiles:
-/// let bytes : &[u8] = bytemuck::must_cast_slice(indicies);
+/// let bytes: &[u8] = bytemuck::must_cast_slice(indicies);
 /// ```
 /// ```compile_fail,E0080
 /// # let bytes : &[u8] = [1, 0, 2, 0, 3, 0];
@@ -140,16 +145,17 @@ pub fn must_cast_slice<A: NoUninit, B: AnyBitPattern>(a: &[A]) -> &[B] {
   unsafe { core::slice::from_raw_parts(a.as_ptr() as *const B, new_len) }
 }
 
-/// Convert `&mut [A]` into `&mut [B]` (possibly with a change in length) if infalliable, or fail to compile.
+/// Convert `&mut [A]` into `&mut [B]` (possibly with a change in length) if
+/// infalliable, or fail to compile.
 ///
 /// As [`must_cast_slice`], but `&mut`.
 ///
 /// ## Examples
 /// ```
 /// let mut indicies = [1, 2, 3];
-/// let indicies : &mut [u16] = &mut indicies;
+/// let indicies: &mut [u16] = &mut indicies;
 /// // compiles:
-/// let bytes : &mut [u8] = bytemuck::must_cast_slice_mut(indicies);
+/// let bytes: &mut [u8] = bytemuck::must_cast_slice_mut(indicies);
 /// ```
 /// ```compile_fail,E0080
 /// # let mut bytes = [1, 0, 2, 0, 3, 0];
