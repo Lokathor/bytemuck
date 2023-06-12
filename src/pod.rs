@@ -60,7 +60,7 @@ unsafe impl<T: 'static> Pod for *const T {}
 #[cfg(feature = "unsound_ptr_pod_impl")]
 unsafe impl<T: 'static> PodInOption for NonNull<T> {}
 
-unsafe impl<T: Pod> Pod for PhantomData<T> {}
+unsafe impl<T: ?Sized + 'static> Pod for PhantomData<T> {}
 unsafe impl Pod for PhantomPinned {}
 unsafe impl<T: Pod> Pod for ManuallyDrop<T> {}
 
