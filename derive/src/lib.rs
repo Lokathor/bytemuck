@@ -130,7 +130,7 @@ pub fn derive_anybitpattern(
 ///
 /// #[derive(Clone, Zeroable)]
 /// #[zeroable(bound = "")]
-/// struct MaybeZeroable<T> {
+/// struct AlwaysZeroable<T> {
 ///   a: T,
 /// }
 /// ```
@@ -369,9 +369,9 @@ fn derive_marker_trait<Trait: Derivable>(input: DeriveInput) -> TokenStream {
 /// Find `#[name(key = "value")]` helper attributes on the struct, and return
 /// their `"value"`s parsed with `parser`.
 ///
-/// Returns an error any matching attributes do not match the expected format.
-/// Returns `Ok([])` if no attributes with `name` are found.
-fn find_helper_attributes<P: syn::parse::Parser + Copy>(
+/// Returns an error any attributes with the given name do not match the
+/// expected format. Returns `Ok([])` if no attributes with `name` are found.
+fn find_and_parse_helper_attributes<P: syn::parse::Parser + Copy>(
   attributes: &[syn::Attribute], name: &str, key: &str, parser: P,
   example_value: &str, invalid_value_msg: &str,
 ) -> Result<Vec<P::Output>> {
@@ -428,26 +428,27 @@ fn derive_marker_trait_inner<Trait: Derivable>(
   mut input: DeriveInput,
 ) -> Result<TokenStream> {
   let trait_ = Trait::ident(&input)?;
-  let explicit_bounds = find_helper_attributes(
-    &input.attrs,
-    "zeroable",
-    "bound",
-    <Punctuated<WherePredicate, syn::Token![,]>>::parse_terminated,
-    "Type: Trait",
-    "invalid where predicate",
-  )?;
-  if explicit_bounds.is_empty() {
-    // Enforce bound on all generic fields.
-    add_trait_marker(&mut input.generics, &trait_);
-  } else {
-    // Only enforce explicitly given bounds (the asserts should ensure
+  if let Some(name) = Trait::explicit_bounds_attribute_name() {
+    // Only enforce explicitly given bounds (the asserts emitted should ensure
     // soundness)
+    let explicit_bounds = find_and_parse_helper_attributes(
+      &input.attrs,
+      name,
+      "bound",
+      <Punctuated<WherePredicate, syn::Token![,]>>::parse_terminated,
+      "Type: Trait",
+      "invalid where predicate",
+    )?;
+
     let explicit_bounds = explicit_bounds
       .into_iter()
       .flatten()
       .collect::<Vec<syn::WherePredicate>>();
 
     input.generics.make_where_clause().predicates.extend(explicit_bounds);
+  } else {
+    // Enforce trait bound on all generic fields.
+    add_trait_marker(&mut input.generics, &trait_);
   }
 
   let name = &input.ident;

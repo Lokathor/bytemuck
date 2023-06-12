@@ -35,6 +35,9 @@ pub trait Derivable {
   fn requires_where_clause() -> bool {
     true
   }
+  fn explicit_bounds_attribute_name() -> Option<&'static str> {
+    None
+  }
 }
 
 pub struct Pod;
@@ -125,6 +128,10 @@ impl Derivable for Zeroable {
       Data::Struct(_) => generate_fields_are_trait(input, Self::ident(input)?),
       Data::Enum(_) => bail!("Deriving Zeroable is not supported for enums"),
     }
+  }
+
+  fn explicit_bounds_attribute_name() -> Option<&'static str> {
+    Some("zeroable")
   }
 }
 
