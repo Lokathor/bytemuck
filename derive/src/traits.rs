@@ -532,7 +532,7 @@ fn generate_assert_no_padding(input: &DeriveInput) -> Result<TokenStream> {
     let size_rest =
       quote_spanned!(span => #( + ::core::mem::size_of::<#field_types>() )*);
 
-    quote_spanned!(span => #size_first#size_rest)
+    quote_spanned!(span => #size_first #size_rest)
   } else {
     quote_spanned!(span => 0)
   };
