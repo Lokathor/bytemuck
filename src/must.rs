@@ -81,8 +81,7 @@ pub fn must_cast_ref<A: NoUninit, B: AnyBitPattern>(a: &A) -> &B {
 /// let bytes: &mut [u8; 2] = bytemuck::must_cast_mut(&mut i);
 /// ```
 /// ```compile_fail,E0080
-/// # let mut bytes : [u8; 2] = [1, 2];
-/// # let bytes = &mut bytes[..];
+/// # let mut bytes: &mut [u8; 2] = &mut [1, 2];
 /// // fails to compile (alignment requirements increased):
 /// let i : &mut u16 = bytemuck::must_cast_mut(bytes);
 /// ```
@@ -124,7 +123,7 @@ pub fn must_cast_mut<
 /// let bytes: &[u8] = bytemuck::must_cast_slice(indicies);
 /// ```
 /// ```compile_fail,E0080
-/// # let bytes : &[u8] = [1, 0, 2, 0, 3, 0];
+/// # let bytes : &[u8] = &[1, 0, 2, 0, 3, 0];
 /// // fails to compile (bytes.len() might not be a multiple of 2):
 /// let byte_pairs : &[[u8; 2]] = bytemuck::must_cast_slice(bytes);
 /// ```
