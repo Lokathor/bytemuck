@@ -6,7 +6,10 @@ mod traits;
 
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Result};
+use syn::{
+  parse_macro_input, punctuated::Punctuated, DeriveInput, MetaNameValue,
+  Result, WherePredicate,
+};
 
 use crate::traits::{
   AnyBitPattern, CheckedBitPattern, Contiguous, Derivable, NoUninit, Pod,
@@ -85,7 +88,53 @@ pub fn derive_anybitpattern(
 ///   b: u16,
 /// }
 /// ```
-#[proc_macro_derive(Zeroable)]
+///
+/// # Custom bounds
+///
+/// Custom bounds for the derived `Zeroable` impl can be given using the
+/// `#[zeroable(bound = "")]` helper attribute.
+///
+/// ## Examples
+///
+/// ```rust
+/// # use bytemuck::Zeroable;
+/// # use std::marker::PhantomData;
+///
+/// #[derive(Clone, Zeroable)]
+/// #[zeroable(bound = "")]
+/// struct AlwaysZeroable<T> {
+///   a: PhantomData<T>,
+/// }
+///
+/// AlwaysZeroable::<std::num::NonZeroU8>::zeroed();
+/// ```
+///
+/// ```rust,compile_fail
+/// # use bytemuck::Zeroable;
+/// # use std::marker::PhantomData;
+///
+/// #[derive(Clone, Zeroable)]
+/// #[zeroable(bound = "T: Copy")]
+/// struct ZeroableWhenTIsCopy<T> {
+///   a: PhantomData<T>,
+/// }
+///
+/// ZeroableWhenTIsCopy::<String>::zeroed();
+/// ```
+///
+/// The restriction that all fields must be Zeroable is still applied, and an
+/// error will be produced if the custom bounds do not guarantee this.
+///
+/// ```rust,compile_fail
+/// # use bytemuck_derive::{Zeroable};
+///
+/// #[derive(Clone, Zeroable)]
+/// #[zeroable(bound = "")]
+/// struct MaybeZeroable<T> {
+///   a: T,
+/// }
+/// ```
+#[proc_macro_derive(Zeroable, attributes(zeroable))]
 pub fn derive_zeroable(
   input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
@@ -317,12 +366,96 @@ fn derive_marker_trait<Trait: Derivable>(input: DeriveInput) -> TokenStream {
     .unwrap_or_else(|err| err.into_compile_error())
 }
 
+/// Find a `#[name(key = "value")]` attribute on the struct, and parse "value"
+/// with `parser` and return it.
+///
+/// Returns an error if multiple attributes with `name` are found, or if the one
+/// found does not match the expected format. Returns `Ok(None)` if no attribute
+/// with `name` is found.
+fn find_helper_attribute<P: syn::parse::Parser + Copy>(
+  attributes: &[syn::Attribute], name: &str, key: &str, parser: P,
+  example_value: &str,
+) -> Result<Vec<(syn::LitStr, P::Output)>> {
+  let values_to_check = attributes.iter().filter_map(|attr| match &attr.meta {
+    syn::Meta::Path(path) => path.is_ident(name).then(|| {
+      Err(syn::Error::new_spanned(
+        &path,
+        format!(
+          "{name} attribute must be `{name}({key} = \"{example_value}\")`",
+        ),
+      ))
+    }),
+    syn::Meta::NameValue(namevalue) => {
+      namevalue.path.is_ident(name).then(|| {
+        Err(syn::Error::new_spanned(
+          &namevalue.path,
+          format!(
+            "{name} attribute must be `{name}({key} = \"{example_value}\")`",
+          ),
+        ))
+      })
+    }
+    syn::Meta::List(list) => list.path.is_ident(name).then(|| {
+      let namevalue: MetaNameValue =
+        syn::parse2(list.tokens.clone()).map_err(|_| {
+          syn::Error::new_spanned(
+            &list.tokens,
+            format!(
+              "{name} attribute must be `{name}({key} = \"{example_value}\")`",
+            ),
+          )
+        })?;
+      if namevalue.path.is_ident("bound") {
+        match namevalue.value {
+          syn::Expr::Lit(syn::ExprLit {
+            lit: syn::Lit::Str(strlit), ..
+          }) => Ok(strlit),
+          _ => Err(syn::Error::new_spanned(
+            &namevalue.path,
+            format!(
+              "{name} attribute must be `{name}({key} = \"{example_value}\")`",
+            ),
+          )),
+        }
+      } else {
+        Err(syn::Error::new_spanned(
+          &namevalue.path,
+          format!(
+            "{name} attribute must be `{name}({key} = \"{example_value}\")`",
+          ),
+        ))
+      }
+    }),
+  });
+  values_to_check
+    .map(|r| r.and_then(|lit| Ok((lit.clone(), lit.parse_with(parser)?))))
+    .collect()
+}
+
 fn derive_marker_trait_inner<Trait: Derivable>(
   mut input: DeriveInput,
 ) -> Result<TokenStream> {
-  // Enforce Pod on all generic fields.
   let trait_ = Trait::ident(&input)?;
-  add_trait_marker(&mut input.generics, &trait_);
+  let explicit_bounds = find_helper_attribute(
+    &input.attrs,
+    "zeroable",
+    "bound",
+    <Punctuated<WherePredicate, syn::Token![,]>>::parse_terminated,
+    "Type: Trait",
+  )?;
+  if explicit_bounds.is_empty() {
+    // Enforce bound on all generic fields.
+    add_trait_marker(&mut input.generics, &trait_);
+  } else {
+    // Only enforce explicitly given bounds (the asserts should ensure
+    // soundness)
+    let explicit_bounds = explicit_bounds
+      .into_iter()
+      .flat_map(|a| (a.1))
+      .collect::<Vec<syn::WherePredicate>>();
+
+    input.generics.make_where_clause().predicates.extend(explicit_bounds);
+  }
 
   let name = &input.ident;
 
@@ -339,11 +472,8 @@ fn derive_marker_trait_inner<Trait: Derivable>(
     quote!()
   };
 
-  let where_clause = if Trait::requires_where_clause() {
-    where_clause
-  } else {
-    None
-  };
+  let where_clause =
+    if Trait::requires_where_clause() { where_clause } else { None };
 
   Ok(quote! {
     #asserts
@@ -364,9 +494,12 @@ fn add_trait_marker(generics: &mut syn::Generics, trait_name: &syn::Path) {
   let type_params = generics
     .type_params()
     .map(|param| &param.ident)
-    .map(|param| syn::parse_quote!(
-      #param: #trait_name
-    )).collect::<Vec<syn::WherePredicate>>();
+    .map(|param| {
+      syn::parse_quote!(
+        #param: #trait_name
+      )
+    })
+    .collect::<Vec<syn::WherePredicate>>();
 
   generics.make_where_clause().predicates.extend(type_params);
 }
