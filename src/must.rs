@@ -17,7 +17,10 @@ impl<A, B> Cast<A, B> {
   );
 }
 
-// Workaround for https://github.com/rust-lang/miri/issues/2423
+// Workaround for https://github.com/rust-lang/miri/issues/2423.
+// Miri currently doesn't see post-monomorphization errors until runtime,
+// so `compile_fail` tests relying on post-monomorphization errors don't
+// actually fail. Instead use `should_panic` under miri as a workaround.
 #[cfg(miri)]
 macro_rules! post_mono_compile_fail_doctest {
   () => {
