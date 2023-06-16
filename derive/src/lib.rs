@@ -6,10 +6,7 @@ mod traits;
 
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{
-  parse_macro_input, punctuated::Punctuated, DeriveInput, MetaNameValue,
-  Result, WherePredicate,
-};
+use syn::{parse_macro_input, DeriveInput, Result};
 
 use crate::traits::{
   AnyBitPattern, CheckedBitPattern, Contiguous, Derivable, NoUninit, Pod,
@@ -382,7 +379,7 @@ fn find_and_parse_helper_attributes<P: syn::parse::Parser + Copy>(
     // e.g. `#[zeroable]`
     syn::Meta::Path(path) => path
       .is_ident(name)
-      .then(|| Err(syn::Error::new_spanned(&path, &invalid_format_msg))),
+      .then(|| Err(syn::Error::new_spanned(path, &invalid_format_msg))),
     // If a `NameValue` matches our `name`, return an error, else ignore it.
     // e.g. `#[zeroable = "hello"]`
     syn::Meta::NameValue(namevalue) => {
@@ -394,8 +391,8 @@ fn find_and_parse_helper_attributes<P: syn::parse::Parser + Copy>(
     // ignore it. If its contents match our format, return the value, else
     // return an error.
     syn::Meta::List(list) => list.path.is_ident(name).then(|| {
-      let namevalue: MetaNameValue =
-        syn::parse2(list.tokens.clone()).map_err(|_| {
+      let namevalue: syn::MetaNameValue = syn::parse2(list.tokens.clone())
+        .map_err(|_| {
           syn::Error::new_spanned(&list.tokens, &invalid_format_msg)
         })?;
       if namevalue.path.is_ident(key) {
@@ -418,7 +415,7 @@ fn find_and_parse_helper_attributes<P: syn::parse::Parser + Copy>(
     .map(|lit| {
       let lit = lit?;
       lit.parse_with(parser).map_err(|err| {
-        syn::Error::new_spanned(&lit, &format!("{invalid_value_msg}: {err}"))
+        syn::Error::new_spanned(&lit, format!("{invalid_value_msg}: {err}"))
       })
     })
     .collect()
@@ -435,7 +432,7 @@ fn derive_marker_trait_inner<Trait: Derivable>(
       &input.attrs,
       name,
       "bound",
-      <Punctuated<WherePredicate, syn::Token![,]>>::parse_terminated,
+      <syn::punctuated::Punctuated<syn::WherePredicate, syn::Token![,]>>::parse_terminated,
       "Type: Trait",
       "invalid where predicate",
     )?;
