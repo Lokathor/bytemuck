@@ -425,9 +425,11 @@ fn derive_marker_trait_inner<Trait: Derivable>(
   mut input: DeriveInput,
 ) -> Result<TokenStream> {
   let trait_ = Trait::ident(&input)?;
+  // If this trait allows explicit bounds, and any explicit bounds were given,
+  // then use those explicit bounds. Else, apply the default bounds (bound
+  // each generic type on this trait).
   if let Some(name) = Trait::explicit_bounds_attribute_name() {
-    // Only enforce explicitly given bounds (the asserts emitted should ensure
-    // soundness)
+    // See if any explicit bounds were given in attributes.
     let explicit_bounds = find_and_parse_helper_attributes(
       &input.attrs,
       name,
@@ -437,13 +439,23 @@ fn derive_marker_trait_inner<Trait: Derivable>(
       "invalid where predicate",
     )?;
 
-    let explicit_bounds = explicit_bounds
-      .into_iter()
-      .flatten()
-      .collect::<Vec<syn::WherePredicate>>();
+    if !explicit_bounds.is_empty() {
+      // Explicit bounds were given.
+      // Only enforce explicitly given bounds (the asserts emitted should ensure
+      // soundness).
+      let explicit_bounds = explicit_bounds
+        .into_iter()
+        .flatten()
+        .collect::<Vec<syn::WherePredicate>>();
 
-    input.generics.make_where_clause().predicates.extend(explicit_bounds);
+      input.generics.make_where_clause().predicates.extend(explicit_bounds);
+    } else {
+      // No explicit bounds were given.
+      // Enforce trait bound on all generic fields.
+      add_trait_marker(&mut input.generics, &trait_);
+    }
   } else {
+    // This trait does not allow explicit bounds.
     // Enforce trait bound on all generic fields.
     add_trait_marker(&mut input.generics, &trait_);
   }
