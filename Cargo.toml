@@ -58,4 +58,3 @@ features = [
   "wasm_simd",
   "must_cast",
 ]
-
