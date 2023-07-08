@@ -407,13 +407,23 @@ pub fn try_cast_slice_mut<
 /// See also [`fill_zero`], if you have a slice rather than a single value.
 #[inline]
 pub fn write_zero<T: Zeroable>(target: &mut T) {
+  struct EnsureZeroWrite<T>(*mut T);
+  impl<T> Drop for EnsureZeroWrite<T> {
+    #[inline(always)]
+    fn drop(&mut self) {
+      unsafe {
+        core::ptr::write_bytes(
+          self.0.cast::<u8>(),
+          0u8,
+          core::mem::size_of::<T>(),
+        );
+      }
+    }
+  }
   unsafe {
-    core::ptr::drop_in_place(target);
-    core::ptr::write_bytes(
-      target as *mut T as *mut u8,
-      0u8,
-      core::mem::size_of::<T>(),
-    )
+    let guard = EnsureZeroWrite(target);
+    core::ptr::drop_in_place(guard.0);
+    drop(guard);
   }
 }
 
