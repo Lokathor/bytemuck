@@ -170,6 +170,7 @@ unsafe impl CheckedBitPattern for bool {
   }
 }
 
+// Rust 1.70.0 documents that NonZero[int] has the same layout as [int].
 macro_rules! impl_checked_for_nonzero {
   ($($nonzero:ty: $primitive:ty),* $(,)?) => {
     $(
@@ -178,14 +179,7 @@ macro_rules! impl_checked_for_nonzero {
 
         #[inline]
         fn is_valid_bit_pattern(bits: &Self::Bits) -> bool {
-          // Note(zachs18): The size and alignment check are almost certainly
-          // not necessary, but Rust currently doesn't explicitly document that
-          // NonZero[int] has the same layout as [int], so we check it to be safe.
-          // In a const to reduce debug-profile overhead.
-          const LAYOUT_SAME: bool =
-            core::mem::size_of::<$nonzero>() == core::mem::size_of::<$primitive>()
-            && core::mem::align_of::<$nonzero>() == core::mem::align_of::<$primitive>();
-          LAYOUT_SAME && *bits != 0
+          *bits != 0
         }
       }
     )*
