@@ -371,12 +371,31 @@ impl Derivable for Contiguous {
     let min_lit = LitInt::new(&format!("{}", min), input.span());
     let max_lit = LitInt::new(&format!("{}", max), input.span());
 
+    // `from_integer` and `into_integer` are usually provided by the trait's default implementation.
+    // We override this implementation because it goes through `transmute_copy`, which can lead to
+    // inefficient assembly as seen in https://github.com/Lokathor/bytemuck/issues/175 .
+
     Ok((
       quote!(),
       quote! {
           type Int = #integer_ty;
           const MIN_VALUE: #integer_ty = #min_lit;
           const MAX_VALUE: #integer_ty = #max_lit;
+
+          #[inline]
+          fn from_integer(value: Self::Int) -> Option<Self> {
+            #[allow(clippy::manual_range_contains)]
+            if Self::MIN_VALUE <= value && value <= Self::MAX_VALUE {
+              Some(unsafe { ::core::mem::transmute(value) })
+            } else {
+              None
+            }
+          }
+
+          #[inline]
+          fn into_integer(self) -> Self::Int {
+              self as #integer_ty
+          }
       },
     ))
   }
