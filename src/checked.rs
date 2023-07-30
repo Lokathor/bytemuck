@@ -224,6 +224,7 @@ impl core::fmt::Display for CheckedCastError {
   }
 }
 #[cfg(feature = "extern_crate_std")]
+#[cfg_attr(feature = "nightly_docs", doc(cfg(feature = "extern_crate_std")))]
 impl std::error::Error for CheckedCastError {}
 
 impl From<crate::PodCastError> for CheckedCastError {

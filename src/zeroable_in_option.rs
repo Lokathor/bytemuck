@@ -31,4 +31,5 @@ unsafe impl<T: ?Sized> ZeroableInOption for &'_ T {}
 unsafe impl<T: ?Sized> ZeroableInOption for &'_ mut T {}
 
 #[cfg(feature = "extern_crate_alloc")]
+#[cfg_attr(feature = "nightly_docs", doc(cfg(feature = "extern_crate_alloc")))]
 unsafe impl<T: ?Sized> ZeroableInOption for alloc::boxed::Box<T> {}

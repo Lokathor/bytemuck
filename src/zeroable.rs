@@ -71,6 +71,7 @@ unsafe impl<T: Zeroable> Zeroable for core::cell::UnsafeCell<T> {}
 unsafe impl<T: Zeroable> Zeroable for core::cell::Cell<T> {}
 
 #[cfg(feature = "zeroable_atomics")]
+#[cfg_attr(feature = "nightly_docs", doc(cfg(feature = "zeroable_atomics")))]
 mod atomic_impls {
   use super::Zeroable;
 
@@ -106,6 +107,7 @@ mod atomic_impls {
 }
 
 #[cfg(feature = "zeroable_maybe_uninit")]
+#[cfg_attr(feature = "nightly_docs", doc(cfg(feature = "zeroable_maybe_uninit")))]
 unsafe impl<T> Zeroable for core::mem::MaybeUninit<T> {}
 
 unsafe impl<A: Zeroable> Zeroable for (A,) {}
@@ -154,6 +156,7 @@ unsafe impl<
 }
 
 #[cfg(feature = "min_const_generics")]
+#[cfg_attr(feature = "nightly_docs", doc(cfg(feature = "min_const_generics")))]
 unsafe impl<T, const N: usize> Zeroable for [T; N] where T: Zeroable {}
 
 #[cfg(not(feature = "min_const_generics"))]
@@ -211,6 +214,7 @@ impl_unsafe_marker_for_simd!(
 );
 
 #[cfg(feature = "nightly_portable_simd")]
+#[cfg_attr(feature = "nightly_docs", doc(cfg(feature = "nightly_portable_simd")))]
 unsafe impl<T, const N: usize> Zeroable for core::simd::Simd<T, N>
 where
   T: core::simd::SimdElement + Zeroable,
@@ -219,6 +223,7 @@ where
 }
 
 #[cfg(all(target_arch = "x86", feature = "nightly_stdsimd"))]
+#[cfg_attr(feature = "nightly_docs", doc(cfg(feature = "nightly_std_simd")))]
 impl_unsafe_marker_for_simd!(
     unsafe impl Zeroable for x86::{
         __m128bh, __m256bh, __m512,
@@ -227,6 +232,7 @@ impl_unsafe_marker_for_simd!(
 );
 
 #[cfg(all(target_arch = "x86_64", feature = "nightly_stdsimd"))]
+#[cfg_attr(feature = "nightly_docs", doc(cfg(feature = "nightly_std_simd")))]
 impl_unsafe_marker_for_simd!(
     unsafe impl Zeroable for x86_64::{
         __m128bh, __m256bh, __m512,
