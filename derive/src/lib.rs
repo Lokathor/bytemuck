@@ -23,19 +23,69 @@ use crate::traits::{
 /// - All fields in the struct must implement `Pod`
 /// - The struct must be `#[repr(C)]` or `#[repr(transparent)]`
 /// - The struct must not contain any padding bytes
-/// - The struct contains no generic parameters
+/// - The struct contains no generic parameters, if it is not
+///   `#[repr(transparent)]`
 ///
-/// ## Example
+/// ## Examples
 ///
 /// ```rust
+/// # use std::marker::PhantomData;
 /// # use bytemuck_derive::{Pod, Zeroable};
-///
 /// #[derive(Copy, Clone, Pod, Zeroable)]
 /// #[repr(C)]
 /// struct Test {
 ///   a: u16,
 ///   b: u16,
 /// }
+///
+/// #[derive(Copy, Clone, Pod, Zeroable)]
+/// #[repr(transparent)]
+/// struct Generic<A, B> {
+///   a: A,
+///   b: PhantomData<B>,
+/// }
+/// ```
+///
+/// If the struct is generic, it must be `#[repr(transparent)]` also.
+///
+/// ```compile_fail
+/// # use bytemuck::{Pod, Zeroable};
+/// # use std::marker::PhantomData;
+/// #[derive(Copy, Clone, Pod, Zeroable)]
+/// #[repr(C)] // must be `#[repr(transparent)]`
+/// struct Generic<A> {
+///   a: A,
+/// }
+/// ```
+///
+/// If the struct is generic and `#[repr(transparent)]`, then it is only `Pod`
+/// when all of its generics are `Pod`, not just its fields.
+///
+/// ```
+/// # use bytemuck::{Pod, Zeroable};
+/// # use std::marker::PhantomData;
+/// #[derive(Copy, Clone, Pod, Zeroable)]
+/// #[repr(transparent)]
+/// struct Generic<A, B> {
+///   a: A,
+///   b: PhantomData<B>,
+/// }
+///
+/// let _: u32 = bytemuck::cast(Generic { a: 4u32, b: PhantomData::<u32> });
+/// ```
+///
+/// ```compile_fail
+/// # use bytemuck::{Pod, Zeroable};
+/// # use std::marker::PhantomData;
+/// # #[derive(Copy, Clone, Pod, Zeroable)]
+/// # #[repr(transparent)]
+/// # struct Generic<A, B> {
+/// #   a: A,
+/// #   b: PhantomData<B>,
+/// # }
+/// struct NotPod;
+///
+/// let _: u32 = bytemuck::cast(Generic { a: 4u32, b: PhantomData::<NotPod> });
 /// ```
 #[proc_macro_derive(Pod)]
 pub fn derive_pod(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -217,23 +267,55 @@ pub fn derive_maybe_pod(
 ///
 /// - The struct must be `#[repr(transparent)]`
 /// - The struct must contain the `Wrapped` type
+/// - Any ZST fields must be [`Zeroable`][derive@Zeroable].
 ///
 /// If the struct only contains a single field, the `Wrapped` type will
-/// automatically be determined if there is more then one field in the struct,
+/// automatically be determined. If there is more then one field in the struct,
 /// you need to specify the `Wrapped` type using `#[transparent(T)]`
 ///
-/// ## Example
+/// ## Examples
 ///
 /// ```rust
 /// # use bytemuck_derive::TransparentWrapper;
 /// # use std::marker::PhantomData;
-///
 /// #[derive(Copy, Clone, TransparentWrapper)]
 /// #[repr(transparent)]
 /// #[transparent(u16)]
 /// struct Test<T> {
 ///   inner: u16,
 ///   extra: PhantomData<T>,
+/// }
+/// ```
+///
+/// If the struct contains more than one field, the `Wrapped` type must be
+/// explicitly specified.
+///
+/// ```rust,compile_fail
+/// # use bytemuck_derive::TransparentWrapper;
+/// # use std::marker::PhantomData;
+/// #[derive(Copy, Clone, TransparentWrapper)]
+/// #[repr(transparent)]
+/// // missing `#[transparent(u16)]`
+/// struct Test<T> {
+///   inner: u16,
+///   extra: PhantomData<T>,
+/// }
+/// ```
+///
+/// Any ZST fields must be `Zeroable`.
+///
+/// ```rust,compile_fail
+/// # use bytemuck_derive::TransparentWrapper;
+/// # use std::marker::PhantomData;
+/// struct NonTransparentSafeZST;
+///
+/// #[derive(TransparentWrapper)]
+/// #[repr(transparent)]
+/// #[transparent(u16)]
+/// struct Test<T> {
+///   inner: u16,
+///   extra: PhantomData<T>,
+///   another_extra: NonTransparentSafeZST, // not `Zeroable`
 /// }
 /// ```
 #[proc_macro_derive(TransparentWrapper, attributes(transparent))]
