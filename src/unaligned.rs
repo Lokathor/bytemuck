@@ -168,8 +168,8 @@ impl<T, const N: usize> Unaligned<[T; N]> {
 
 /// Clones by copy, only if `T` itself is `Copy`.
 ///
-/// This can not be implemented for copyable types since copy-by-reference would require the inner
-/// value to be aligned, to make a valid reference.
+/// This can not be implemented for non-copyable types since clone-by-reference would require the
+/// inner value to be aligned, to make a valid reference.
 impl<T: Copy> Clone for Unaligned<T> {
     fn clone(&self) -> Self {
         Unaligned { inner: self.inner }
