@@ -243,7 +243,7 @@ impl From<crate::PodCastError> for CheckedCastError {
 pub fn try_from_bytes<T: CheckedBitPattern>(
   s: &[u8],
 ) -> Result<&T, CheckedCastError> {
-  let pod = unsafe { internal::try_from_bytes(s) }?;
+  let pod = crate::try_from_bytes(s)?;
 
   if <T as CheckedBitPattern>::is_valid_bit_pattern(pod) {
     Ok(unsafe { &*(pod as *const <T as CheckedBitPattern>::Bits as *const T) })
@@ -281,7 +281,7 @@ pub fn try_from_bytes_mut<T: CheckedBitPattern + NoUninit>(
 pub fn try_pod_read_unaligned<T: CheckedBitPattern>(
   bytes: &[u8],
 ) -> Result<T, CheckedCastError> {
-  let pod = unsafe { internal::try_pod_read_unaligned(bytes) }?;
+  let pod = crate::try_pod_read_unaligned(bytes)?;
 
   if <T as CheckedBitPattern>::is_valid_bit_pattern(&pod) {
     Ok(unsafe { transmute!(pod) })
@@ -305,7 +305,7 @@ pub fn try_pod_read_unaligned<T: CheckedBitPattern>(
 pub fn try_cast<A: NoUninit, B: CheckedBitPattern>(
   a: A,
 ) -> Result<B, CheckedCastError> {
-  let pod = unsafe { internal::try_cast(a) }?;
+  let pod = crate::try_cast(a)?;
 
   if <B as CheckedBitPattern>::is_valid_bit_pattern(&pod) {
     Ok(unsafe { transmute!(pod) })
@@ -325,7 +325,7 @@ pub fn try_cast<A: NoUninit, B: CheckedBitPattern>(
 pub fn try_cast_ref<A: NoUninit, B: CheckedBitPattern>(
   a: &A,
 ) -> Result<&B, CheckedCastError> {
-  let pod = unsafe { internal::try_cast_ref(a) }?;
+  let pod = crate::try_cast_ref(a)?;
 
   if <B as CheckedBitPattern>::is_valid_bit_pattern(pod) {
     Ok(unsafe { &*(pod as *const <B as CheckedBitPattern>::Bits as *const B) })
@@ -374,7 +374,7 @@ pub fn try_cast_mut<
 pub fn try_cast_slice<A: NoUninit, B: CheckedBitPattern>(
   a: &[A],
 ) -> Result<&[B], CheckedCastError> {
-  let pod = unsafe { internal::try_cast_slice(a) }?;
+  let pod = crate::try_cast_slice(a)?;
 
   if pod.iter().all(|pod| <B as CheckedBitPattern>::is_valid_bit_pattern(pod)) {
     Ok(unsafe {
