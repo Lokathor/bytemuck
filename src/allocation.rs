@@ -685,4 +685,5 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
     }
   }
 }
-impl<I: ?Sized, T: TransparentWrapper<I>> TransparentWrapperAlloc<I> for T {}
+
+impl<I: ?Sized, T: ?Sized + TransparentWrapper<I>> TransparentWrapperAlloc<I> for T {}
