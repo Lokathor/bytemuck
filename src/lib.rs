@@ -79,10 +79,13 @@ macro_rules! transmute {
 /// with relevant cargo features enabled.
 #[allow(unused)]
 macro_rules! impl_unsafe_marker_for_simd {
-  (unsafe impl $trait:ident for $platform:ident :: {}) => {};
-  (unsafe impl $trait:ident for $platform:ident :: { $first_type:ident $(, $types:ident)* $(,)? }) => {
+  ($(#[cfg($cfg_predicate:meta)])? unsafe impl $trait:ident for $platform:ident :: {}) => {};
+  ($(#[cfg($cfg_predicate:meta)])? unsafe impl $trait:ident for $platform:ident :: { $first_type:ident $(, $types:ident)* $(,)? }) => {
+    $( #[cfg($cfg_predicate)] )?
+    $( #[cfg_attr(feature = "nightly_docs", doc(cfg($cfg_predicate)))] )?
     unsafe impl $trait for $platform::$first_type {}
-    impl_unsafe_marker_for_simd!(unsafe impl $trait for $platform::{ $( $types ),* });
+    $( #[cfg($cfg_predicate)] )? // To prevent recursion errors if nothing is going to be expanded anyway.
+    impl_unsafe_marker_for_simd!($( #[cfg($cfg_predicate)] )? unsafe impl $trait for $platform::{ $( $types ),* });
   };
 }
 
