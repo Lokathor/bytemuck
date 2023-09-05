@@ -1,5 +1,19 @@
 # `bytemuck` changelog
 
+## 1.14
+
+* `write_zeroes` and `fill_zeroes` functions: Writes (to one) or fills (a slice)
+  zero bytes to all bytes covered by the provided reference. If your type has
+  padding, this will even zero out the padding bytes.
+* `align_offset` feature: causes pointer alignment checks to use the
+  `align_offset` pointer method rather than as-casting the pointer to `usize`.
+  This *may* improve codegen, if the compiler would have otherwise thought that
+  the pointer address escaped. No formal benchmarks have been done either way.
+* `must_cast` feature: Adds `must_*` family of functions. These functions will
+  fail to compile if the cast requested can't be statically known to succeed.
+  The error messages can be kinda bad when this happens, but eliminating the
+  possibility of a runtime error might be worth it to you.
+
 ## 1.13.1
 
 * Remove the requirement for the *source* data type to be `AnyBitPattern` on
