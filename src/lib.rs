@@ -414,9 +414,9 @@ pub fn try_cast_slice_mut<
 /// This is similar to `*target = Zeroable::zeroed()`, but guarantees that any
 /// padding bytes in `target` are zeroed as well.
 ///
-/// See also [`fill_zero`], if you have a slice rather than a single value.
+/// See also [`fill_zeroes`], if you have a slice rather than a single value.
 #[inline]
-pub fn write_zero<T: Zeroable>(target: &mut T) {
+pub fn write_zeroes<T: Zeroable>(target: &mut T) {
   struct EnsureZeroWrite<T>(*mut T);
   impl<T> Drop for EnsureZeroWrite<T> {
     #[inline(always)]
@@ -438,14 +438,14 @@ pub fn write_zero<T: Zeroable>(target: &mut T) {
 /// This is similar to `slice.fill(Zeroable::zeroed())`, but guarantees that any
 /// padding bytes in `slice` are zeroed as well.
 ///
-/// See also [`write_zero`], which zeroes all bytes of a single value rather
+/// See also [`write_zeroes`], which zeroes all bytes of a single value rather
 /// than a slice.
 #[inline]
-pub fn fill_zero<T: Zeroable>(slice: &mut [T]) {
+pub fn fill_zeroes<T: Zeroable>(slice: &mut [T]) {
   if core::mem::needs_drop::<T>() {
     // If `T` needs to be dropped then we have to do this one item at a time, in
     // case one of the intermediate drops does a panic.
-    slice.iter_mut().for_each(write_zero);
+    slice.iter_mut().for_each(write_zeroes);
   } else {
     // Otherwise we can be really fast and just fill everthing with zeros.
     let len = core::mem::size_of_val::<[T]>(slice);
