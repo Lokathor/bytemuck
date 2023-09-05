@@ -1,6 +1,10 @@
 
 ## `bytemuck_derive` changelog
 
+## 1.5.0
+
+* The `Zeroable` derive now allows custom bounds. See the rustdoc for an explanation.
+
 ## 1.4.1
 
 * Move the `syn` dependency to use version 2.
