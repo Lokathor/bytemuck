@@ -412,11 +412,7 @@ pub fn write_zero<T: Zeroable>(target: &mut T) {
     #[inline(always)]
     fn drop(&mut self) {
       unsafe {
-        core::ptr::write_bytes(
-          self.0.cast::<u8>(),
-          0u8,
-          core::mem::size_of::<T>(),
-        );
+        core::ptr::write_bytes(self.0, 0u8, 1);
       }
     }
   }
