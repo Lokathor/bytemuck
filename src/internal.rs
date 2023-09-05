@@ -136,11 +136,18 @@ pub(crate) unsafe fn pod_read_unaligned<T: Copy>(bytes: &[u8]) -> T {
 /// * If `align` is not a power of two. This includes when `align` is zero.
 #[inline]
 pub(crate) fn is_aligned_to(ptr: *const (), align: usize) -> bool {
-  // This is in a way better than `ptr as usize % align == 0`,
-  // because casting a pointer to an integer has the side effect that it exposes
-  // the pointer's provenance, which may theoretically inhibit some compiler
-  // optimizations.
-  ptr.align_offset(align) == 0
+  #[cfg(feature = "align_offset")]
+  {
+    // This is in a way better than `ptr as usize % align == 0`,
+    // because casting a pointer to an integer has the side effect that it
+    // exposes the pointer's provenance, which may theoretically inhibit
+    // some compiler optimizations.
+    ptr.align_offset(align) == 0
+  }
+  #[cfg(not(feature = "align_offset"))]
+  {
+    ((ptr as usize) % align) == 0
+  }
 }
 
 /// Re-interprets `&[u8]` as `&T`.
