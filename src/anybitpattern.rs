@@ -56,5 +56,6 @@ pub unsafe trait AnyBitPattern:
 unsafe impl<T: Pod> AnyBitPattern for T {}
 
 #[cfg(feature = "zeroable_maybe_uninit")]
+#[cfg_attr(feature = "nightly_docs", doc(cfg(feature = "zeroable_maybe_uninit")))]
 unsafe impl<T> AnyBitPattern for core::mem::MaybeUninit<T> where T: AnyBitPattern
 {}

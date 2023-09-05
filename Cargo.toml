@@ -30,12 +30,16 @@ unsound_ptr_pod_impl = []
 nightly_portable_simd = []
 nightly_stdsimd = []
 
+# Improved documentation using the nightly toolchain
+nightly_docs = []
+
 [dependencies]
 bytemuck_derive = { version = "1.4", path = "derive", optional = true }
 
 [package.metadata.docs.rs]
 # Note(Lokathor): Don't use all-features or it would use `unsound_ptr_pod_impl` too.
 features = [
+  "nightly_docs",
   "derive",
   "extern_crate_alloc",
   "extern_crate_std",
