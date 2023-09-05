@@ -1,3 +1,6 @@
+#![allow(clippy::unnecessary_cast)]
+#![allow(clippy::manual_slice_size_calculation)]
+
 use core::{
   mem::size_of,
   num::{NonZeroU32, NonZeroU8},
