@@ -593,36 +593,46 @@ fn generate_checked_bit_pattern_enum_with_fields(
 
       let bits_repr = Representation { repr: Repr::C, ..representation };
 
-      let bits_ty = Ident::new(&format!("{}Bits", input.ident), input.span());
-      let fields_ty =
+      // the enum manually re-configured as the actual tagged union it represents,
+      // thus circumventing the requirements rust imposes on the tag even when using
+      // #[repr(C)] enum layout
+      // see: https://doc.rust-lang.org/reference/type-layout.html#reprc-enums-with-fields
+      let bits_ty_ident = Ident::new(&format!("{}Bits", input.ident), input.span());
+
+      // the variants union part of the tagged union. These get put into a union which gets the
+      // AnyBitPattern derive applied to it, thus checking that the fields of the union obey the requriements of AnyBitPattern.
+      // The types that actually go in the union are one more level of indirection deep: we generate new structs for each variant
+      // (`variant_struct_definitions`) which themselves have the `CheckedBitPattern` derive applied, thus generating `{variant_struct_ident}Bits`
+      // structs, which are the ones that go into this union.
+      let variants_union_ident =
         Ident::new(&format!("{}Fields", input.ident), input.span());
 
-      let variant_struct = variants
+      let variant_struct_idents = variants
         .iter()
-        .map(|v| Ident::new(&format!("{fields_ty}{}", v.ident), v.span()));
+        .map(|v| Ident::new(&format!("{variants_union_ident}{}", v.ident), v.span()));
 
       let variant_struct_definitions =
-        variant_struct.clone().zip(variants.iter()).map(|(variant_ty, v)| {
+        variant_struct_idents.clone().zip(variants.iter()).map(|(variant_ident, v)| {
           let fields = v.fields.iter().map(|v| &v.ty);
 
           quote! {
             #[derive(::core::clone::Clone, ::core::marker::Copy, ::bytemuck::CheckedBitPattern)]
             #[repr(C)]
-            #vis struct #variant_ty(#(#fields),*);
+            #vis struct #variant_ident(#(#fields),*);
           }
         });
 
       let union_fields =
-        variant_struct.clone().zip(variants.iter()).map(|(variant_ty, v)| {
-          let variant_ty =
-            Ident::new(&format!("{variant_ty}Bits"), input.span());
+        variant_struct_idents.clone().zip(variants.iter()).map(|(variant_struct_ident, v)| {
+          let variant_struct_bits_ident =
+            Ident::new(&format!("{variant_struct_ident}Bits"), input.span());
           let field_ident = &v.ident;
           quote! {
-            #field_ident: #variant_ty
+            #field_ident: #variant_struct_bits_ident
           }
         });
 
-      let variant_checks = variant_struct
+      let variant_checks = variant_struct_idents
         .clone()
         .zip(VariantDiscriminantIterator::new(variants.iter()))
         .zip(variants.iter())
@@ -644,22 +654,22 @@ fn generate_checked_bit_pattern_enum_with_fields(
           #[derive(::core::clone::Clone, ::core::marker::Copy, ::bytemuck::AnyBitPattern)]
           #derive_dbg
           #bits_repr
-          #vis struct #bits_ty {
+          #vis struct #bits_ty_ident {
             tag: #integer,
-            payload: #fields_ty,
+            payload: #variants_union_ident,
           }
 
           #[derive(::core::clone::Clone, ::core::marker::Copy, ::bytemuck::AnyBitPattern)]
           #[repr(C)]
           #[allow(non_snake_case)]
-          #vis union #fields_ty {
+          #vis union #variants_union_ident {
             #(#union_fields,)*
           }
 
           #[cfg(not(target_arch = "spirv"))]
-          impl ::core::fmt::Debug for #fields_ty {
+          impl ::core::fmt::Debug for #variants_union_ident {
             fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-              let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#fields_ty));
+              let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#variants_union_ident));
               ::core::fmt::DebugStruct::finish_non_exhaustive(&mut debug_struct)
             }
           }
@@ -667,7 +677,7 @@ fn generate_checked_bit_pattern_enum_with_fields(
           #(#variant_struct_definitions)*
         },
         quote! {
-          type Bits = #bits_ty;
+          type Bits = #bits_ty_ident;
 
           #[inline]
           #[allow(clippy::double_comparisons)]
@@ -710,16 +720,23 @@ fn generate_checked_bit_pattern_enum_with_fields(
     Repr::Integer(integer) => {
       let bits_repr = Representation { repr: Repr::C, ..representation };
 
-      let bits_ty = Ident::new(&format!("{}Bits", input.ident), input.span());
+      // the enum manually re-configured as the union it represents. such a union is the union of variants
+      // as a repr(c) struct with the discriminator type inserted at the beginning.
+      // in our case we union the `Bits` representation of each variant rather than the variant itself, which we generate
+      // via a nested `CheckedBitPattern` derive on the `variant_struct_definitions` generated below.
+      //
+      // see: https://doc.rust-lang.org/reference/type-layout.html#primitive-representation-of-enums-with-fields
+      let bits_ty_ident = Ident::new(&format!("{}Bits", input.ident), input.span());
 
-      let variant_struct = variants
+      let variant_struct_idents = variants
         .iter()
-        .map(|v| Ident::new(&format!("{bits_ty}{}", v.ident), v.span()));
+        .map(|v| Ident::new(&format!("{bits_ty_ident}{}", v.ident), v.span()));
 
       let variant_struct_definitions =
-        variant_struct.clone().zip(variants.iter()).map(|(variant_ty, v)| {
+        variant_struct_idents.clone().zip(variants.iter()).map(|(variant_ty, v)| {
           let fields = v.fields.iter().map(|v| &v.ty);
 
+          // adding the discriminant repr integer as first field, as described above
           quote! {
             #[derive(::core::clone::Clone, ::core::marker::Copy, ::bytemuck::CheckedBitPattern)]
             #[repr(C)]
@@ -728,16 +745,16 @@ fn generate_checked_bit_pattern_enum_with_fields(
         });
 
       let union_fields =
-        variant_struct.clone().zip(variants.iter()).map(|(variant_ty, v)| {
-          let variant_ty =
+        variant_struct_idents.clone().zip(variants.iter()).map(|(variant_ty, v)| {
+          let variant_struct_bits_ident =
             Ident::new(&format!("{variant_ty}Bits"), input.span());
           let field_ident = &v.ident;
           quote! {
-            #field_ident: #variant_ty
+            #field_ident: #variant_struct_bits_ident
           }
         });
 
-      let variant_checks = variant_struct
+      let variant_checks = variant_struct_idents
         .clone()
         .zip(VariantDiscriminantIterator::new(variants.iter()))
         .zip(variants.iter())
@@ -759,15 +776,15 @@ fn generate_checked_bit_pattern_enum_with_fields(
           #[derive(::core::clone::Clone, ::core::marker::Copy, ::bytemuck::AnyBitPattern)]
           #bits_repr
           #[allow(non_snake_case)]
-          #vis union #bits_ty {
+          #vis union #bits_ty_ident {
             __tag: #integer,
             #(#union_fields,)*
           }
 
           #[cfg(not(target_arch = "spirv"))]
-          impl ::core::fmt::Debug for #bits_ty {
+          impl ::core::fmt::Debug for #bits_ty_ident {
             fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-              let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#bits_ty));
+              let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#bits_ty_ident));
               ::core::fmt::DebugStruct::field(&mut debug_struct, "tag", unsafe { &self.__tag });
               ::core::fmt::DebugStruct::finish_non_exhaustive(&mut debug_struct)
             }
@@ -776,7 +793,7 @@ fn generate_checked_bit_pattern_enum_with_fields(
           #(#variant_struct_definitions)*
         },
         quote! {
-          type Bits = #bits_ty;
+          type Bits = #bits_ty_ident;
 
           #[inline]
           #[allow(clippy::double_comparisons)]
