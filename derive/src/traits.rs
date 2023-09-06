@@ -214,7 +214,7 @@ impl Derivable for CheckedBitPattern {
             bail!("CheckedBitPattern requires the enum to be an explicit #[repr(Int)]")
           }
         } else if matches!(repr.repr, Repr::Rust) {
-          bail!("the default Rust repr doesn't have a specified type layout")
+          bail!("CheckedBitPattern requires an explicit repr annotation because `repr(Rust)` doesn't have a specified type layout")
         } else {
           Ok(())
         }
