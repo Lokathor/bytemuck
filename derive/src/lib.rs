@@ -218,7 +218,7 @@ pub fn derive_zeroable(
 /// - The struct must contain no generic parameters
 ///
 /// If applied to an enum:
-/// - The enum must be explicit `#[repr(Int)]`
+/// - The enum must be explicit `#[repr(Int)]`, `#[repr(C)]`, or both
 /// - All variants must be fieldless
 /// - The enum must contain no generic parameters
 #[proc_macro_derive(NoUninit)]
