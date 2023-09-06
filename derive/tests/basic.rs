@@ -2,7 +2,7 @@
 
 use bytemuck::{
   AnyBitPattern, CheckedBitPattern, Contiguous, NoUninit, Pod,
-  TransparentWrapper, Zeroable,
+  TransparentWrapper, Zeroable, checked::CheckedCastError,
 };
 use std::marker::{PhantomData, PhantomPinned};
 
@@ -193,6 +193,16 @@ enum CheckedBitPatternTransparentEnumWithFields {
   A { b: u32 },
 }
 
+// size 24, align 8.
+// first byte always the u8 discriminant, then 7 bytes of padding until the payload union since the align of the payload
+// is the greatest of the align of all the variants, which is 8 (from CheckedBitPatternCDefaultDiscriminantEnumWithFields)
+#[derive(Debug, Clone, Copy, CheckedBitPattern, PartialEq, Eq)]
+#[repr(C, u8)]
+enum CheckedBitPatternEnumNested {
+  A(CheckedBitPatternCEnumWithFields),
+  B(CheckedBitPatternCDefaultDiscriminantEnumWithFields),
+}
+
 /// ```compile_fail
 /// use bytemuck::{Pod, Zeroable};
 ///
@@ -361,6 +371,65 @@ fn checkedbitpattern_int_enum_with_fields() {
   assert_eq!(value, CheckedBitPatternIntEnumWithFields::B { c: 0xcc5555cc });
 }
 
+#[test]
+fn checkedbitpattern_nested_enum_with_fields() {
+  // total size 24 bytes. first byte always the u8 discriminant.
+  // with variant A, nested CheckedBitPatternCEnumWithFields begins at byte 4.
+  // with variant B, nested CheckedBitPatternCDefaultDiscriminantEnumWithFields begins at byte 8.
+
+  #[repr(C, align(8))]
+  struct Align8Bytes([u8; 24]);
+
+  // first we'll check variantA, nested variant A
+  let pod = Align8Bytes([
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // byte 0 discriminant = 0 = variant A, bytes 1-7 irrelevant padding.
+    0x00, 0x00, 0x00, 0x00, 0xcc, 0x55, 0x55, 0xcc, // bytes 8-15 are the nested CheckedBitPatternCEnumWithFields,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // bytes 16-23 padding
+  ]);
+  let value = bytemuck::checked::from_bytes::<
+    CheckedBitPatternEnumNested,
+  >(&pod.0);
+  assert_eq!(value, &CheckedBitPatternEnumNested::A(CheckedBitPatternCEnumWithFields::A(0xcc5555cc)));
+
+  // next we'll check invalid first discriminant fails
+  let pod = Align8Bytes([
+    0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // byte 0 discriminant = 2 = invalid, bytes 1-7 padding
+    0x00, 0x00, 0x00, 0x00, 0xcc, 0x55, 0x55, 0xcc, // bytes 8-15 are the nested CheckedBitPatternCEnumWithFields = A,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // bytes 16-23 padding
+  ]);
+  let result = bytemuck::checked::try_from_bytes::<
+    CheckedBitPatternEnumNested,
+  >(&pod.0);
+  assert_eq!(result, Err(CheckedCastError::InvalidBitPattern));
+
+
+  // next we'll check variant B, nested variant B
+  let pod = Align8Bytes([
+    0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // byte 0 discriminant = 1 = variant B, bytes 1-7 padding
+    0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // bytes 8-15 is C int size discriminant of CheckedBitPatternCDefaultDiscrimimantEnumWithFields, 1 (LE byte order) = variant B
+    0xcc, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0xcc, // bytes 16-13 is the data contained in nested variant B
+  ]);
+  let value = bytemuck::checked::from_bytes::<
+    CheckedBitPatternEnumNested,
+  >(&pod.0);
+  assert_eq!(
+    value,
+    &CheckedBitPatternEnumNested::B(CheckedBitPatternCDefaultDiscriminantEnumWithFields::B {
+      c: 0xcc555555555555cc
+    })
+  );
+
+  // finally we'll check variant B, nested invalid discriminant
+  let pod = Align8Bytes([
+    0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 1 discriminant = variant B, bytes 1-7 padding
+    0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // bytes 8-15 is C int size discriminant of CheckedBitPatternCDefaultDiscrimimantEnumWithFields, 0x08 is invalid
+    0xcc, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0xcc, // bytes 16-13 is the data contained in nested variant B
+  ]);
+  let result = bytemuck::checked::try_from_bytes::<
+    CheckedBitPatternEnumNested,
+  >(&pod.0);
+  assert_eq!(result, Err(CheckedCastError::InvalidBitPattern));
+}
 #[test]
 fn checkedbitpattern_transparent_enum_with_fields() {
   let pod = [0xcc, 0x55, 0x55, 0xcc];

@@ -590,6 +590,7 @@ fn generate_checked_bit_pattern_enum_with_fields(
         Repr::CWithDiscriminant(integer) => quote!(#integer),
         _ => unreachable!(),
       };
+      let input_ident = &input.ident;
 
       let bits_repr = Representation { repr: Repr::C, ..representation };
 
@@ -597,7 +598,7 @@ fn generate_checked_bit_pattern_enum_with_fields(
       // thus circumventing the requirements rust imposes on the tag even when using
       // #[repr(C)] enum layout
       // see: https://doc.rust-lang.org/reference/type-layout.html#reprc-enums-with-fields
-      let bits_ty_ident = Ident::new(&format!("{}Bits", input.ident), input.span());
+      let bits_ty_ident = Ident::new(&format!("{input_ident}Bits"), input.span());
 
       // the variants union part of the tagged union. These get put into a union which gets the
       // AnyBitPattern derive applied to it, thus checking that the fields of the union obey the requriements of AnyBitPattern.
@@ -605,20 +606,20 @@ fn generate_checked_bit_pattern_enum_with_fields(
       // (`variant_struct_definitions`) which themselves have the `CheckedBitPattern` derive applied, thus generating `{variant_struct_ident}Bits`
       // structs, which are the ones that go into this union.
       let variants_union_ident =
-        Ident::new(&format!("{}Fields", input.ident), input.span());
+        Ident::new(&format!("{}Variants", input.ident), input.span());
 
       let variant_struct_idents = variants
         .iter()
-        .map(|v| Ident::new(&format!("{variants_union_ident}{}", v.ident), v.span()));
+        .map(|v| Ident::new(&format!("{input_ident}Variant{}", v.ident), v.span()));
 
       let variant_struct_definitions =
-        variant_struct_idents.clone().zip(variants.iter()).map(|(variant_ident, v)| {
+        variant_struct_idents.clone().zip(variants.iter()).map(|(variant_struct_ident, v)| {
           let fields = v.fields.iter().map(|v| &v.ty);
 
           quote! {
             #[derive(::core::clone::Clone, ::core::marker::Copy, ::bytemuck::CheckedBitPattern)]
             #[repr(C)]
-            #vis struct #variant_ident(#(#fields),*);
+            #vis struct #variant_struct_ident(#(#fields),*);
           }
         });
 
@@ -636,14 +637,14 @@ fn generate_checked_bit_pattern_enum_with_fields(
         .clone()
         .zip(VariantDiscriminantIterator::new(variants.iter()))
         .zip(variants.iter())
-        .map(|((variant_ty, discriminant), v)| -> Result<_> {
+        .map(|((variant_struct_ident, discriminant), v)| -> Result<_> {
           let discriminant = discriminant?;
           let discriminant = LitInt::new(&discriminant.to_string(), v.span());
           let ident = &v.ident;
           Ok(quote! {
             #discriminant => {
               let payload = unsafe { &bits.payload.#ident };
-              <#variant_ty as ::bytemuck::CheckedBitPattern>::is_valid_bit_pattern(payload)
+              <#variant_struct_ident as ::bytemuck::CheckedBitPattern>::is_valid_bit_pattern(payload)
             }
           })
         })
@@ -719,6 +720,7 @@ fn generate_checked_bit_pattern_enum_with_fields(
     }
     Repr::Integer(integer) => {
       let bits_repr = Representation { repr: Repr::C, ..representation };
+      let input_ident = &input.ident;
 
       // the enum manually re-configured as the union it represents. such a union is the union of variants
       // as a repr(c) struct with the discriminator type inserted at the beginning.
@@ -726,28 +728,28 @@ fn generate_checked_bit_pattern_enum_with_fields(
       // via a nested `CheckedBitPattern` derive on the `variant_struct_definitions` generated below.
       //
       // see: https://doc.rust-lang.org/reference/type-layout.html#primitive-representation-of-enums-with-fields
-      let bits_ty_ident = Ident::new(&format!("{}Bits", input.ident), input.span());
+      let bits_ty_ident = Ident::new(&format!("{input_ident}Bits"), input.span());
 
       let variant_struct_idents = variants
         .iter()
-        .map(|v| Ident::new(&format!("{bits_ty_ident}{}", v.ident), v.span()));
+        .map(|v| Ident::new(&format!("{input_ident}Variant{}", v.ident), v.span()));
 
       let variant_struct_definitions =
-        variant_struct_idents.clone().zip(variants.iter()).map(|(variant_ty, v)| {
+        variant_struct_idents.clone().zip(variants.iter()).map(|(variant_struct_ident, v)| {
           let fields = v.fields.iter().map(|v| &v.ty);
 
           // adding the discriminant repr integer as first field, as described above
           quote! {
             #[derive(::core::clone::Clone, ::core::marker::Copy, ::bytemuck::CheckedBitPattern)]
             #[repr(C)]
-            #vis struct #variant_ty(#integer, #(#fields),*);
+            #vis struct #variant_struct_ident(#integer, #(#fields),*);
           }
         });
 
       let union_fields =
-        variant_struct_idents.clone().zip(variants.iter()).map(|(variant_ty, v)| {
+        variant_struct_idents.clone().zip(variants.iter()).map(|(variant_struct_ident, v)| {
           let variant_struct_bits_ident =
-            Ident::new(&format!("{variant_ty}Bits"), input.span());
+            Ident::new(&format!("{variant_struct_ident}Bits"), input.span());
           let field_ident = &v.ident;
           quote! {
             #field_ident: #variant_struct_bits_ident
@@ -758,14 +760,14 @@ fn generate_checked_bit_pattern_enum_with_fields(
         .clone()
         .zip(VariantDiscriminantIterator::new(variants.iter()))
         .zip(variants.iter())
-        .map(|((variant_ty, discriminant), v)| -> Result<_> {
+        .map(|((variant_struct_ident, discriminant), v)| -> Result<_> {
           let discriminant = discriminant?;
           let discriminant = LitInt::new(&discriminant.to_string(), v.span());
           let ident = &v.ident;
           Ok(quote! {
             #discriminant => {
               let payload = unsafe { &bits.#ident };
-              <#variant_ty as ::bytemuck::CheckedBitPattern>::is_valid_bit_pattern(payload)
+              <#variant_struct_ident as ::bytemuck::CheckedBitPattern>::is_valid_bit_pattern(payload)
             }
           })
         })
