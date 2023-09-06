@@ -374,8 +374,6 @@ fn checkedbitpattern_int_enum_with_fields() {
 #[test]
 fn checkedbitpattern_nested_enum_with_fields() {
   // total size 24 bytes. first byte always the u8 discriminant.
-  // with variant A, nested CheckedBitPatternCEnumWithFields begins at byte 4.
-  // with variant B, nested CheckedBitPatternCDefaultDiscriminantEnumWithFields begins at byte 8.
 
   #[repr(C, align(8))]
   struct Align8Bytes([u8; 24]);
