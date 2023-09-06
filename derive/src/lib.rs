@@ -218,7 +218,7 @@ pub fn derive_zeroable(
 /// - The struct must contain no generic parameters
 ///
 /// If applied to an enum:
-/// - The enum must be explicit `#[repr(Int)]`
+/// - The enum must be explicit `#[repr(Int)]`, `#[repr(C)]`, or both
 /// - All variants must be fieldless
 /// - The enum must contain no generic parameters
 #[proc_macro_derive(NoUninit)]
@@ -237,16 +237,17 @@ pub fn derive_no_uninit(
 /// for the `CheckedBitPattern` trait and derives the required `Bits` type
 /// definition and `is_valid_bit_pattern` method for the type automatically.
 ///
-/// The following constraints need to be satisfied for the macro to succeed
-/// (the rest of the constraints are guaranteed by the `CheckedBitPattern`
-/// subtrait bounds, i.e. are guaranteed by the requirements of the `NoUninit`
-/// trait which `CheckedBitPattern` is a subtrait of):
+/// The following constraints need to be satisfied for the macro to succeed:
 ///
 /// If applied to a struct:
 /// - All fields must implement `CheckedBitPattern`
+/// - The struct must be `#[repr(C)]` or `#[repr(transparent)]`
+/// - The struct must contain no generic parameters
 ///
 /// If applied to an enum:
-/// - All requirements already checked by `NoUninit`, just impls the trait
+/// - The enum must be explicit `#[repr(Int)]`
+/// - All fields in variants must implement `CheckedBitPattern`
+/// - The enum must contain no generic parameters
 #[proc_macro_derive(CheckedBitPattern)]
 pub fn derive_maybe_pod(
   input: proc_macro::TokenStream,
