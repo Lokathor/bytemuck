@@ -694,7 +694,8 @@ impl<I: ?Sized, T: ?Sized + TransparentWrapper<I>> TransparentWrapperAlloc<I>
 
 /// As `Box<[u8]>`, but remembers the original alignment.
 pub struct BoxBytes {
-  // SAFETY: `ptr` is owned, was allocated with `layout`, and points to `layout.size()` initialized bytes.
+  // SAFETY: `ptr` is owned, was allocated with `layout`, and points to
+  // `layout.size()` initialized bytes.
   ptr: NonNull<u8>,
   layout: Layout,
 }
@@ -769,8 +770,9 @@ pub fn try_from_box_bytes<T: AnyBitPattern>(
   } else if input.layout.size() != layout.size() {
     return Err((PodCastError::SizeMismatch, input));
   } else {
+    let (ptr, _) = input.into_raw_parts();
     // SAFETY: See type invariant.
-    Ok(unsafe { Box::from_raw(input.ptr.as_ptr() as *mut T) })
+    Ok(unsafe { Box::from_raw(ptr.as_ptr() as *mut T) })
   }
 }
 
@@ -779,9 +781,19 @@ impl BoxBytes {
   ///
   /// # Safety
   ///
-  /// The pointer is owned, has been allocated with the provided layout, and points to `layout.size()` initialized bytes.
+  /// The pointer is owned, has been allocated with the provided layout, and
+  /// points to `layout.size()` initialized bytes.
   pub unsafe fn from_parts(ptr: NonNull<u8>, layout: Layout) -> Self {
     BoxBytes { ptr, layout }
+  }
+
+  /// Deconstructs a `BoxBytes` into its raw parts.
+  ///
+  /// The pointer is owned, has been allocated with the provided layout, and
+  /// points to `layout.size()` initialized bytes.
+  pub fn into_raw_parts(self) -> (NonNull<u8>, Layout) {
+    let me = ManuallyDrop::new(self);
+    (me.ptr, me.layout)
   }
 
   /// Returns the original layout.
