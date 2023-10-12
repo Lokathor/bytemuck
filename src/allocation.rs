@@ -694,7 +694,7 @@ impl<I: ?Sized, T: ?Sized + TransparentWrapper<I>> TransparentWrapperAlloc<I>
 
 /// As `Box<[u8]>`, but remembers the original alignment.
 pub struct BoxBytes {
-  // SAFETY: `ptr` is owned and was allocated with `layout`.
+  // SAFETY: `ptr` is owned, was allocated with `layout`, and points to `layout.size()` initialized bytes.
   ptr: NonNull<u8>,
   layout: Layout,
 }
@@ -726,7 +726,7 @@ impl Drop for BoxBytes {
   }
 }
 
-impl<T> From<Box<T>> for BoxBytes {
+impl<T: NoUninit> From<Box<T>> for BoxBytes {
   fn from(value: Box<T>) -> Self {
     let layout = Layout::new::<T>();
     let ptr = Box::into_raw(value) as *mut u8;
@@ -738,7 +738,7 @@ impl<T> From<Box<T>> for BoxBytes {
 
 /// Re-interprets `Box<T>` as `BoxBytes`.
 #[inline]
-pub fn box_bytes_of<T: NoUninit + AnyBitPattern>(input: Box<T>) -> BoxBytes {
+pub fn box_bytes_of<T: NoUninit>(input: Box<T>) -> BoxBytes {
   input.into()
 }
 
@@ -749,7 +749,7 @@ pub fn box_bytes_of<T: NoUninit + AnyBitPattern>(input: Box<T>) -> BoxBytes {
 /// This is [`try_from_box_bytes`] but will panic on error and the input will be
 /// dropped.
 #[inline]
-pub fn from_box_bytes<T: NoUninit + AnyBitPattern>(input: BoxBytes) -> Box<T> {
+pub fn from_box_bytes<T: AnyBitPattern>(input: BoxBytes) -> Box<T> {
   try_from_box_bytes(input).map_err(|(error, _)| error).unwrap()
 }
 
@@ -760,7 +760,7 @@ pub fn from_box_bytes<T: NoUninit + AnyBitPattern>(input: BoxBytes) -> Box<T> {
 /// * If the input isn't aligned for the new type
 /// * If the input's length isn’t exactly the size of the new type
 #[inline]
-pub fn try_from_box_bytes<T: NoUninit + AnyBitPattern>(
+pub fn try_from_box_bytes<T: AnyBitPattern>(
   input: BoxBytes,
 ) -> Result<Box<T>, (PodCastError, BoxBytes)> {
   let layout = Layout::new::<T>();
@@ -779,7 +779,7 @@ impl BoxBytes {
   ///
   /// # Safety
   ///
-  /// The pointer is owned and has been allocated with the provided layout.
+  /// The pointer is owned, has been allocated with the provided layout, and points to `layout.size()` initialized bytes.
   pub unsafe fn from_parts(ptr: NonNull<u8>, layout: Layout) -> Self {
     BoxBytes { ptr, layout }
   }
