@@ -783,7 +783,7 @@ impl BoxBytes {
   ///
   /// The pointer is owned, has been allocated with the provided layout, and
   /// points to `layout.size()` initialized bytes.
-  pub unsafe fn from_parts(ptr: NonNull<u8>, layout: Layout) -> Self {
+  pub unsafe fn from_raw_parts(ptr: NonNull<u8>, layout: Layout) -> Self {
     BoxBytes { ptr, layout }
   }
 
