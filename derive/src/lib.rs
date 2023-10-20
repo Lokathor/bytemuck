@@ -9,8 +9,8 @@ use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Result};
 
 use crate::traits::{
-  AnyBitPattern, CheckedBitPattern, Contiguous, Derivable, NoUninit, Pod,
-  TransparentWrapper, Zeroable,
+  bytemuck_crate_name, AnyBitPattern, CheckedBitPattern, Contiguous, Derivable,
+  NoUninit, Pod, TransparentWrapper, Zeroable,
 };
 
 /// Derive the `Pod` trait for a struct
@@ -87,7 +87,7 @@ use crate::traits::{
 ///
 /// let _: u32 = bytemuck::cast(Generic { a: 4u32, b: PhantomData::<NotPod> });
 /// ```
-#[proc_macro_derive(Pod)]
+#[proc_macro_derive(Pod, attributes(bytemuck))]
 pub fn derive_pod(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
   let expanded =
     derive_marker_trait::<Pod>(parse_macro_input!(input as DeriveInput));
@@ -103,7 +103,7 @@ pub fn derive_pod(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 /// The following constraints need to be satisfied for the macro to succeed
 ///
 /// - All fields in the struct must to implement `AnyBitPattern`
-#[proc_macro_derive(AnyBitPattern)]
+#[proc_macro_derive(AnyBitPattern, attributes(bytemuck))]
 pub fn derive_anybitpattern(
   input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
@@ -192,7 +192,7 @@ pub fn derive_anybitpattern(
 /// # }
 /// ZeroableWhenTIsZeroable::<String>::zeroed();
 /// ```
-#[proc_macro_derive(Zeroable, attributes(zeroable))]
+#[proc_macro_derive(Zeroable, attributes(bytemuck, zeroable))]
 pub fn derive_zeroable(
   input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
@@ -319,7 +319,7 @@ pub fn derive_maybe_pod(
 ///   another_extra: NonTransparentSafeZST, // not `Zeroable`
 /// }
 /// ```
-#[proc_macro_derive(TransparentWrapper, attributes(transparent))]
+#[proc_macro_derive(TransparentWrapper, attributes(bytemuck, transparent))]
 pub fn derive_transparent(
   input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
@@ -394,6 +394,7 @@ pub fn derive_byte_eq(
   input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
   let input = parse_macro_input!(input as DeriveInput);
+  let crate_name = bytemuck_crate_name(&input);
   let ident = input.ident;
 
   proc_macro::TokenStream::from(quote! {
@@ -401,7 +402,7 @@ pub fn derive_byte_eq(
       #[inline]
       #[must_use]
       fn eq(&self, other: &Self) -> bool {
-        ::bytemuck::bytes_of(self) == ::bytemuck::bytes_of(other)
+        #crate_name::bytes_of(self) == #crate_name::bytes_of(other)
       }
     }
     impl ::core::cmp::Eq for #ident { }
@@ -434,18 +435,19 @@ pub fn derive_byte_hash(
   input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
   let input = parse_macro_input!(input as DeriveInput);
+  let crate_name = bytemuck_crate_name(&input);
   let ident = input.ident;
 
   proc_macro::TokenStream::from(quote! {
     impl ::core::hash::Hash for #ident {
       #[inline]
       fn hash<H: ::core::hash::Hasher>(&self, state: &mut H) {
-        ::core::hash::Hash::hash_slice(::bytemuck::bytes_of(self), state)
+        ::core::hash::Hash::hash_slice(#crate_name::bytes_of(self), state)
       }
 
       #[inline]
       fn hash_slice<H: ::core::hash::Hasher>(data: &[Self], state: &mut H) {
-        ::core::hash::Hash::hash_slice(::bytemuck::cast_slice::<_, u8>(data), state)
+        ::core::hash::Hash::hash_slice(#crate_name::cast_slice::<_, u8>(data), state)
       }
     }
   })
@@ -518,7 +520,8 @@ fn find_and_parse_helper_attributes<P: syn::parse::Parser + Copy>(
 fn derive_marker_trait_inner<Trait: Derivable>(
   mut input: DeriveInput,
 ) -> Result<TokenStream> {
-  let trait_ = Trait::ident(&input)?;
+  let crate_name = bytemuck_crate_name(&input);
+  let trait_ = Trait::ident(&input, &crate_name)?;
   // If this trait allows explicit bounds, and any explicit bounds were given,
   // then use those explicit bounds. Else, apply the default bounds (bound
   // each generic type on this trait).
@@ -585,10 +588,12 @@ fn derive_marker_trait_inner<Trait: Derivable>(
     input.generics.split_for_impl();
 
   Trait::check_attributes(&input.data, &input.attrs)?;
-  let asserts = Trait::asserts(&input)?;
-  let (trait_impl_extras, trait_impl) = Trait::trait_impl(&input)?;
+  let asserts = Trait::asserts(&input, &crate_name)?;
+  let (trait_impl_extras, trait_impl) = Trait::trait_impl(&input, &crate_name)?;
 
-  let implies_trait = if let Some(implies_trait) = Trait::implies_trait() {
+  let implies_trait = if let Some(implies_trait) =
+    Trait::implies_trait(&crate_name)
+  {
     quote!(unsafe impl #impl_generics #implies_trait for #name #ty_generics #where_clause {})
   } else {
     quote!()

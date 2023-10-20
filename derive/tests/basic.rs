@@ -443,3 +443,10 @@ fn checkedbitpattern_transparent_enum_with_fields() {
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 #[repr(C, align(16))]
 struct Issue127 {}
+
+use bytemuck as reexport_name;
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable, bytemuck::ByteEq)]
+#[bytemuck(crate = "reexport_name")]
+#[repr(C)]
+struct Issue93 {}
+
