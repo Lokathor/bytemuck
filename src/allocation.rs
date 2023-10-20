@@ -19,6 +19,7 @@ use alloc::{
   vec,
   vec::Vec,
 };
+use core::ops::{Deref, DerefMut};
 
 /// As [`try_cast_box`](try_cast_box), but unwraps for you.
 #[inline]
@@ -686,4 +687,117 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
   }
 }
 
-impl<I: ?Sized, T: ?Sized + TransparentWrapper<I>> TransparentWrapperAlloc<I> for T {}
+impl<I: ?Sized, T: ?Sized + TransparentWrapper<I>> TransparentWrapperAlloc<I>
+  for T
+{
+}
+
+/// As `Box<[u8]>`, but remembers the original alignment.
+pub struct BoxBytes {
+  // SAFETY: `ptr` is owned, was allocated with `layout`, and points to
+  // `layout.size()` initialized bytes.
+  ptr: NonNull<u8>,
+  layout: Layout,
+}
+
+impl Deref for BoxBytes {
+  type Target = [u8];
+
+  fn deref(&self) -> &Self::Target {
+    // SAFETY: See type invariant.
+    unsafe {
+      core::slice::from_raw_parts(self.ptr.as_ptr(), self.layout.size())
+    }
+  }
+}
+
+impl DerefMut for BoxBytes {
+  fn deref_mut(&mut self) -> &mut Self::Target {
+    // SAFETY: See type invariant.
+    unsafe {
+      core::slice::from_raw_parts_mut(self.ptr.as_ptr(), self.layout.size())
+    }
+  }
+}
+
+impl Drop for BoxBytes {
+  fn drop(&mut self) {
+    // SAFETY: See type invariant.
+    unsafe { alloc::alloc::dealloc(self.ptr.as_ptr(), self.layout) };
+  }
+}
+
+impl<T: NoUninit> From<Box<T>> for BoxBytes {
+  fn from(value: Box<T>) -> Self {
+    let layout = Layout::new::<T>();
+    let ptr = Box::into_raw(value) as *mut u8;
+    // SAFETY: Box::into_raw() returns a non-null pointer.
+    let ptr = unsafe { NonNull::new_unchecked(ptr) };
+    BoxBytes { ptr, layout }
+  }
+}
+
+/// Re-interprets `Box<T>` as `BoxBytes`.
+#[inline]
+pub fn box_bytes_of<T: NoUninit>(input: Box<T>) -> BoxBytes {
+  input.into()
+}
+
+/// Re-interprets `BoxBytes` as `Box<T>`.
+///
+/// ## Panics
+///
+/// This is [`try_from_box_bytes`] but will panic on error and the input will be
+/// dropped.
+#[inline]
+pub fn from_box_bytes<T: AnyBitPattern>(input: BoxBytes) -> Box<T> {
+  try_from_box_bytes(input).map_err(|(error, _)| error).unwrap()
+}
+
+/// Re-interprets `BoxBytes` as `Box<T>`.
+///
+/// ## Panics
+///
+/// * If the input isn't aligned for the new type
+/// * If the input's length isn’t exactly the size of the new type
+#[inline]
+pub fn try_from_box_bytes<T: AnyBitPattern>(
+  input: BoxBytes,
+) -> Result<Box<T>, (PodCastError, BoxBytes)> {
+  let layout = Layout::new::<T>();
+  if input.layout.align() != layout.align() {
+    return Err((PodCastError::AlignmentMismatch, input));
+  } else if input.layout.size() != layout.size() {
+    return Err((PodCastError::SizeMismatch, input));
+  } else {
+    let (ptr, _) = input.into_raw_parts();
+    // SAFETY: See type invariant.
+    Ok(unsafe { Box::from_raw(ptr.as_ptr() as *mut T) })
+  }
+}
+
+impl BoxBytes {
+  /// Constructs a `BoxBytes` from its raw parts.
+  ///
+  /// # Safety
+  ///
+  /// The pointer is owned, has been allocated with the provided layout, and
+  /// points to `layout.size()` initialized bytes.
+  pub unsafe fn from_raw_parts(ptr: NonNull<u8>, layout: Layout) -> Self {
+    BoxBytes { ptr, layout }
+  }
+
+  /// Deconstructs a `BoxBytes` into its raw parts.
+  ///
+  /// The pointer is owned, has been allocated with the provided layout, and
+  /// points to `layout.size()` initialized bytes.
+  pub fn into_raw_parts(self) -> (NonNull<u8>, Layout) {
+    let me = ManuallyDrop::new(self);
+    (me.ptr, me.layout)
+  }
+
+  /// Returns the original layout.
+  pub fn layout(&self) -> Layout {
+    self.layout
+  }
+}
