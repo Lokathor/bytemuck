@@ -19,28 +19,64 @@
 //! * `&[T]` uses [`cast_slice`]
 //! * `&mut [T]` uses [`cast_slice_mut`]
 //!
-//! Some casts will never fail (eg: `cast::<u32, f32>` always works), other
-//! casts might fail (eg: `cast_ref::<[u8; 4], u32>` will fail if the reference
-//! isn't already aligned to 4). Each casting function has a "try" version which
-//! will return a `Result`, and the "normal" version which will simply panic on
-//! invalid input.
+//! Depending on the function, the [`NoUninit`] and/or [`AnyBitPattern`] traits
+//! are used to maintain memory safety.
+//!
+//! **Historical Note:** When the crate first started the [`Pod`] trait was used
+//! instead, and so you may hear people refer to that, but it has the strongest
+//! requirements and people eventually wanted the more fine-grained system, so
+//! here we are. All types that impl `Pod` have a blanket impl to also support
+//! `NoUninit` and `AnyBitPattern`. The traits unfortunately do not have a
+//! perfectly clean hierarchy for semver reasons.
+//!
+//! ## Failures
+//!
+//! Some casts will never fail, and other casts might fail.
+//!
+//! * `cast::<u32, f32>` always works (and [`f32::from_bits`]).
+//! * `cast_ref::<[u8; 4], u32>` might fail if the specific array reference
+//!   given at runtime doesn't have alignment 4.
+//!
+//! In addition to the "normal" forms of each function, which will panic on
+//! invalid input, there's also `try_` versions which will return a `Result`.
+//!
+//! If you would like to statically ensure that a cast will work at runtime you
+//! can use the `must_cast` crate feature and the `must_` casting functions. A
+//! "must cast" that can't be statically known to be valid will cause a
+//! compilation error (and sometimes a very hard to read compilation error).
 //!
 //! ## Using Your Own Types
 //!
-//! All the functions here are guarded by the [`Pod`] trait, which is a
+//! All the functions listed above are guarded by the [`Pod`] trait, which is a
 //! sub-trait of the [`Zeroable`] trait.
 //!
-//! If you're very sure that your type is eligible, you can implement those
-//! traits for your type and then they'll have full casting support. However,
-//! these traits are `unsafe`, and you should carefully read the requirements
-//! before adding the them to your own types.
+//! If you enable the crate's `derive` feature then these traits can be derived
+//! on your own types. The derive macros will perform the necessary checks on
+//! your type declaration, and trigger an error if your type does not qualify.
 //!
-//! ## Features
+//! The derive macros might not cover all edge cases, and sometimes they will
+//! error when actually everything is fine. As a last resort you can impl these
+//! traits manually. However, these traits are `unsafe`, and you should
+//! carefully read the requirements before using a manual implementation.
 //!
-//! * This crate is core only by default, but if you're using Rust 1.36 or later
-//!   you can enable the `extern_crate_alloc` cargo feature for some additional
-//!   methods related to `Box` and `Vec`. Note that the `docs.rs` documentation
-//!   is always built with `extern_crate_alloc` cargo feature enabled.
+//! ## Cargo Features
+//!
+//! The crate supports Rust 1.34 when no features are enabled, and so there's
+//! cargo features for thing that you might consider "obvious".
+//!
+//! The cargo features **do not** promise any particular MSRV, and they may
+//! increase their MSRV in new versions.
+//!
+//! * `derive`: Provide derive macros for the various traits.
+//! * `extern_crate_alloc`: Provide utilities for `alloc` related types such as
+//!   Box and Vec.
+//! * `zeroable_maybe_uninit` and `zeroable_atomics`: Provide more [`Zeroable`]
+//!   impls.
+//! * `wasm_simd` and `aarch64_simd`: Support more SIMD types.
+//! * `min_const_generics`: Provides appropriate impls for arrays of all lengths
+//!   instead of just for a select list of array lengths.
+//! * `must_cast`: Provides the `must_` functions, which will compile error if
+//!   the requested cast can't be statically verified.
 
 #[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
 use core::arch::aarch64;
@@ -131,7 +167,8 @@ mod contiguous;
 pub use contiguous::*;
 
 mod offset_of;
-pub use offset_of::*;
+// ^ no import, the module only has a macro_rules, which are cursed and don't
+// follow normal import/export rules.
 
 mod transparent;
 pub use transparent::*;
