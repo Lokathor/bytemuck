@@ -9,6 +9,8 @@
 //!   `bytemuck = { version = "VERSION_YOU_ARE_USING", features =
 //! ["extern_crate_alloc"]}`
 
+use self::sealed::BoxBytesOf;
+
 use super::*;
 #[cfg(target_has_atomic = "ptr")]
 use alloc::sync::Arc;
@@ -729,28 +731,116 @@ impl Drop for BoxBytes {
 
 impl<T: NoUninit> From<Box<T>> for BoxBytes {
   fn from(value: Box<T>) -> Self {
+    value.box_bytes_of()
+  }
+}
+
+impl<T: NoUninit> From<Box<[T]>> for BoxBytes {
+  fn from(value: Box<[T]>) -> Self {
+    value.box_bytes_of()
+  }
+}
+mod sealed {
+  use crate::{BoxBytes, PodCastError};
+  use alloc::boxed::Box;
+
+  pub trait BoxBytesOf {
+    fn box_bytes_of(self: Box<Self>) -> BoxBytes;
+  }
+
+  pub trait FromBoxBytes {
+    fn try_from_box_bytes(
+      bytes: BoxBytes,
+    ) -> Result<Box<Self>, (PodCastError, BoxBytes)>;
+  }
+}
+
+impl<T: NoUninit> sealed::BoxBytesOf for T {
+  fn box_bytes_of(self: Box<Self>) -> BoxBytes {
     let layout = Layout::new::<T>();
-    let ptr = Box::into_raw(value) as *mut u8;
+    let ptr = Box::into_raw(self) as *mut u8;
     // SAFETY: Box::into_raw() returns a non-null pointer.
     let ptr = unsafe { NonNull::new_unchecked(ptr) };
     BoxBytes { ptr, layout }
   }
 }
 
+impl<T: NoUninit> sealed::BoxBytesOf for [T] {
+  fn box_bytes_of(self: Box<Self>) -> BoxBytes {
+    let layout = Layout::for_value::<[T]>(&self);
+    let ptr = Box::into_raw(self) as *mut u8;
+    // SAFETY: Box::into_raw() returns a non-null pointer.
+    let ptr = unsafe { NonNull::new_unchecked(ptr) };
+    BoxBytes { ptr, layout }
+  }
+}
+
+impl sealed::BoxBytesOf for str {
+  fn box_bytes_of(self: Box<Self>) -> BoxBytes {
+    self.into_boxed_bytes().box_bytes_of()
+  }
+}
+
+impl<T: AnyBitPattern> sealed::FromBoxBytes for T {
+  fn try_from_box_bytes(
+    bytes: BoxBytes,
+  ) -> Result<Box<Self>, (PodCastError, BoxBytes)> {
+    let layout = Layout::new::<T>();
+    if bytes.layout.align() != layout.align() {
+      return Err((PodCastError::AlignmentMismatch, bytes));
+    } else if bytes.layout.size() != layout.size() {
+      return Err((PodCastError::SizeMismatch, bytes));
+    } else {
+      let (ptr, _) = bytes.into_raw_parts();
+      // SAFETY: See BoxBytes type invariant.
+      Ok(unsafe { Box::from_raw(ptr.as_ptr() as *mut T) })
+    }
+  }
+}
+
+impl<T: AnyBitPattern> sealed::FromBoxBytes for [T] {
+  fn try_from_box_bytes(
+    bytes: BoxBytes,
+  ) -> Result<Box<Self>, (PodCastError, BoxBytes)> {
+    let single_layout = Layout::new::<T>();
+    if bytes.layout.align() != single_layout.align() {
+      return Err((PodCastError::AlignmentMismatch, bytes));
+    } else if single_layout.size() == 0 {
+      return Err((PodCastError::SizeMismatch, bytes));
+    } else if bytes.layout.size() % single_layout.size() != 0 {
+      return Err((PodCastError::OutputSliceWouldHaveSlop, bytes));
+    } else {
+      let (ptr, layout) = bytes.into_raw_parts();
+      let length = layout.size() / single_layout.size();
+      let ptr =
+        core::ptr::slice_from_raw_parts_mut(ptr.as_ptr() as *mut T, length);
+      // SAFETY: See BoxBytes type invariant.
+      Ok(unsafe { Box::from_raw(ptr) })
+    }
+  }
+}
+
 /// Re-interprets `Box<T>` as `BoxBytes`.
+///
+/// `T` must be either `Sized + NoUninit`, or `[U]` where `U: NoUninit`.
 #[inline]
-pub fn box_bytes_of<T: NoUninit>(input: Box<T>) -> BoxBytes {
-  input.into()
+pub fn box_bytes_of<T: sealed::BoxBytesOf + ?Sized>(input: Box<T>) -> BoxBytes {
+  input.box_bytes_of()
 }
 
 /// Re-interprets `BoxBytes` as `Box<T>`.
+///
+/// `T` must be either `Sized + AnyBitPattern`, or `[U]` where `U:
+/// AnyBitPattern`.
 ///
 /// ## Panics
 ///
 /// This is [`try_from_box_bytes`] but will panic on error and the input will be
 /// dropped.
 #[inline]
-pub fn from_box_bytes<T: AnyBitPattern>(input: BoxBytes) -> Box<T> {
+pub fn from_box_bytes<T: sealed::FromBoxBytes + ?Sized>(
+  input: BoxBytes,
+) -> Box<T> {
   try_from_box_bytes(input).map_err(|(error, _)| error).unwrap()
 }
 
@@ -761,19 +851,10 @@ pub fn from_box_bytes<T: AnyBitPattern>(input: BoxBytes) -> Box<T> {
 /// * If the input isn't aligned for the new type
 /// * If the input's length isn’t exactly the size of the new type
 #[inline]
-pub fn try_from_box_bytes<T: AnyBitPattern>(
+pub fn try_from_box_bytes<T: sealed::FromBoxBytes + ?Sized>(
   input: BoxBytes,
 ) -> Result<Box<T>, (PodCastError, BoxBytes)> {
-  let layout = Layout::new::<T>();
-  if input.layout.align() != layout.align() {
-    return Err((PodCastError::AlignmentMismatch, input));
-  } else if input.layout.size() != layout.size() {
-    return Err((PodCastError::SizeMismatch, input));
-  } else {
-    let (ptr, _) = input.into_raw_parts();
-    // SAFETY: See type invariant.
-    Ok(unsafe { Box::from_raw(ptr.as_ptr() as *mut T) })
-  }
+  T::try_from_box_bytes(input)
 }
 
 impl BoxBytes {
