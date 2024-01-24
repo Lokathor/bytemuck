@@ -304,7 +304,7 @@ pub fn try_from_bytes_mut<T: NoUninit + AnyBitPattern>(
 ///
 /// ## Panics
 ///
-/// * This is like [`try_cast`](try_cast), but will panic on a size mismatch.
+/// * This is like [`try_cast`], but will panic on a size mismatch.
 #[inline]
 pub fn cast<A: NoUninit, B: AnyBitPattern>(a: A) -> B {
   unsafe { internal::cast(a) }

@@ -450,7 +450,7 @@ pub fn pod_read_unaligned<T: CheckedBitPattern>(bytes: &[u8]) -> T {
 ///
 /// ## Panics
 ///
-/// * This is like [`try_cast`](try_cast), but will panic on a size mismatch.
+/// * This is like [`try_cast`], but will panic on a size mismatch.
 #[inline]
 pub fn cast<A: NoUninit, B: CheckedBitPattern>(a: A) -> B {
   match try_cast(a) {
