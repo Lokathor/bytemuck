@@ -252,6 +252,9 @@ pub fn from_bytes_mut<T: NoUninit + AnyBitPattern>(s: &mut [u8]) -> &mut T {
 
 /// Reads from the bytes as if they were a `T`.
 ///
+/// Unlike [`from_bytes`], the slice doesn't need to respect alignment of `T`, only sizes
+/// must match.
+///
 /// ## Failure
 /// * If the `bytes` length is not equal to `size_of::<T>()`.
 #[inline]
@@ -262,6 +265,9 @@ pub fn try_pod_read_unaligned<T: AnyBitPattern>(
 }
 
 /// Reads the slice into a `T` value.
+///
+/// Unlike [`from_bytes`], the slice doesn't need to respect alignment of `T`, only sizes
+/// must match.
 ///
 /// ## Panics
 /// * This is like `try_pod_read_unaligned` but will panic on failure.
