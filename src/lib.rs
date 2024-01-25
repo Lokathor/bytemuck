@@ -234,7 +234,7 @@ pub fn bytes_of_mut<T: NoUninit + AnyBitPattern>(t: &mut T) -> &mut [u8] {
 ///
 /// ## Panics
 ///
-/// This is [`try_from_bytes`] but will panic on error.
+/// This is like [`try_from_bytes`] but will panic on error.
 #[inline]
 pub fn from_bytes<T: AnyBitPattern>(s: &[u8]) -> &T {
   unsafe { internal::from_bytes(s) }
@@ -244,13 +244,16 @@ pub fn from_bytes<T: AnyBitPattern>(s: &[u8]) -> &T {
 ///
 /// ## Panics
 ///
-/// This is [`try_from_bytes_mut`] but will panic on error.
+/// This is like [`try_from_bytes_mut`] but will panic on error.
 #[inline]
 pub fn from_bytes_mut<T: NoUninit + AnyBitPattern>(s: &mut [u8]) -> &mut T {
   unsafe { internal::from_bytes_mut(s) }
 }
 
 /// Reads from the bytes as if they were a `T`.
+///
+/// Unlike [`from_bytes`], the slice doesn't need to respect alignment of `T`, only sizes
+/// must match.
 ///
 /// ## Failure
 /// * If the `bytes` length is not equal to `size_of::<T>()`.
@@ -262,6 +265,9 @@ pub fn try_pod_read_unaligned<T: AnyBitPattern>(
 }
 
 /// Reads the slice into a `T` value.
+///
+/// Unlike [`from_bytes`], the slice doesn't need to respect alignment of `T`, only sizes
+/// must match.
 ///
 /// ## Panics
 /// * This is like `try_pod_read_unaligned` but will panic on failure.
@@ -298,7 +304,7 @@ pub fn try_from_bytes_mut<T: NoUninit + AnyBitPattern>(
 ///
 /// ## Panics
 ///
-/// * This is like [`try_cast`](try_cast), but will panic on a size mismatch.
+/// * This is like [`try_cast`], but will panic on a size mismatch.
 #[inline]
 pub fn cast<A: NoUninit, B: AnyBitPattern>(a: A) -> B {
   unsafe { internal::cast(a) }
@@ -351,7 +357,8 @@ pub fn cast_slice_mut<
   unsafe { internal::cast_slice_mut(a) }
 }
 
-/// As `align_to`, but safe because of the [`Pod`] bound.
+/// As [`align_to`](https://doc.rust-lang.org/std/primitive.slice.html#method.align_to),
+/// but safe because of the [`Pod`] bound.
 #[inline]
 pub fn pod_align_to<T: NoUninit, U: AnyBitPattern>(
   vals: &[T],
@@ -359,7 +366,8 @@ pub fn pod_align_to<T: NoUninit, U: AnyBitPattern>(
   unsafe { vals.align_to::<U>() }
 }
 
-/// As `align_to_mut`, but safe because of the [`Pod`] bound.
+/// As [`align_to_mut`](https://doc.rust-lang.org/std/primitive.slice.html#method.align_to_mut),
+/// but safe because of the [`Pod`] bound.
 #[inline]
 pub fn pod_align_to_mut<
   T: NoUninit + AnyBitPattern,
