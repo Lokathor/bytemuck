@@ -1,5 +1,9 @@
 # `bytemuck` changelog
 
+## 1.14.1
+
+* docs clarifications.
+
 ## 1.14
 
 * `write_zeroes` and `fill_zeroes` functions: Writes (to one) or fills (a slice)
