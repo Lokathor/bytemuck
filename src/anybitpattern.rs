@@ -14,7 +14,7 @@ use crate::{Pod, Zeroable};
 ///
 /// [`AnyBitPattern`] is a subset of [`Zeroable`], meaning that any `T:
 /// AnyBitPattern` is also [`Zeroable`], but any `T: Zeroable` is not
-/// necessarily [`AnyBitPattern  ]
+/// necessarily [`AnyBitPattern`]
 ///
 /// # Derive
 ///
