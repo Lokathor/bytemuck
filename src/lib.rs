@@ -4,7 +4,13 @@
 #![allow(clippy::uninlined_format_args)]
 #![cfg_attr(feature = "nightly_docs", feature(doc_cfg))]
 #![cfg_attr(feature = "nightly_portable_simd", feature(portable_simd))]
-#![cfg_attr(feature = "nightly_stdsimd", feature(stdarch_x86_avx512))]
+#![cfg_attr(
+  all(
+    feature = "nightly_stdsimd",
+    any(target_arch = "x86_64", target_arch = "x86")
+  ),
+  feature(stdarch_x86_avx512)
+)]
 
 //! This crate gives small utilities for casting between plain data types.
 //!
