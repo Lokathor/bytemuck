@@ -1,5 +1,10 @@
 # `bytemuck` changelog
 
+## 1.14.3
+
+* The new std simd nightly features are apparently arch-specific.
+  This adjusts the feature activation to be x86/ x86_64 only.
+
 ## 1.14.2
 
 * Changes the name of the Nightly feature activated by the crate's
