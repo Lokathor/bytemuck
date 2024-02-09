@@ -1,4 +1,5 @@
 #![allow(clippy::disallowed_names)]
+#![allow(dead_code)]
 
 //! Cargo miri doesn't run doctests yet, so we duplicate these here. It's
 //! probably not that important to sweat keeping these perfectly up to date, but

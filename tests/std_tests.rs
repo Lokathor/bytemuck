@@ -1,4 +1,5 @@
 #![allow(clippy::uninlined_format_args)]
+#![allow(unused_imports)]
 //! The integration tests seem to always have `std` linked, so things that would
 //! depend on that can go here.
 
