@@ -1,7 +1,7 @@
 [package]
 name = "bytemuck"
 description = "A crate for mucking around with piles of bytes."
-version = "1.14.2"
+version = "1.14.3"
 authors = ["Lokathor <zefria@gmail.com>"]
 repository = "https://github.com/Lokathor/bytemuck"
 readme = "README.md"
