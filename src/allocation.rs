@@ -9,8 +9,6 @@
 //!   `bytemuck = { version = "VERSION_YOU_ARE_USING", features =
 //! ["extern_crate_alloc"]}`
 
-use self::sealed::BoxBytesOf;
-
 use super::*;
 #[cfg(target_has_atomic = "ptr")]
 use alloc::sync::Arc;
@@ -782,9 +780,9 @@ impl<T: AnyBitPattern> sealed::FromBoxBytes for T {
   ) -> Result<Box<Self>, (PodCastError, BoxBytes)> {
     let layout = Layout::new::<T>();
     if bytes.layout.align() != layout.align() {
-      return Err((PodCastError::AlignmentMismatch, bytes));
+      Err((PodCastError::AlignmentMismatch, bytes))
     } else if bytes.layout.size() != layout.size() {
-      return Err((PodCastError::SizeMismatch, bytes));
+      Err((PodCastError::SizeMismatch, bytes))
     } else {
       let (ptr, _) = bytes.into_raw_parts();
       // SAFETY: See BoxBytes type invariant.
@@ -799,11 +797,11 @@ impl<T: AnyBitPattern> sealed::FromBoxBytes for [T] {
   ) -> Result<Box<Self>, (PodCastError, BoxBytes)> {
     let single_layout = Layout::new::<T>();
     if bytes.layout.align() != single_layout.align() {
-      return Err((PodCastError::AlignmentMismatch, bytes));
+      Err((PodCastError::AlignmentMismatch, bytes))
     } else if single_layout.size() == 0 {
-      return Err((PodCastError::SizeMismatch, bytes));
+      Err((PodCastError::SizeMismatch, bytes))
     } else if bytes.layout.size() % single_layout.size() != 0 {
-      return Err((PodCastError::OutputSliceWouldHaveSlop, bytes));
+      Err((PodCastError::OutputSliceWouldHaveSlop, bytes))
     } else {
       let (ptr, layout) = bytes.into_raw_parts();
       let length = layout.size() / single_layout.size();
