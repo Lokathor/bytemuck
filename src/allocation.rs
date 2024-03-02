@@ -729,17 +729,12 @@ impl Drop for BoxBytes {
   }
 }
 
-impl<T: NoUninit> From<Box<T>> for BoxBytes {
+impl<T: ?Sized + sealed::BoxBytesOf> From<Box<T>> for BoxBytes {
   fn from(value: Box<T>) -> Self {
     value.box_bytes_of()
   }
 }
 
-impl<T: NoUninit> From<Box<[T]>> for BoxBytes {
-  fn from(value: Box<[T]>) -> Self {
-    value.box_bytes_of()
-  }
-}
 mod sealed {
   use crate::{BoxBytes, PodCastError};
   use alloc::boxed::Box;
@@ -822,7 +817,8 @@ impl<T: AnyBitPattern> sealed::FromBoxBytes for [T] {
 
 /// Re-interprets `Box<T>` as `BoxBytes`.
 ///
-/// `T` must be either `Sized + NoUninit`, or `[U]` where `U: NoUninit`.
+/// `T` must be either [`Sized`] and [`NoUninit`],
+/// [`[U]`](slice) where `U: NoUninit`, or [`str`].
 #[inline]
 pub fn box_bytes_of<T: sealed::BoxBytesOf + ?Sized>(input: Box<T>) -> BoxBytes {
   input.box_bytes_of()
@@ -830,8 +826,8 @@ pub fn box_bytes_of<T: sealed::BoxBytesOf + ?Sized>(input: Box<T>) -> BoxBytes {
 
 /// Re-interprets `BoxBytes` as `Box<T>`.
 ///
-/// `T` must be either `Sized + AnyBitPattern`, or `[U]` where `U:
-/// AnyBitPattern`.
+/// `T` must be either [`Sized`] + [`AnyBitPattern`], or
+/// [`[U]`](slice) where `U: AnyBitPattern`.
 ///
 /// ## Panics
 ///
@@ -846,10 +842,14 @@ pub fn from_box_bytes<T: sealed::FromBoxBytes + ?Sized>(
 
 /// Re-interprets `BoxBytes` as `Box<T>`.
 ///
-/// ## Panics
+/// `T` must be either [`Sized`] + [`AnyBitPattern`], or
+/// [`[U]`](slice) where `U: AnyBitPattern`.
 ///
-/// * If the input isn't aligned for the new type
-/// * If the input's length isn’t exactly the size of the new type
+/// Returns `Err`:
+/// * If the input isn't aligned for `T`.
+/// * If `T: Sized` and the input's length isn't exactly the size of `T`.
+/// * If `T = [U]` and the input's length isn't exactly a multiple of the size
+///   of `U`.
 #[inline]
 pub fn try_from_box_bytes<T: sealed::FromBoxBytes + ?Sized>(
   input: BoxBytes,
