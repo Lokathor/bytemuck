@@ -1,6 +1,15 @@
 
 ## `bytemuck_derive` changelog
 
+## 1.6.0
+
+* This allows `CheckedBitPattern` to be derived for enums with fields.
+  The repr must be one of the following:
+  * `#[repr(C)]`
+  * `#[repr(C, int)]`
+  * `#[repr(int)]`
+  * `#[repr(transparent)]`
+
 ## 1.5.0
 
 * The `Zeroable` derive now allows custom bounds. See the rustdoc for an explanation.
