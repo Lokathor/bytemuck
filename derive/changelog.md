@@ -1,23 +1,6 @@
 
 ## `bytemuck_derive` changelog
 
-## 1.7.0
-
-This primarily relaxes the bounds on a `From` impl.
-
-Previously:
-
-> `impl<T: NoUninit> From<Box<T>> for BoxBytes`
-
-Now:
-
-> `impl<T: ?Sized + sealed::BoxBytesOf> From<Box<T>> for BoxBytes`
-
-All related functions and methods are similarly updated.
-
-We believe this to be backwards compatible with all previous uses,
-and now `BoxBytes` can be converted to/from more types than before.
-
 ## 1.6.0
 
 * This allows `CheckedBitPattern` to be derived for enums with fields.
