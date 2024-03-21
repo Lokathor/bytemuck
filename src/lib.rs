@@ -179,6 +179,9 @@ mod offset_of;
 mod transparent;
 pub use transparent::*;
 
+mod unaligned;
+pub use unaligned::*;
+
 #[cfg(feature = "derive")]
 #[cfg_attr(feature = "nightly_docs", doc(cfg(feature = "derive")))]
 pub use bytemuck_derive::{
