@@ -124,11 +124,43 @@ impl Derivable for Zeroable {
     Ok(syn::parse_quote!(#crate_name::Zeroable))
   }
 
+  fn check_attributes(ty: &Data, attributes: &[Attribute]) -> Result<()> {
+    let repr = get_repr(attributes)?;
+    match ty {
+      Data::Struct(_) => Ok(()),
+      Data::Enum(DataEnum { variants,.. }) => {
+        if !repr.repr.is_integer() {
+          bail!("Zeroable requires the enum to be an explicit #[repr(Int)]")
+        }
+
+        if variants.iter().any(|variant| !variant.fields.is_empty()) {
+          bail!("Only fieldless enums are supported for Zeroable")
+        }
+
+        let iter = VariantDiscriminantIterator::new(variants.iter());
+        let mut has_zero_variant = false;
+        for res in iter {
+          let discriminant = res?;
+          if discriminant == 0 {
+            has_zero_variant = true;
+            break;
+          }
+        }
+        if !has_zero_variant {
+          bail!("No variant's discriminant is 0")
+        }
+
+        Ok(())
+      },
+      Data::Union(_) => Ok(())
+    }
+  }
+
   fn asserts(input: &DeriveInput, crate_name: &TokenStream) -> Result<TokenStream> {
     match &input.data {
       Data::Union(_) => Ok(quote!()), // unions are always `Zeroable`
       Data::Struct(_) => generate_fields_are_trait(input, Self::ident(input, crate_name)?),
-      Data::Enum(_) => bail!("Deriving Zeroable is not supported for enums"),
+      Data::Enum(_) => Ok(quote!()),
     }
   }
 
