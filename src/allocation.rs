@@ -531,6 +531,11 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
   /// type.
   #[inline]
   fn wrap_box(s: Box<Inner>) -> Box<Self> {
+    // The unsafe contract requires that these two have
+    // identical representations, and thus identical pointer metadata.
+    // Assert that Self and Inner have the same pointer size,
+    // which is the best we can do to assert their metadata is the same type
+    // on stable.
     assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
 
     unsafe {
@@ -555,6 +560,11 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
   /// wrapper type.
   #[inline]
   fn wrap_rc(s: Rc<Inner>) -> Rc<Self> {
+    // The unsafe contract requires that these two have
+    // identical representations, and thus identical pointer metadata.
+    // Assert that Self and Inner have the same pointer size,
+    // which is the best we can do to assert their metadata is the same type
+    // on stable.
     assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
 
     unsafe {
@@ -578,6 +588,11 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
   #[inline]
   #[cfg(target_has_atomic = "ptr")]
   fn wrap_arc(s: Arc<Inner>) -> Arc<Self> {
+    // The unsafe contract requires that these two have
+    // identical representations, and thus identical pointer metadata.
+    // Assert that Self and Inner have the same pointer size,
+    // which is the best we can do to assert their metadata is the same type
+    // on stable.
     assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
 
     unsafe {
@@ -621,6 +636,11 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
   /// type.
   #[inline]
   fn peel_box(s: Box<Self>) -> Box<Inner> {
+    // The unsafe contract requires that these two have
+    // identical representations, and thus identical pointer metadata.
+    // Assert that Self and Inner have the same pointer size,
+    // which is the best we can do to assert their metadata is the same type
+    // on stable.
     assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
 
     unsafe {
@@ -645,6 +665,11 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
   /// inner type.
   #[inline]
   fn peel_rc(s: Rc<Self>) -> Rc<Inner> {
+    // The unsafe contract requires that these two have
+    // identical representations, and thus identical pointer metadata.
+    // Assert that Self and Inner have the same pointer size,
+    // which is the best we can do to assert their metadata is the same type
+    // on stable.
     assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
 
     unsafe {
@@ -668,6 +693,11 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
   #[inline]
   #[cfg(target_has_atomic = "ptr")]
   fn peel_arc(s: Arc<Self>) -> Arc<Inner> {
+    // The unsafe contract requires that these two have
+    // identical representations, and thus identical pointer metadata.
+    // Assert that Self and Inner have the same pointer size,
+    // which is the best we can do to assert their metadata is the same type
+    // on stable.
     assert!(size_of::<*mut Inner>() == size_of::<*mut Self>());
 
     unsafe {
