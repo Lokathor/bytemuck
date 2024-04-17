@@ -485,6 +485,7 @@ fn generate_checked_bit_pattern_struct(
 
   Ok((
     quote! {
+        #[doc = #GENERATED_TYPE_DOCUMENTATION]
         #repr
         #[derive(Clone, Copy, #crate_name::AnyBitPattern)]
         #derive_dbg
@@ -652,6 +653,7 @@ fn generate_checked_bit_pattern_enum_with_fields(
 
       Ok((
         quote! {
+          #[doc = #GENERATED_TYPE_DOCUMENTATION]
           #[derive(::core::clone::Clone, ::core::marker::Copy, #crate_name::AnyBitPattern)]
           #derive_dbg
           #bits_repr
@@ -703,6 +705,7 @@ fn generate_checked_bit_pattern_enum_with_fields(
 
       Ok((
         quote! {
+          #[doc = #GENERATED_TYPE_DOCUMENTATION]
           #[derive(::core::clone::Clone, ::core::marker::Copy, #crate_name::CheckedBitPattern)]
           #[repr(C)]
           #vis struct #bits_ty(#(#fields),*);
@@ -775,6 +778,7 @@ fn generate_checked_bit_pattern_enum_with_fields(
 
       Ok((
         quote! {
+          #[doc = #GENERATED_TYPE_DOCUMENTATION]
           #[derive(::core::clone::Clone, ::core::marker::Copy, #crate_name::AnyBitPattern)]
           #bits_repr
           #[allow(non_snake_case)]
@@ -1263,3 +1267,6 @@ pub fn bytemuck_crate_name(input: &DeriveInput) -> TokenStream {
 
   return crate_name;
 }
+
+const GENERATED_TYPE_DOCUMENTATION: &str =
+  " `bytemuck`-generated type for internal purposes only.";
