@@ -52,10 +52,10 @@ impl Derivable for Pod {
   fn asserts(input: &DeriveInput, crate_name: &TokenStream) -> Result<TokenStream> {
     let repr = get_repr(&input.attrs)?;
 
-    let completly_packed =
-      repr.packed == Some(1) || repr.repr == Repr::Transparent;
+    let completely_packed =
+      repr.packed == Some(1) || repr.repr == Repr::Transparent || repr.repr.is_integer();
 
-    if !completly_packed && !input.generics.params.is_empty() {
+    if !completely_packed && !input.generics.params.is_empty() {
       bail!("\
         Pod requires cannot be derived for non-packed types containing \
         generic parameters because the padding requirements can't be verified \
@@ -65,7 +65,7 @@ impl Derivable for Pod {
 
     match &input.data {
       Data::Struct(_) => {
-        let assert_no_padding = if !completly_packed {
+        let assert_no_padding = if !completely_packed {
           Some(generate_assert_no_padding(input)?)
         } else {
           None
@@ -78,7 +78,36 @@ impl Derivable for Pod {
           #assert_fields_are_pod
         ))
       }
-      Data::Enum(_) => bail!("Deriving Pod is not supported for enums"),
+      Data::Enum(DataEnum { variants,.. }) => {
+        if !repr.repr.is_integer() {
+          bail!("Pod requires the enum to be an explicit #[repr(Int)]")
+        }
+
+        if variants.iter().any(|variant| !variant.fields.is_empty()) {
+          bail!("Only fieldless enums are supported for Pod")
+        }
+
+        let iter = VariantDiscriminantIterator::new(variants.iter());
+        let mut has_zero_variant = false;
+        for res in iter {
+          let discriminant = res?;
+          if discriminant == 0 {
+            has_zero_variant = true;
+            break;
+          }
+        }
+        if !has_zero_variant {
+          bail!("No variant's discriminant is 0")
+        }
+
+        let assert_no_padding: Option<TokenStream> = None;
+        let assert_fields_are_pod =
+          generate_fields_are_trait(input, Self::ident(input, crate_name)?)?;
+        Ok(quote!(
+          #assert_no_padding
+          #assert_fields_are_pod
+        ))
+      },
       Data::Union(_) => bail!("Deriving Pod is not supported for unions"),
     }
   }
@@ -88,8 +117,9 @@ impl Derivable for Pod {
     match repr.repr {
       Repr::C => Ok(()),
       Repr::Transparent => Ok(()),
+      Repr::Integer(_) => Ok(()),
       _ => {
-        bail!("Pod requires the type to be #[repr(C)] or #[repr(transparent)]")
+        bail!("Pod requires the type to be #[repr(C)], #[repr(Int)], or #[repr(transparent)]")
       }
     }
   }
@@ -124,11 +154,43 @@ impl Derivable for Zeroable {
     Ok(syn::parse_quote!(#crate_name::Zeroable))
   }
 
+    fn check_attributes(ty: &Data, attributes: &[Attribute]) -> Result<()> {
+    let repr = get_repr(attributes)?;
+    match ty {
+      Data::Struct(_) => Ok(()),
+      Data::Enum(DataEnum { variants,.. }) => {
+        if !repr.repr.is_integer() {
+          bail!("Zeroable requires the enum to be an explicit #[repr(Int)]")
+        }
+
+        if variants.iter().any(|variant| !variant.fields.is_empty()) {
+          bail!("Only fieldless enums are supported for Zeroable")
+        }
+
+        let iter = VariantDiscriminantIterator::new(variants.iter());
+        let mut has_zero_variant = false;
+        for res in iter {
+          let discriminant = res?;
+          if discriminant == 0 {
+            has_zero_variant = true;
+            break;
+          }
+        }
+        if !has_zero_variant {
+          bail!("No variant's discriminant is 0")
+        }
+
+        Ok(())
+      },
+      Data::Union(_) => Ok(())
+    }
+  }
+
   fn asserts(input: &DeriveInput, crate_name: &TokenStream) -> Result<TokenStream> {
     match &input.data {
       Data::Union(_) => Ok(quote!()), // unions are always `Zeroable`
       Data::Struct(_) => generate_fields_are_trait(input, Self::ident(input, crate_name)?),
-      Data::Enum(_) => bail!("Deriving Zeroable is not supported for enums"),
+      Data::Enum(_) => Ok(quote!()),
     }
   }
 
@@ -439,7 +501,13 @@ fn get_fields(input: &DeriveInput) -> Result<Fields> {
   match &input.data {
     Data::Struct(DataStruct { fields, .. }) => Ok(fields.clone()),
     Data::Union(DataUnion { fields, .. }) => Ok(Fields::Named(fields.clone())),
-    Data::Enum(_) => bail!("deriving this trait is not supported for enums"),
+    Data::Enum(DataEnum { variants, .. }) => {
+      if enum_has_fields(variants.iter()) {
+        bail!("deriving this trait is not supported for enums with fields")
+      } else {
+        Ok(Fields::Unit)
+      }
+    },
   }
 }
 
