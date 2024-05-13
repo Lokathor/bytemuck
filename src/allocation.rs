@@ -19,6 +19,7 @@ use alloc::{
   vec,
   vec::Vec,
 };
+use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
 
 /// As [`try_cast_box`](try_cast_box), but unwraps for you.
@@ -286,7 +287,7 @@ pub fn try_cast_vec<A: NoUninit, B: AnyBitPattern>(
 pub fn pod_collect_to_vec<A: NoUninit, B: NoUninit + AnyBitPattern>(
   src: &[A],
 ) -> Vec<B> {
-  let src_size = size_of_val(src);
+  let src_size = core::mem::size_of_val(src);
   // Note(Lokathor): dst_count is rounded up so that the dest will always be at
   // least as many bytes as the src.
   let dst_count = src_size / size_of::<B>()
@@ -512,7 +513,7 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
     Self: Sized,
     Inner: Sized,
   {
-    let mut s = core::mem::ManuallyDrop::new(s);
+    let mut s = ManuallyDrop::new(s);
 
     let length = s.len();
     let capacity = s.capacity();
@@ -617,7 +618,7 @@ pub trait TransparentWrapperAlloc<Inner: ?Sized>:
     Self: Sized,
     Inner: Sized,
   {
-    let mut s = core::mem::ManuallyDrop::new(s);
+    let mut s = ManuallyDrop::new(s);
 
     let length = s.len();
     let capacity = s.capacity();
