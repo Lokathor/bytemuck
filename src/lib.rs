@@ -514,11 +514,10 @@ pub fn fill_zeroes<T: Zeroable>(slice: &mut [T]) {
   }
 }
 
-/// Initialize a zeroed `T`.
-///
-/// Like [`Zeroable::zeroed`], but supports const.
+/// Same as [`Zeroable::zeroed`], but as a `const fn` const.
 #[cfg(feature = "const_zeroed")]
 #[inline]
+#[must_use]
 pub const fn zeroed<T: Zeroable>() -> T {
   unsafe { core::mem::zeroed() }
 }
