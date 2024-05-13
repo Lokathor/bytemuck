@@ -1,6 +1,6 @@
 # `bytemuck` changelog
 
-## 1.16.0 (UNRELEASED)
+## 1.16.0
 
 * Adds a `const_zeroed` feature (MSRV 1.75) which puts a `zeroed` fn at the crate root.
   This is just like the `Zeroable::zeroed` method, but as a `const fn`.
