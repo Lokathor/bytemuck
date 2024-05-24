@@ -1,6 +1,5 @@
 #![no_std]
 #![warn(missing_docs)]
-#![allow(unexpected_cfgs)]
 #![allow(clippy::match_like_matches_macro)]
 #![allow(clippy::uninlined_format_args)]
 #![cfg_attr(feature = "nightly_docs", feature(doc_cfg))]
