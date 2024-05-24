@@ -317,8 +317,10 @@ impl Derivable for TransparentWrapper {
       Ok(quote!(
         const _: () = {
           #[repr(transparent)]
+          #[allow(clippy::multiple_bound_locations)]
           struct AssertWrappedIsWrapped #impl_generics((u8, ::core::marker::PhantomData<#wrapped_field_ty>), #(#nonwrapped_field_tys),*) #where_clause;
           fn assert_zeroable<Z: #crate_name::Zeroable>() {}
+          #[allow(clippy::multiple_bound_locations)]
           fn check #impl_generics () #where_clause {
             #(
               assert_zeroable::<#nonwrapped_field_tys>();
