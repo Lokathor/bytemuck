@@ -163,6 +163,7 @@ unsafe impl CheckedBitPattern for bool {
 
   #[inline]
   fn is_valid_bit_pattern(bits: &Self::Bits) -> bool {
+    // DO NOT use the `matches!` macro, it isn't 1.34 compatible.
     match *bits {
       0 | 1 => true,
       _ => false,
