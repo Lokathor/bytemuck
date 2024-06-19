@@ -42,6 +42,8 @@ unsound_ptr_pod_impl = []
 # NOT SEMVER SUPPORTED! TEMPORARY ONLY!
 nightly_portable_simd = []
 nightly_stdsimd = []
+# Enable `f16` and `f128`
+nightly_float = []
 
 # Improved documentation using the nightly toolchain
 nightly_docs = []
