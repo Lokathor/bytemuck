@@ -60,5 +60,6 @@ unsafe impl<T: Pod> AnyBitPattern for T {}
   feature = "nightly_docs",
   doc(cfg(feature = "zeroable_maybe_uninit"))
 )]
-unsafe impl<T> AnyBitPattern for core::mem::MaybeUninit<T> where T: AnyBitPattern
+unsafe impl<T> AnyBitPattern for core::mem::MaybeUninit<T> where
+  T: Copy + 'static
 {}
