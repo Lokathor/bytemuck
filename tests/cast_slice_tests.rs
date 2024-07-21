@@ -22,7 +22,7 @@ fn test_try_cast_slice() {
   );
 
   // by taking one byte off the front, we're definitely mis-aligned for u32.
-  let mis_aligned_bytes = &the_bytes[1..];
+  let mis_aligned_bytes = &the_bytes[1..][..4];
   assert_eq!(
     try_cast_slice::<u8, u32>(mis_aligned_bytes),
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
@@ -60,7 +60,7 @@ fn test_try_cast_slice_mut() {
   assert_eq!(u32_len * size_of::<u32>(), the_bytes_len * size_of::<u8>());
 
   // by taking one byte off the front, we're definitely mis-aligned for u32.
-  let mis_aligned_bytes = &mut the_bytes[1..];
+  let mis_aligned_bytes = &mut the_bytes[1..][..4];
   assert_eq!(
     try_cast_slice_mut::<u8, u32>(mis_aligned_bytes),
     Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned)
