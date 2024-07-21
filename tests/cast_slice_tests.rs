@@ -195,3 +195,136 @@ fn test_panics() {
   let aligned_bytes = bytemuck::cast_slice::<u32, u8>(&[0, 0]);
   should_panic!(from_bytes::<u32>(&aligned_bytes[1..5]));
 }
+
+#[cfg(feature = "extern_crate_alloc")]
+#[test]
+fn test_boxed_slices() {
+  let boxed_u8_slice: Box<[u8]> = Box::new([0, 1, u8::MAX, i8::MAX as u8]);
+  let boxed_i8_slice: Box<[i8]> = cast_slice_box::<u8, i8>(boxed_u8_slice);
+  assert_eq!(&*boxed_i8_slice, [0, 1, -1, i8::MAX]);
+
+  let result: Result<Box<[u16]>, (PodCastError, Box<[i8]>)> =
+    try_cast_slice_box(boxed_i8_slice);
+  let (error, boxed_i8_slice) =
+    result.expect_err("u16 and i8 have different alignment");
+  assert_eq!(error, PodCastError::AlignmentMismatch);
+
+  // FIXME(#253): Should these next two casts' errors be consistent?
+  let result: Result<&[[i8; 3]], PodCastError> =
+    try_cast_slice(&*boxed_i8_slice);
+  let error =
+    result.expect_err("slice of [i8; 3] cannot be made from slice of 4 i8s");
+  assert_eq!(error, PodCastError::OutputSliceWouldHaveSlop);
+
+  let result: Result<Box<[[i8; 3]]>, (PodCastError, Box<[i8]>)> =
+    try_cast_slice_box(boxed_i8_slice);
+  let (error, boxed_i8_slice) =
+    result.expect_err("slice of [i8; 3] cannot be made from slice of 4 i8s");
+  assert_eq!(error, PodCastError::SizeMismatch);
+
+  let empty: Box<[()]> = cast_slice_box::<u8, ()>(Box::new([]));
+  assert!(empty.is_empty());
+
+  let result: Result<Box<[()]>, (PodCastError, Box<[i8]>)> =
+    try_cast_slice_box(boxed_i8_slice);
+  let (error, boxed_i8_slice) =
+    result.expect_err("slice of ZST cannot be made from slice of 4 u8s");
+  assert_eq!(error, PodCastError::SizeMismatch);
+
+  drop(boxed_i8_slice);
+
+  let empty: Box<[i8]> = cast_slice_box::<(), i8>(Box::new([]));
+  assert!(empty.is_empty());
+
+  let empty: Box<[i8]> = cast_slice_box::<(), i8>(Box::new([(); 42]));
+  assert!(empty.is_empty());
+}
+
+#[cfg(feature = "extern_crate_alloc")]
+#[test]
+fn test_rc_slices() {
+  use std::rc::Rc;
+  let rc_u8_slice: Rc<[u8]> = Rc::new([0, 1, u8::MAX, i8::MAX as u8]);
+  let rc_i8_slice: Rc<[i8]> = cast_slice_rc::<u8, i8>(rc_u8_slice);
+  assert_eq!(&*rc_i8_slice, [0, 1, -1, i8::MAX]);
+
+  let result: Result<Rc<[u16]>, (PodCastError, Rc<[i8]>)> =
+    try_cast_slice_rc(rc_i8_slice);
+  let (error, rc_i8_slice) =
+    result.expect_err("u16 and i8 have different alignment");
+  assert_eq!(error, PodCastError::AlignmentMismatch);
+
+  // FIXME(#253): Should these next two casts' errors be consistent?
+  let result: Result<&[[i8; 3]], PodCastError> = try_cast_slice(&*rc_i8_slice);
+  let error =
+    result.expect_err("slice of [i8; 3] cannot be made from slice of 4 i8s");
+  assert_eq!(error, PodCastError::OutputSliceWouldHaveSlop);
+
+  let result: Result<Rc<[[i8; 3]]>, (PodCastError, Rc<[i8]>)> =
+    try_cast_slice_rc(rc_i8_slice);
+  let (error, rc_i8_slice) =
+    result.expect_err("slice of [i8; 3] cannot be made from slice of 4 i8s");
+  assert_eq!(error, PodCastError::SizeMismatch);
+
+  let empty: Rc<[()]> = cast_slice_rc::<u8, ()>(Rc::new([]));
+  assert!(empty.is_empty());
+
+  let result: Result<Rc<[()]>, (PodCastError, Rc<[i8]>)> =
+    try_cast_slice_rc(rc_i8_slice);
+  let (error, rc_i8_slice) =
+    result.expect_err("slice of ZST cannot be made from slice of 4 u8s");
+  assert_eq!(error, PodCastError::SizeMismatch);
+
+  drop(rc_i8_slice);
+
+  let empty: Rc<[i8]> = cast_slice_rc::<(), i8>(Rc::new([]));
+  assert!(empty.is_empty());
+
+  let empty: Rc<[i8]> = cast_slice_rc::<(), i8>(Rc::new([(); 42]));
+  assert!(empty.is_empty());
+}
+
+#[cfg(feature = "extern_crate_alloc")]
+#[cfg(target_has_atomic = "ptr")]
+#[test]
+fn test_arc_slices() {
+  use std::sync::Arc;
+  let arc_u8_slice: Arc<[u8]> = Arc::new([0, 1, u8::MAX, i8::MAX as u8]);
+  let arc_i8_slice: Arc<[i8]> = cast_slice_arc::<u8, i8>(arc_u8_slice);
+  assert_eq!(&*arc_i8_slice, [0, 1, -1, i8::MAX]);
+
+  let result: Result<Arc<[u16]>, (PodCastError, Arc<[i8]>)> =
+    try_cast_slice_arc(arc_i8_slice);
+  let (error, arc_i8_slice) =
+    result.expect_err("u16 and i8 have different alignment");
+  assert_eq!(error, PodCastError::AlignmentMismatch);
+
+  // FIXME(#253): Should these next two casts' errors be consistent?
+  let result: Result<&[[i8; 3]], PodCastError> = try_cast_slice(&*arc_i8_slice);
+  let error =
+    result.expect_err("slice of [i8; 3] cannot be made from slice of 4 i8s");
+  assert_eq!(error, PodCastError::OutputSliceWouldHaveSlop);
+
+  let result: Result<Arc<[[i8; 3]]>, (PodCastError, Arc<[i8]>)> =
+    try_cast_slice_arc(arc_i8_slice);
+  let (error, arc_i8_slice) =
+    result.expect_err("slice of [i8; 3] cannot be made from slice of 4 i8s");
+  assert_eq!(error, PodCastError::SizeMismatch);
+
+  let empty: Arc<[()]> = cast_slice_arc::<u8, ()>(Arc::new([]));
+  assert!(empty.is_empty());
+
+  let result: Result<Arc<[()]>, (PodCastError, Arc<[i8]>)> =
+    try_cast_slice_arc(arc_i8_slice);
+  let (error, arc_i8_slice) =
+    result.expect_err("slice of ZST cannot be made from slice of 4 u8s");
+  assert_eq!(error, PodCastError::SizeMismatch);
+
+  drop(arc_i8_slice);
+
+  let empty: Arc<[i8]> = cast_slice_arc::<(), i8>(Arc::new([]));
+  assert!(empty.is_empty());
+
+  let empty: Arc<[i8]> = cast_slice_arc::<(), i8>(Arc::new([(); 42]));
+  assert!(empty.is_empty());
+}
