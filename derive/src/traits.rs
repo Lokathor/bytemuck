@@ -44,6 +44,9 @@ pub trait Derivable {
   fn explicit_bounds_attribute_name() -> Option<&'static str> {
     None
   }
+  fn perfect_derive_fields(input: &DeriveInput) -> Option<Fields> {
+    None
+  }
 }
 
 pub struct Pod;
@@ -201,6 +204,24 @@ impl Derivable for Zeroable {
 
   fn explicit_bounds_attribute_name() -> Option<&'static str> {
     Some("zeroable")
+  }
+
+  fn perfect_derive_fields(input: &DeriveInput) -> Option<Fields> {
+    match &input.data {
+      Data::Struct(struct_) => Some(struct_.fields.clone()),
+      Data::Enum(DataEnum { variants, .. }) => {
+        let iter = VariantDiscriminantIterator::new(variants.iter());
+        for res in iter {
+          match res {
+            Ok((0, variant)) => return Some(variant.fields.clone()),
+            Ok(_) => (),
+            Err(_) => return None,
+          }
+        }
+        None
+      }
+      Data::Union(_) => None,
+    }
   }
 }
 
