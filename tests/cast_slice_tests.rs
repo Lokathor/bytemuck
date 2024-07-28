@@ -196,6 +196,30 @@ fn test_panics() {
   should_panic!(from_bytes::<u32>(&aligned_bytes[1..5]));
 }
 
+#[test]
+fn test_zsts() {
+  #[derive(Debug, Clone, Copy)]
+  struct MyZst;
+  unsafe impl Zeroable for MyZst {}
+  unsafe impl Pod for MyZst {}
+  assert_eq!(42, cast_slice::<(), MyZst>(&[(); 42]).len());
+  assert_eq!(42, cast_slice_mut::<(), MyZst>(&mut [(); 42]).len());
+  assert_eq!(0, cast_slice::<(), u8>(&[(); 42]).len());
+  assert_eq!(0, cast_slice_mut::<(), u8>(&mut [(); 42]).len());
+  assert_eq!(0, cast_slice::<u8, ()>(&[]).len());
+  assert_eq!(0, cast_slice_mut::<u8, ()>(&mut []).len());
+
+  assert_eq!(
+    PodCastError::OutputSliceWouldHaveSlop,
+    try_cast_slice::<u8, ()>(&[42]).unwrap_err()
+  );
+
+  assert_eq!(
+    PodCastError::OutputSliceWouldHaveSlop,
+    try_cast_slice_mut::<u8, ()>(&mut [42]).unwrap_err()
+  );
+}
+
 #[cfg(feature = "extern_crate_alloc")]
 #[test]
 fn test_boxed_slices() {
@@ -209,7 +233,6 @@ fn test_boxed_slices() {
     result.expect_err("u16 and i8 have different alignment");
   assert_eq!(error, PodCastError::AlignmentMismatch);
 
-  // FIXME(#253): Should these next two casts' errors be consistent?
   let result: Result<&[[i8; 3]], PodCastError> =
     try_cast_slice(&*boxed_i8_slice);
   let error =
@@ -220,7 +243,7 @@ fn test_boxed_slices() {
     try_cast_slice_box(boxed_i8_slice);
   let (error, boxed_i8_slice) =
     result.expect_err("slice of [i8; 3] cannot be made from slice of 4 i8s");
-  assert_eq!(error, PodCastError::SizeMismatch);
+  assert_eq!(error, PodCastError::OutputSliceWouldHaveSlop);
 
   let empty: Box<[()]> = cast_slice_box::<u8, ()>(Box::new([]));
   assert!(empty.is_empty());
@@ -229,7 +252,7 @@ fn test_boxed_slices() {
     try_cast_slice_box(boxed_i8_slice);
   let (error, boxed_i8_slice) =
     result.expect_err("slice of ZST cannot be made from slice of 4 u8s");
-  assert_eq!(error, PodCastError::SizeMismatch);
+  assert_eq!(error, PodCastError::OutputSliceWouldHaveSlop);
 
   drop(boxed_i8_slice);
 
@@ -254,7 +277,6 @@ fn test_rc_slices() {
     result.expect_err("u16 and i8 have different alignment");
   assert_eq!(error, PodCastError::AlignmentMismatch);
 
-  // FIXME(#253): Should these next two casts' errors be consistent?
   let result: Result<&[[i8; 3]], PodCastError> = try_cast_slice(&*rc_i8_slice);
   let error =
     result.expect_err("slice of [i8; 3] cannot be made from slice of 4 i8s");
@@ -264,7 +286,7 @@ fn test_rc_slices() {
     try_cast_slice_rc(rc_i8_slice);
   let (error, rc_i8_slice) =
     result.expect_err("slice of [i8; 3] cannot be made from slice of 4 i8s");
-  assert_eq!(error, PodCastError::SizeMismatch);
+  assert_eq!(error, PodCastError::OutputSliceWouldHaveSlop);
 
   let empty: Rc<[()]> = cast_slice_rc::<u8, ()>(Rc::new([]));
   assert!(empty.is_empty());
@@ -273,7 +295,7 @@ fn test_rc_slices() {
     try_cast_slice_rc(rc_i8_slice);
   let (error, rc_i8_slice) =
     result.expect_err("slice of ZST cannot be made from slice of 4 u8s");
-  assert_eq!(error, PodCastError::SizeMismatch);
+  assert_eq!(error, PodCastError::OutputSliceWouldHaveSlop);
 
   drop(rc_i8_slice);
 
@@ -299,7 +321,6 @@ fn test_arc_slices() {
     result.expect_err("u16 and i8 have different alignment");
   assert_eq!(error, PodCastError::AlignmentMismatch);
 
-  // FIXME(#253): Should these next two casts' errors be consistent?
   let result: Result<&[[i8; 3]], PodCastError> = try_cast_slice(&*arc_i8_slice);
   let error =
     result.expect_err("slice of [i8; 3] cannot be made from slice of 4 i8s");
@@ -309,7 +330,7 @@ fn test_arc_slices() {
     try_cast_slice_arc(arc_i8_slice);
   let (error, arc_i8_slice) =
     result.expect_err("slice of [i8; 3] cannot be made from slice of 4 i8s");
-  assert_eq!(error, PodCastError::SizeMismatch);
+  assert_eq!(error, PodCastError::OutputSliceWouldHaveSlop);
 
   let empty: Arc<[()]> = cast_slice_arc::<u8, ()>(Arc::new([]));
   assert!(empty.is_empty());
@@ -318,7 +339,7 @@ fn test_arc_slices() {
     try_cast_slice_arc(arc_i8_slice);
   let (error, arc_i8_slice) =
     result.expect_err("slice of ZST cannot be made from slice of 4 u8s");
-  assert_eq!(error, PodCastError::SizeMismatch);
+  assert_eq!(error, PodCastError::OutputSliceWouldHaveSlop);
 
   drop(arc_i8_slice);
 

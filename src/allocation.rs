@@ -178,7 +178,7 @@ pub fn try_cast_slice_box<A: NoUninit, B: AnyBitPattern>(
     {
       // If the size in bytes of the underlying buffer does not match an exact
       // multiple of the size of B, we cannot cast between them.
-      Err((PodCastError::SizeMismatch, input))
+      Err((PodCastError::OutputSliceWouldHaveSlop, input))
     } else {
       // Because the size is an exact multiple, we can now change the length
       // of the slice and recreate the Box
@@ -239,7 +239,7 @@ pub fn try_cast_vec<A: NoUninit, B: AnyBitPattern>(
       // length and capacity are valid under B, as we do not want to
       // change which bytes are considered part of the initialized slice
       // of the Vec
-      Err((PodCastError::SizeMismatch, input))
+      Err((PodCastError::OutputSliceWouldHaveSlop, input))
     } else {
       // Because the size is an exact multiple, we can now change the length and
       // capacity and recreate the Vec
@@ -431,7 +431,7 @@ pub fn try_cast_slice_rc<
     {
       // If the size in bytes of the underlying buffer does not match an exact
       // multiple of the size of B, we cannot cast between them.
-      Err((PodCastError::SizeMismatch, input))
+      Err((PodCastError::OutputSliceWouldHaveSlop, input))
     } else {
       // Because the size is an exact multiple, we can now change the length
       // of the slice and recreate the Rc
@@ -499,7 +499,7 @@ pub fn try_cast_slice_arc<
     {
       // If the size in bytes of the underlying buffer does not match an exact
       // multiple of the size of B, we cannot cast between them.
-      Err((PodCastError::SizeMismatch, input))
+      Err((PodCastError::OutputSliceWouldHaveSlop, input))
     } else {
       // Because the size is an exact multiple, we can now change the length
       // of the slice and recreate the Arc
@@ -846,13 +846,18 @@ impl<T: AnyBitPattern> sealed::FromBoxBytes for [T] {
     let single_layout = Layout::new::<T>();
     if bytes.layout.align() != single_layout.align() {
       Err((PodCastError::AlignmentMismatch, bytes))
-    } else if single_layout.size() == 0 {
-      Err((PodCastError::SizeMismatch, bytes))
-    } else if bytes.layout.size() % single_layout.size() != 0 {
+    } else if (single_layout.size() == 0 && bytes.layout.size() != 0)
+      || (single_layout.size() != 0
+        && bytes.layout.size() % single_layout.size() != 0)
+    {
       Err((PodCastError::OutputSliceWouldHaveSlop, bytes))
     } else {
       let (ptr, layout) = bytes.into_raw_parts();
-      let length = layout.size() / single_layout.size();
+      let length = if single_layout.size() != 0 {
+        layout.size() / single_layout.size()
+      } else {
+        0
+      };
       let ptr =
         core::ptr::slice_from_raw_parts_mut(ptr.as_ptr() as *mut T, length);
       // SAFETY: See BoxBytes type invariant.
