@@ -116,7 +116,7 @@ pub fn derive_anybitpattern(
 
 /// Derive the `Zeroable` trait for a type.
 ///
-/// The macro ensures that the struct follows all the the safety requirements
+/// The macro ensures that the type follows all the the safety requirements
 /// for the `Zeroable` trait.
 ///
 /// The following constraints need to be satisfied for the macro to succeed on a
@@ -133,7 +133,7 @@ pub fn derive_anybitpattern(
 /// - All fields in the variant with discriminant 0 (if any) must implement
 ///   `Zeroable`
 ///
-/// The macro always succeeds on `union`s.
+/// The macro always succeeds on unions.
 ///
 /// ## Example
 ///
