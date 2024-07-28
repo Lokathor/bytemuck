@@ -44,6 +44,11 @@ pub trait Derivable {
   fn explicit_bounds_attribute_name() -> Option<&'static str> {
     None
   }
+
+  /// If this trait has a custom meaning for "perfect derive", this function
+  /// should be overridden to return `Some`.
+  ///
+  /// The default is "the fields of a struct; unions and enums not supported".
   fn perfect_derive_fields(input: &DeriveInput) -> Option<Fields> {
     None
   }
