@@ -76,8 +76,11 @@ impl Derivable for Pod {
         } else {
           None
         };
-        let assert_fields_are_pod =
-          generate_fields_are_trait(input, Self::ident(input, crate_name)?)?;
+        let assert_fields_are_pod = generate_fields_are_trait(
+          input,
+          None,
+          Self::ident(input, crate_name)?,
+        )?;
 
         Ok(quote!(
           #assert_no_padding
@@ -118,7 +121,7 @@ impl Derivable for AnyBitPattern {
     match &input.data {
       Data::Union(_) => Ok(quote!()), // unions are always `AnyBitPattern`
       Data::Struct(_) => {
-        generate_fields_are_trait(input, Self::ident(input, crate_name)?)
+        generate_fields_are_trait(input, None, Self::ident(input, crate_name)?)
       }
       Data::Enum(_) => {
         bail!("Deriving AnyBitPattern is not supported for enums")
@@ -139,24 +142,23 @@ impl Derivable for Zeroable {
     match ty {
       Data::Struct(_) => Ok(()),
       Data::Enum(DataEnum { variants, .. }) => {
-        if !repr.repr.is_integer() {
-          bail!("Zeroable requires the enum to be an explicit #[repr(Int)]")
-        }
-
-        if variants.iter().any(|variant| !variant.fields.is_empty()) {
-          bail!("Only fieldless enums are supported for Zeroable")
+        if !matches!(
+          repr.repr,
+          Repr::C | Repr::Integer(_) | Repr::CWithDiscriminant(_)
+        ) {
+          bail!("Zeroable requires the enum to be an explicit #[repr(Int)] or #[repr(C)]")
         }
 
         let iter = VariantDiscriminantIterator::new(variants.iter());
-        let mut has_zero_variant = false;
+        let mut zero_variant = None;
         for res in iter {
-          let discriminant = res?;
+          let (discriminant, variant) = res?;
           if discriminant == 0 {
-            has_zero_variant = true;
+            zero_variant = Some(variant);
             break;
           }
         }
-        if !has_zero_variant {
+        if zero_variant.is_none() {
           bail!("No variant's discriminant is 0")
         }
 
@@ -172,9 +174,28 @@ impl Derivable for Zeroable {
     match &input.data {
       Data::Union(_) => Ok(quote!()), // unions are always `Zeroable`
       Data::Struct(_) => {
-        generate_fields_are_trait(input, Self::ident(input, crate_name)?)
+        generate_fields_are_trait(input, None, Self::ident(input, crate_name)?)
       }
-      Data::Enum(_) => Ok(quote!()),
+      Data::Enum(DataEnum { variants, .. }) => {
+        let iter = VariantDiscriminantIterator::new(variants.iter());
+        let mut zero_variant = None;
+        for res in iter {
+          let (discriminant, variant) = res?;
+          if discriminant == 0 {
+            zero_variant = Some(variant);
+            break;
+          }
+        }
+        if zero_variant.is_none() {
+          bail!("No variant's discriminant is 0")
+        };
+
+        generate_fields_are_trait(
+          input,
+          zero_variant,
+          Self::ident(input, crate_name)?,
+        )
+      }
     }
   }
 
@@ -216,8 +237,11 @@ impl Derivable for NoUninit {
     match &input.data {
       Data::Struct(DataStruct { .. }) => {
         let assert_no_padding = generate_assert_no_padding(&input)?;
-        let assert_fields_are_no_padding =
-          generate_fields_are_trait(&input, Self::ident(input, crate_name)?)?;
+        let assert_fields_are_no_padding = generate_fields_are_trait(
+          &input,
+          None,
+          Self::ident(input, crate_name)?,
+        )?;
 
         Ok(quote!(
             #assert_no_padding
@@ -282,13 +306,16 @@ impl Derivable for CheckedBitPattern {
 
     match &input.data {
       Data::Struct(DataStruct { .. }) => {
-        let assert_fields_are_maybe_pod =
-          generate_fields_are_trait(&input, Self::ident(input, crate_name)?)?;
+        let assert_fields_are_maybe_pod = generate_fields_are_trait(
+          &input,
+          None,
+          Self::ident(input, crate_name)?,
+        )?;
 
         Ok(assert_fields_are_maybe_pod)
       }
-      Data::Enum(_) => Ok(quote!()), /* nothing needed, already guaranteed
-                                       * OK by NoUninit */
+      // nothing needed, already guaranteed OK by NoUninit.
+      Data::Enum(_) => Ok(quote!()),
       Data::Union(_) => bail!("Internal error in CheckedBitPattern derive"), /* shouldn't be possible since we already error in attribute check for this case */
     }
   }
@@ -439,16 +466,16 @@ impl Derivable for Contiguous {
       ));
     }
 
-    let mut variants_with_discriminator =
+    let mut variants_with_discriminant =
       VariantDiscriminantIterator::new(variants);
 
-    let (min, max, count) = variants_with_discriminator.try_fold(
+    let (min, max, count) = variants_with_discriminant.try_fold(
       (i64::max_value(), i64::min_value(), 0),
       |(min, max, count), res| {
-        let discriminator = res?;
+        let (discriminant, _variant) = res?;
         Ok::<_, Error>((
-          i64::min(min, discriminator),
-          i64::max(max, discriminator),
+          i64::min(min, discriminant),
+          i64::max(max, discriminant),
           count + 1,
         ))
       },
@@ -505,11 +532,16 @@ fn get_struct_fields(input: &DeriveInput) -> Result<&Fields> {
   }
 }
 
-fn get_fields(input: &DeriveInput) -> Result<Fields> {
+fn get_fields(
+  input: &DeriveInput, enum_variant: Option<&Variant>,
+) -> Result<Fields> {
   match &input.data {
     Data::Struct(DataStruct { fields, .. }) => Ok(fields.clone()),
     Data::Union(DataUnion { fields, .. }) => Ok(Fields::Named(fields.clone())),
-    Data::Enum(_) => bail!("deriving this trait is not supported for enums"),
+    Data::Enum(_) => match enum_variant {
+      Some(variant) => Ok(variant.fields.clone()),
+      None => bail!("deriving this trait is not supported for enums"),
+    },
   }
 }
 
@@ -598,7 +630,7 @@ fn generate_checked_bit_pattern_enum_without_fields(
   let (min, max, count) = variants_with_discriminant.try_fold(
     (i64::max_value(), i64::min_value(), 0),
     |(min, max, count), res| {
-      let discriminant = res?;
+      let (discriminant, _variant) = res?;
       Ok::<_, Error>((
         i64::min(min, discriminant),
         i64::max(max, discriminant),
@@ -617,16 +649,17 @@ fn generate_checked_bit_pattern_enum_without_fields(
     quote!(*bits >= #min_lit && *bits <= #max_lit)
   } else {
     // not contiguous range, check for each
-    let variant_lits = VariantDiscriminantIterator::new(variants.iter())
-      .map(|res| {
-        let variant = res?;
-        Ok(LitInt::new(&format!("{}", variant), span))
-      })
-      .collect::<Result<Vec<_>>>()?;
+    let variant_discriminant_lits =
+      VariantDiscriminantIterator::new(variants.iter())
+        .map(|res| {
+          let (discriminant, _variant) = res?;
+          Ok(LitInt::new(&format!("{}", discriminant), span))
+        })
+        .collect::<Result<Vec<_>>>()?;
 
     // count is at least 1
-    let first = &variant_lits[0];
-    let rest = &variant_lits[1..];
+    let first = &variant_discriminant_lits[0];
+    let rest = &variant_discriminant_lits[1..];
 
     quote!(matches!(*bits, #first #(| #rest )*))
   };
@@ -720,7 +753,7 @@ fn generate_checked_bit_pattern_enum_with_fields(
         .zip(VariantDiscriminantIterator::new(variants.iter()))
         .zip(variants.iter())
         .map(|((variant_struct_ident, discriminant), v)| -> Result<_> {
-          let discriminant = discriminant?;
+          let (discriminant, _variant) = discriminant?;
           let discriminant = LitInt::new(&discriminant.to_string(), v.span());
           let ident = &v.ident;
           Ok(quote! {
@@ -850,7 +883,7 @@ fn generate_checked_bit_pattern_enum_with_fields(
         .zip(VariantDiscriminantIterator::new(variants.iter()))
         .zip(variants.iter())
         .map(|((variant_struct_ident, discriminant), v)| -> Result<_> {
-          let discriminant = discriminant?;
+          let (discriminant, _variant) = discriminant?;
           let discriminant = LitInt::new(&discriminant.to_string(), v.span());
           let ident = &v.ident;
           Ok(quote! {
@@ -906,7 +939,7 @@ fn generate_checked_bit_pattern_enum_with_fields(
 fn generate_assert_no_padding(input: &DeriveInput) -> Result<TokenStream> {
   let struct_type = &input.ident;
   let span = input.ident.span();
-  let fields = get_fields(input)?;
+  let fields = get_fields(input, None)?;
 
   let mut field_types = get_field_types(&fields);
   let size_sum = if let Some(first) = field_types.next() {
@@ -928,11 +961,11 @@ fn generate_assert_no_padding(input: &DeriveInput) -> Result<TokenStream> {
 
 /// Check that all fields implement a given trait
 fn generate_fields_are_trait(
-  input: &DeriveInput, trait_: syn::Path,
+  input: &DeriveInput, enum_variant: Option<&Variant>, trait_: syn::Path,
 ) -> Result<TokenStream> {
   let (impl_generics, _ty_generics, where_clause) =
     input.generics.split_for_impl();
-  let fields = get_fields(input)?;
+  let fields = get_fields(input, enum_variant)?;
   let span = input.span();
   let field_types = get_field_types(&fields);
   Ok(quote_spanned! {span => #(const _: fn() = || {
@@ -1200,7 +1233,7 @@ impl<'a, I: Iterator<Item = &'a Variant> + 'a>
 impl<'a, I: Iterator<Item = &'a Variant> + 'a> Iterator
   for VariantDiscriminantIterator<'a, I>
 {
-  type Item = Result<i64>;
+  type Item = Result<(i64, &'a Variant)>;
 
   fn next(&mut self) -> Option<Self::Item> {
     let variant = self.inner.next()?;
@@ -1215,7 +1248,7 @@ impl<'a, I: Iterator<Item = &'a Variant> + 'a> Iterator
       self.last_value += 1;
     }
 
-    Some(Ok(self.last_value))
+    Some(Ok((self.last_value, variant)))
   }
 }
 
