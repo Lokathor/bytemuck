@@ -49,7 +49,7 @@ pub trait Derivable {
   /// should be overridden to return `Some`.
   ///
   /// The default is "the fields of a struct; unions and enums not supported".
-  fn perfect_derive_fields(input: &DeriveInput) -> Option<Fields> {
+  fn perfect_derive_fields(_input: &DeriveInput) -> Option<Fields> {
     None
   }
 }

@@ -6,7 +6,7 @@ mod traits;
 
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Result, Variant};
+use syn::{parse_macro_input, DeriveInput, Result};
 
 use crate::traits::{
   bytemuck_crate_name, AnyBitPattern, CheckedBitPattern, Contiguous, Derivable,
