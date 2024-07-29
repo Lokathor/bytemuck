@@ -742,8 +742,9 @@ impl<I: ?Sized, T: ?Sized + TransparentWrapper<I>> TransparentWrapperAlloc<I>
 
 /// As `Box<[u8]>`, but remembers the original alignment.
 pub struct BoxBytes {
-  // SAFETY: `ptr` is owned, was allocated with `layout`, and points to
-  // `layout.size()` initialized bytes.
+  // SAFETY: `ptr` is owned, points to `layout.size()` initialized bytes, and
+  // was allocated with `layout` (unless `layout.size() == 0` in which case it
+  // is dangling).
   ptr: NonNull<u8>,
   layout: Layout,
 }
@@ -770,8 +771,11 @@ impl DerefMut for BoxBytes {
 
 impl Drop for BoxBytes {
   fn drop(&mut self) {
-    // SAFETY: See type invariant.
-    unsafe { alloc::alloc::dealloc(self.ptr.as_ptr(), self.layout) };
+    if self.layout.size() != 0 {
+      // SAFETY: See type invariant: if `self.layout.size() != 0`, then
+      // `self.ptr` is owned and was allocated with `self.layout`.
+      unsafe { alloc::alloc::dealloc(self.ptr.as_ptr(), self.layout) };
+    }
   }
 }
 

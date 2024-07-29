@@ -328,3 +328,17 @@ fn test_arc_slices() {
   let empty: Arc<[i8]> = cast_slice_arc::<(), i8>(Arc::new([(); 42]));
   assert!(empty.is_empty());
 }
+
+#[cfg(feature = "extern_crate_alloc")]
+#[test]
+fn box_bytes_zst() {
+  let x: BoxBytes = box_bytes_of(Box::new([0u8; 0]));
+  let _: Box<[u8]> = from_box_bytes(x);
+
+  let x: BoxBytes = box_bytes_of(Box::new([0u8; 0]));
+  let res: Result<Box<[()]>, _> = try_from_box_bytes(x);
+  assert_eq!(res.unwrap_err().0, PodCastError::SizeMismatch);
+
+  let x: BoxBytes = box_bytes_of(Box::new([(); 0]));
+  let _: Box<[u8]> = from_box_bytes(x);
+}
