@@ -1,5 +1,11 @@
 # `bytemuck` changelog
 
+## 1.16.3
+
+* Fully described in https://github.com/Lokathor/bytemuck/pull/256, This makes
+  casting slices to/from ZST elements more consistent between the crate's core
+  module and other modules.
+
 ## 1.16.2
 
 * Fixes potential UB where `BoxBytes` could attempt to free a dangling pointer
