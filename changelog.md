@@ -1,5 +1,11 @@
 # `bytemuck` changelog
 
+## 1.16.2
+
+* Fixes potential UB where `BoxBytes` could attempt to free a dangling pointer
+  if the `Layout` is zero sized. This type was introduced in 1.14.1, so that
+  version and the others up to and including 1.16.1 are now yanked for safety.
+
 ## 1.16.1
 
 * **NOT SEMVER SUPPORTED:** Adds the  `nightly_float` Cargo feature. This
