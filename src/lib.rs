@@ -123,6 +123,15 @@ macro_rules! transmute {
   ($val:expr) => {
     ::core::mem::transmute_copy(&::core::mem::ManuallyDrop::new($val))
   };
+  ($srcty:ty; $dstty:ty; $val:expr) => {
+    {
+      union Transmute<A, B> {
+        src: ::core::mem::ManuallyDrop<A>,
+        dst: ::core::mem::ManuallyDrop<B>,
+      }
+      ::core::mem::ManuallyDrop::into_inner(Transmute::<$srcty, $dstty> { src: ::core::mem::ManuallyDrop::new($val) }.dst)
+    }
+  }
 }
 
 /// A macro to implement marker traits for various simd types.
