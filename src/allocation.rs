@@ -742,9 +742,9 @@ impl<I: ?Sized, T: ?Sized + TransparentWrapper<I>> TransparentWrapperAlloc<I>
 
 /// As `Box<[u8]>`, but remembers the original alignment.
 pub struct BoxBytes {
-  // SAFETY: `ptr` is owned, points to `layout.size()` initialized bytes, and
-  // was allocated with `layout` (unless `layout.size() == 0` in which case it
-  // is dangling).
+  // SAFETY: `ptr` is aligned to `layout.align()`, points to
+  // `layout.size()` initialized bytes, and, if `layout.size() > 0`,
+  // is owned and was allocated with the global allocator with `layout`.
   ptr: NonNull<u8>,
   layout: Layout,
 }
