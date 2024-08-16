@@ -1,5 +1,11 @@
 # `bytemuck` changelog
 
+## 1.17.0
+
+* Makes the `must_cast` versions of the by-value and by-ref casts be `const`.
+  The mut ref cast is unaffected for now (mut references aren't yet stable in `const fn`).
+  This increases the MSRV of using that particular feature from 1.57 to 1.64.
+
 ## 1.16.3
 
 * Fully described in https://github.com/Lokathor/bytemuck/pull/256, This makes
