@@ -17,10 +17,10 @@ use super::*;
 /// For a given `Wrapper` which implements `TransparentWrapper<Inner>`:
 ///
 /// 1. `Wrapper` must be a wrapper around `Inner` with an identical data
-///    representations. This    either means that it must be a
-///    `#[repr(transparent)]` struct which    contains a either a field of type
-///    `Inner` (or a field of some other    transparent wrapper for `Inner`) as
-///    the only non-ZST field.
+///    representations. This either means that it must be a
+///    `#[repr(transparent)]` struct which contains a either a field of type
+///    `Inner` or a field of some other transparent wrapper for `Inner` as the
+///    only non-ZST field.
 ///
 /// 2. Any fields *other* than the `Inner` field must be trivially constructable
 ///    ZSTs, for example `PhantomData`, `PhantomPinned`, etc. (When deriving
@@ -303,3 +303,4 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
 }
 
 unsafe impl<T> TransparentWrapper<T> for core::num::Wrapping<T> {}
+unsafe impl<T> TransparentWrapper<T> for [T; 1] {}
