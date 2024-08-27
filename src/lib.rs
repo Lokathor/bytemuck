@@ -127,6 +127,7 @@ macro_rules! transmute {
   // since the compiler hedges that the type being borrowed could have interior mutability.
   ($srcty:ty; $dstty:ty; $val:expr) => {
     {
+      #[repr(C)]
       union Transmute<A, B> {
         src: ::core::mem::ManuallyDrop<A>,
         dst: ::core::mem::ManuallyDrop<B>,
