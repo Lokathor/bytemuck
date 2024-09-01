@@ -303,3 +303,4 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
 }
 
 unsafe impl<T> TransparentWrapper<T> for core::num::Wrapping<T> {}
+unsafe impl<T> TransparentWrapper<T> for core::cmp::Reverse<T> {}
