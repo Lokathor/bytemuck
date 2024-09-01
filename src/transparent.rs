@@ -304,6 +304,10 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
 
 unsafe impl<T> TransparentWrapper<T> for core::num::Wrapping<T> {}
 #[cfg(feature = "transparentwrapper_extra")]
+#[cfg_attr(
+  feature = "nightly_docs",
+  doc(cfg(feature = "transparentwrapper_extra"))
+)]
 unsafe impl<T> TransparentWrapper<T> for core::num::Saturating<T> {}
 
 // Note that `Reverse` existed since Rust 1.19.0, but was only made `#[repr(transparent)]`
@@ -311,4 +315,8 @@ unsafe impl<T> TransparentWrapper<T> for core::num::Saturating<T> {}
 // the same feature as `Saturating`, which was stabilized in Rust 1.74.0, so that this
 // impl cannot be used on a version before 1.52.0 where it would be unsound.
 #[cfg(feature = "transparentwrapper_extra")]
+#[cfg_attr(
+  feature = "nightly_docs",
+  doc(cfg(feature = "transparentwrapper_extra"))
+)]
 unsafe impl<T> TransparentWrapper<T> for core::cmp::Reverse<T> {}
