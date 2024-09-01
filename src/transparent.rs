@@ -303,4 +303,6 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
 }
 
 unsafe impl<T> TransparentWrapper<T> for core::num::Wrapping<T> {}
+#[cfg(feature = "transparentwrapper_extra")]
+unsafe impl<T> TransparentWrapper<T> for core::num::Saturating<T> {}
 unsafe impl<T> TransparentWrapper<T> for core::cmp::Reverse<T> {}

@@ -34,6 +34,11 @@ aarch64_simd = [] # MSRV 1.59.0: support aarch64 simd types
 
 must_cast = [] # MSRV 1.64.0: support the `must` module.
 
+# Adds `TransparentWrapper` impls for stdlib types newer than bytemuck's base MSRV.
+# Current MSRV 1.74.0: `core::num::Saturating`.
+# MSRV may increase if impls are added for newer types.
+transparentwrapper_extra = []
+
 const_zeroed = [] # MSRV 1.75.0: support const `zeroed()`
 
 # Do not use if you can avoid it, because this is **unsound**!!!!
@@ -66,6 +71,7 @@ features = [
   "min_const_generics",
   "wasm_simd",
   "must_cast",
+  "transparentwrapper_extra",
   "const_zeroed",
 ]
 
@@ -80,5 +86,6 @@ features = [
   "min_const_generics",
   "wasm_simd",
   "must_cast",
+  "transparentwrapper_extra",
   "const_zeroed",
 ]
