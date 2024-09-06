@@ -13,10 +13,16 @@ exclude = ["/pedantic.bat"]
 
 [features]
 # In v2 we'll fix these names to be more "normal".
+
+# Enable deriving the various `bytemuck` traits.
 derive = ["bytemuck_derive"]
+# Enable features requiring items from `extern crate alloc`.
 extern_crate_alloc = []
+# Enable features requiring items from `extern crate std`.
 extern_crate_std = ["extern_crate_alloc"]
+# Implement `Zeroable` for `MaybeUninit`.
 zeroable_maybe_uninit = []
+# Implement `Zeroable` for `std::sync::atomic` types.
 zeroable_atomics = []
 
 # All MSRV notes below are GUIDELINES and future versions may require even more
