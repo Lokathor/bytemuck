@@ -48,6 +48,23 @@ nightly_float = []
 # Improved documentation using the nightly toolchain
 nightly_docs = []
 
+# Enables all features that are both sound and supported on the latest stable
+# version of Rust, with the exception of `extern_crate_alloc` and
+# `extern_crate_std`.
+# Note: Enabling this feature opts out of any MSRV guarantees!
+latest_stable_rust = [
+  # Keep this list sorted.
+  "aarch64_simd",
+  "align_offset",
+  "const_zeroed",
+  "derive",
+  "min_const_generics",
+  "must_cast",
+  "wasm_simd",
+  "zeroable_atomics",
+  "zeroable_maybe_uninit",
+]
+
 [dependencies]
 bytemuck_derive = { version = "1.4", path = "derive", optional = true }
 
