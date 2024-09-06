@@ -56,8 +56,11 @@ latest_stable_rust = [
   "zeroable_maybe_uninit",
 ]
 
-# NOT SEMVER SUPPORTED! TEMPORARY ONLY!
+# ALL FEATURES BELOW THIS ARE NOT SEMVER SUPPORTED! TEMPORARY ONLY!
+
+# Enable support for `std::simd` types.
 nightly_portable_simd = []
+# Enable support for unstable `std::arch` types (such as the AVX512 types).
 nightly_stdsimd = []
 # Enable `f16` and `f128`
 nightly_float = []
