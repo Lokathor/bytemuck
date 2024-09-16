@@ -140,6 +140,21 @@ impl Derivable for AnyBitPattern {
 
 pub struct Zeroable;
 
+/// Helper function to get the variant with discriminant zero (implicit or
+/// explicit).
+fn get_zero_variant(enum_: &DataEnum) -> Result<Option<&Variant>> {
+  let iter = VariantDiscriminantIterator::new(enum_.variants.iter());
+  let mut zero_variant = None;
+  for res in iter {
+    let (discriminant, variant) = res?;
+    if discriminant == 0 {
+      zero_variant = Some(variant);
+      break;
+    }
+  }
+  Ok(zero_variant)
+}
+
 impl Derivable for Zeroable {
   fn ident(_: &DeriveInput, crate_name: &TokenStream) -> Result<syn::Path> {
     Ok(syn::parse_quote!(#crate_name::Zeroable))
@@ -149,26 +164,16 @@ impl Derivable for Zeroable {
     let repr = get_repr(attributes)?;
     match ty {
       Data::Struct(_) => Ok(()),
-      Data::Enum(DataEnum { variants, .. }) => {
+      Data::Enum(_) => {
         if !matches!(
           repr.repr,
           Repr::C | Repr::Integer(_) | Repr::CWithDiscriminant(_)
         ) {
-          bail!("Zeroable requires the enum to be an explicit #[repr(Int)] or #[repr(C)]")
+          bail!("Zeroable requires the enum to be an explicit #[repr(Int)] and/or #[repr(C)]")
         }
 
-        let iter = VariantDiscriminantIterator::new(variants.iter());
-        let mut zero_variant = None;
-        for res in iter {
-          let (discriminant, variant) = res?;
-          if discriminant == 0 {
-            zero_variant = Some(variant);
-            break;
-          }
-        }
-        if zero_variant.is_none() {
-          bail!("No variant's discriminant is 0")
-        }
+        // We ensure there is a zero variant in `asserts`, since it is needed
+        // there anyway.
 
         Ok(())
       }
@@ -184,16 +189,9 @@ impl Derivable for Zeroable {
       Data::Struct(_) => {
         generate_fields_are_trait(input, None, Self::ident(input, crate_name)?)
       }
-      Data::Enum(DataEnum { variants, .. }) => {
-        let iter = VariantDiscriminantIterator::new(variants.iter());
-        let mut zero_variant = None;
-        for res in iter {
-          let (discriminant, variant) = res?;
-          if discriminant == 0 {
-            zero_variant = Some(variant);
-            break;
-          }
-        }
+      Data::Enum(enum_) => {
+        let zero_variant = get_zero_variant(enum_)?;
+
         if zero_variant.is_none() {
           bail!("No variant's discriminant is 0")
         };
@@ -214,16 +212,11 @@ impl Derivable for Zeroable {
   fn perfect_derive_fields(input: &DeriveInput) -> Option<Fields> {
     match &input.data {
       Data::Struct(struct_) => Some(struct_.fields.clone()),
-      Data::Enum(DataEnum { variants, .. }) => {
-        let iter = VariantDiscriminantIterator::new(variants.iter());
-        for res in iter {
-          match res {
-            Ok((0, variant)) => return Some(variant.fields.clone()),
-            Ok(_) => (),
-            Err(_) => return None,
-          }
-        }
-        None
+      Data::Enum(enum_) => {
+        // We handle `Err` returns from `get_zero_variant` in `asserts`, so it's
+        // fine to just ignore them here and return `None`.
+        // Otherwise, we clone the `fields` of the zero variant (if any).
+        Some(get_zero_variant(enum_).ok()??.fields.clone())
       }
       Data::Union(_) => None,
     }
