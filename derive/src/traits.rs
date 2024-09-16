@@ -551,6 +551,11 @@ fn get_struct_fields(input: &DeriveInput) -> Result<&Fields> {
   }
 }
 
+/// Extract the `Fields` off a `DeriveInput`, or, in the `enum` case, off
+/// those of the `enum_variant`, when provided (e.g., for `Zeroable`).
+/// 
+/// We purposely allow not providing an `enum_variant` for cases where
+/// the caller wants to reject supporting `enum`s (e.g., `NoPadding`).
 fn get_fields(
   input: &DeriveInput, enum_variant: Option<&Variant>,
 ) -> Result<Fields> {
