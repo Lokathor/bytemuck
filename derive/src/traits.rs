@@ -963,7 +963,8 @@ fn generate_checked_bit_pattern_enum_with_fields(
 fn generate_assert_no_padding(input: &DeriveInput) -> Result<TokenStream> {
   let struct_type = &input.ident;
   let span = input.ident.span();
-  let fields = get_fields(input, None)?;
+  let enum_variant = None; // `no padding` check is not supported for `enum`s yet.
+  let fields = get_fields(input, enum_variant)?;
 
   let mut field_types = get_field_types(&fields);
   let size_sum = if let Some(first) = field_types.next() {
