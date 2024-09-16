@@ -489,12 +489,12 @@ impl Derivable for Contiguous {
       VariantDiscriminantIterator::new(variants);
 
     let (min, max, count) = variants_with_discriminant.try_fold(
-      (i64::max_value(), i64::min_value(), 0),
+      (i128::MAX, i128::MIN, 0),
       |(min, max, count), res| {
         let (discriminant, _variant) = res?;
         Ok::<_, Error>((
-          i64::min(min, discriminant),
-          i64::max(max, discriminant),
+          i128::min(min, discriminant),
+          i128::max(max, discriminant),
           count + 1,
         ))
       },
@@ -647,12 +647,12 @@ fn generate_checked_bit_pattern_enum_without_fields(
     VariantDiscriminantIterator::new(variants.iter());
 
   let (min, max, count) = variants_with_discriminant.try_fold(
-    (i64::max_value(), i64::min_value(), 0),
+    (i128::MAX, i128::MIN, 0),
     |(min, max, count), res| {
       let (discriminant, _variant) = res?;
       Ok::<_, Error>((
-        i64::min(min, discriminant),
-        i64::max(max, discriminant),
+        i128::min(min, discriminant),
+        i128::max(max, discriminant),
         count + 1,
       ))
     },
@@ -1238,7 +1238,7 @@ fn enum_has_fields<'a>(
 
 struct VariantDiscriminantIterator<'a, I: Iterator<Item = &'a Variant> + 'a> {
   inner: I,
-  last_value: i64,
+  last_value: i128,
 }
 
 impl<'a, I: Iterator<Item = &'a Variant> + 'a>
@@ -1252,7 +1252,7 @@ impl<'a, I: Iterator<Item = &'a Variant> + 'a>
 impl<'a, I: Iterator<Item = &'a Variant> + 'a> Iterator
   for VariantDiscriminantIterator<'a, I>
 {
-  type Item = Result<(i64, &'a Variant)>;
+  type Item = Result<(i128, &'a Variant)>;
 
   fn next(&mut self) -> Option<Self::Item> {
     let variant = self.inner.next()?;
@@ -1264,14 +1264,38 @@ impl<'a, I: Iterator<Item = &'a Variant> + 'a> Iterator
       };
       self.last_value = discriminant_value;
     } else {
-      self.last_value += 1;
+      // If this wraps, then either:
+      // 1. the enum is using repr(u128), so wrapping is correct
+      // 2. the enum is using repr(i<=128 or u<128), so the compiler will
+      //    already emit a "wrapping discriminant" E0370 error.
+      self.last_value = self.last_value.wrapping_add(1);
+      // Static assert that there is no integer repr > 128 bits. If that
+      // changes, the above comment is inaccurate and needs to be updated!
+      // FIXME(zachs18): maybe should also do something to ensure `isize::BITS
+      // <= 128`?
+      if let Some(repr) = None::<IntegerRepr> {
+        match repr {
+          IntegerRepr::U8
+          | IntegerRepr::I8
+          | IntegerRepr::U16
+          | IntegerRepr::I16
+          | IntegerRepr::U32
+          | IntegerRepr::I32
+          | IntegerRepr::U64
+          | IntegerRepr::I64
+          | IntegerRepr::I128
+          | IntegerRepr::U128
+          | IntegerRepr::Usize
+          | IntegerRepr::Isize => (),
+        }
+      }
     }
 
     Some(Ok((self.last_value, variant)))
   }
 }
 
-fn parse_int_expr(expr: &Expr) -> Result<i64> {
+fn parse_int_expr(expr: &Expr) -> Result<i128> {
   match expr {
     Expr::Unary(ExprUnary { op: UnOp::Neg(_), expr, .. }) => {
       parse_int_expr(expr).map(|int| -int)
