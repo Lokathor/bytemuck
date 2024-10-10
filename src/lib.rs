@@ -326,7 +326,7 @@ pub fn try_from_bytes_mut<T: NoUninit + AnyBitPattern>(
   unsafe { internal::try_from_bytes_mut(s) }
 }
 
-/// Cast `T` into `U`
+/// Cast `A` into `B`
 ///
 /// ## Panics
 ///
@@ -336,7 +336,7 @@ pub fn cast<A: NoUninit, B: AnyBitPattern>(a: A) -> B {
   unsafe { internal::cast(a) }
 }
 
-/// Cast `&mut T` into `&mut U`.
+/// Cast `&mut A` into `&mut B`.
 ///
 /// ## Panics
 ///
@@ -348,7 +348,7 @@ pub fn cast_mut<A: NoUninit + AnyBitPattern, B: NoUninit + AnyBitPattern>(
   unsafe { internal::cast_mut(a) }
 }
 
-/// Cast `&T` into `&U`.
+/// Cast `&A` into `&B`.
 ///
 /// ## Panics
 ///
@@ -368,7 +368,7 @@ pub fn cast_slice<A: NoUninit, B: AnyBitPattern>(a: &[A]) -> &[B] {
   unsafe { internal::cast_slice(a) }
 }
 
-/// Cast `&mut [T]` into `&mut [U]`.
+/// Cast `&mut [A]` into `&mut [B]`.
 ///
 /// ## Panics
 ///
@@ -404,7 +404,7 @@ pub fn pod_align_to_mut<
   unsafe { vals.align_to_mut::<U>() }
 }
 
-/// Try to cast `T` into `U`.
+/// Try to cast `A` into `B`.
 ///
 /// Note that for this particular type of cast, alignment isn't a factor. The
 /// input value is semantically copied into the function and then returned to a
@@ -421,7 +421,7 @@ pub fn try_cast<A: NoUninit, B: AnyBitPattern>(
   unsafe { internal::try_cast(a) }
 }
 
-/// Try to convert a `&T` into `&U`.
+/// Try to convert a `&A` into `&B`.
 ///
 /// ## Failure
 ///
@@ -434,7 +434,7 @@ pub fn try_cast_ref<A: NoUninit, B: AnyBitPattern>(
   unsafe { internal::try_cast_ref(a) }
 }
 
-/// Try to convert a `&mut T` into `&mut U`.
+/// Try to convert a `&mut A` into `&mut B`.
 ///
 /// As [`try_cast_ref`], but `mut`.
 #[inline]

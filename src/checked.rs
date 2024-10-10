@@ -292,7 +292,7 @@ pub fn try_pod_read_unaligned<T: CheckedBitPattern>(
   }
 }
 
-/// Try to cast `T` into `U`.
+/// Try to cast `A` into `B`.
 ///
 /// Note that for this particular type of cast, alignment isn't a factor. The
 /// input value is semantically copied into the function and then returned to a
@@ -316,7 +316,7 @@ pub fn try_cast<A: NoUninit, B: CheckedBitPattern>(
   }
 }
 
-/// Try to convert a `&T` into `&U`.
+/// Try to convert a `&A` into `&B`.
 ///
 /// ## Failure
 ///
@@ -336,7 +336,7 @@ pub fn try_cast_ref<A: NoUninit, B: CheckedBitPattern>(
   }
 }
 
-/// Try to convert a `&mut T` into `&mut U`.
+/// Try to convert a `&mut A` into `&mut B`.
 ///
 /// As [`try_cast_ref`], but `mut`.
 #[inline]
@@ -445,7 +445,7 @@ pub fn pod_read_unaligned<T: CheckedBitPattern>(bytes: &[u8]) -> T {
   }
 }
 
-/// Cast `T` into `U`
+/// Cast `A` into `B`
 ///
 /// ## Panics
 ///
@@ -458,7 +458,7 @@ pub fn cast<A: NoUninit, B: CheckedBitPattern>(a: A) -> B {
   }
 }
 
-/// Cast `&mut T` into `&mut U`.
+/// Cast `&mut A` into `&mut B`.
 ///
 /// ## Panics
 ///
@@ -476,7 +476,7 @@ pub fn cast_mut<
   }
 }
 
-/// Cast `&T` into `&U`.
+/// Cast `&A` into `&B`.
 ///
 /// ## Panics
 ///
@@ -502,7 +502,7 @@ pub fn cast_slice<A: NoUninit, B: CheckedBitPattern>(a: &[A]) -> &[B] {
   }
 }
 
-/// Cast `&mut [T]` into `&mut [U]`.
+/// Cast `&mut [A]` into `&mut [B]`.
 ///
 /// ## Panics
 ///

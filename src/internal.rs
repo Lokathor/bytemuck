@@ -180,7 +180,7 @@ pub(crate) unsafe fn try_from_bytes_mut<T: Copy>(
   }
 }
 
-/// Cast `T` into `U`
+/// Cast `A` into `B`
 ///
 /// ## Panics
 ///
@@ -194,7 +194,7 @@ pub(crate) unsafe fn cast<A: Copy, B: Copy>(a: A) -> B {
   }
 }
 
-/// Cast `&mut T` into `&mut U`.
+/// Cast `&mut A` into `&mut B`.
 ///
 /// ## Panics
 ///
@@ -215,7 +215,7 @@ pub(crate) unsafe fn cast_mut<A: Copy, B: Copy>(a: &mut A) -> &mut B {
   }
 }
 
-/// Cast `&T` into `&U`.
+/// Cast `&A` into `&B`.
 ///
 /// ## Panics
 ///
@@ -249,7 +249,7 @@ pub(crate) unsafe fn cast_slice<A: Copy, B: Copy>(a: &[A]) -> &[B] {
   }
 }
 
-/// Cast `&mut [T]` into `&mut [U]`.
+/// Cast `&mut [A]` into `&mut [B]`.
 ///
 /// ## Panics
 ///
@@ -262,7 +262,7 @@ pub(crate) unsafe fn cast_slice_mut<A: Copy, B: Copy>(a: &mut [A]) -> &mut [B] {
   }
 }
 
-/// Try to cast `T` into `U`.
+/// Try to cast `A` into `B`.
 ///
 /// Note that for this particular type of cast, alignment isn't a factor. The
 /// input value is semantically copied into the function and then returned to a
@@ -283,7 +283,7 @@ pub(crate) unsafe fn try_cast<A: Copy, B: Copy>(
   }
 }
 
-/// Try to convert a `&T` into `&U`.
+/// Try to convert a `&A` into `&B`.
 ///
 /// ## Failure
 ///
@@ -306,7 +306,7 @@ pub(crate) unsafe fn try_cast_ref<A: Copy, B: Copy>(
   }
 }
 
-/// Try to convert a `&mut T` into `&mut U`.
+/// Try to convert a `&mut A` into `&mut B`.
 ///
 /// As [`try_cast_ref`], but `mut`.
 #[inline]
