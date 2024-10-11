@@ -45,6 +45,9 @@ const_zeroed = [] # MSRV 1.75.0: support const `zeroed()`
 # Do not use if you can avoid it, because this is **unsound**!!!!
 unsound_ptr_pod_impl = []
 
+# MSRV 1.46.0: adds the `#[track_caller]` attribute to functions which may panic
+track_caller = []
+
 # Enables all features that are both sound and supported on the latest stable
 # version of Rust, with the exception of `extern_crate_alloc` and
 # `extern_crate_std`.
@@ -57,6 +60,7 @@ latest_stable_rust = [
   "derive",
   "min_const_generics",
   "must_cast",
+  "track_caller",
   "wasm_simd",
   "zeroable_atomics",
   "zeroable_maybe_uninit",
