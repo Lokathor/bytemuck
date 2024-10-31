@@ -1,5 +1,13 @@
 # `bytemuck` changelog
 
+## 1.19
+
+* Adds the `#[track_caller]` attribute to functions which may panic.
+
+## 1.18
+
+* Adds the `latest_stable_rust` cargo feature, which is a blanket feature that turns all other features on that are both sound and compatible with Stable rust.
+
 ## 1.17.1
 
 * Adds `#[repr(C)]` to the `union Transmute<A, B>` type that's used internally
