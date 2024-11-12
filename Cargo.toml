@@ -47,6 +47,8 @@ transparentwrapper_extra = []
 
 const_zeroed = [] # MSRV 1.75.0: support const `zeroed()`
 
+alloc_uninit = [] # MSRV 1.82.0: support `zeroed_*rc*`
+
 # Do not use if you can avoid it, because this is **unsound**!!!!
 unsound_ptr_pod_impl = []
 
@@ -61,6 +63,7 @@ latest_stable_rust = [
   # Keep this list sorted.
   "aarch64_simd",
   "align_offset",
+  "alloc_uninit",
   "const_zeroed",
   "derive",
   "min_const_generics",
