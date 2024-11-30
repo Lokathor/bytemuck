@@ -607,18 +607,23 @@ fn generate_checked_bit_pattern_struct(
   let field_name = &field_names[..];
   let field_ty = &field_tys[..];
 
-  let derive_dbg =
-    quote!(#[cfg_attr(not(target_arch = "spirv"), derive(Debug))]);
-
   Ok((
     quote! {
         #[doc = #GENERATED_TYPE_DOCUMENTATION]
         #repr
         #[derive(Clone, Copy, #crate_name::AnyBitPattern)]
-        #derive_dbg
         #[allow(missing_docs)]
         pub struct #bits_ty {
             #(#field_name: <#field_ty as #crate_name::CheckedBitPattern>::Bits,)*
+        }
+
+        #[cfg(not(target_arch = "spirv"))]
+        impl ::core::fmt::Debug for #bits_ty {
+          fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+            let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#bits_ty));
+            #(::core::fmt::DebugStruct::field(&mut debug_struct, ::core::stringify!(#field_name), &self.#field_name);)*
+            ::core::fmt::DebugStruct::finish(&mut debug_struct)
+          }
         }
     },
     quote! {
@@ -711,9 +716,6 @@ fn generate_checked_bit_pattern_enum_with_fields(
   let representation = get_repr(&input.attrs)?;
   let vis = &input.vis;
 
-  let derive_dbg =
-    quote!(#[cfg_attr(not(target_arch = "spirv"), derive(Debug))]);
-
   match representation.repr {
     Repr::Rust => unreachable!(),
     repr @ (Repr::C | Repr::CWithDiscriminant(_)) => {
@@ -793,11 +795,20 @@ fn generate_checked_bit_pattern_enum_with_fields(
         quote! {
           #[doc = #GENERATED_TYPE_DOCUMENTATION]
           #[derive(::core::clone::Clone, ::core::marker::Copy, #crate_name::AnyBitPattern)]
-          #derive_dbg
           #bits_repr
           #vis struct #bits_ty_ident {
             tag: #integer,
             payload: #variants_union_ident,
+          }
+
+          #[cfg(not(target_arch = "spirv"))]
+          impl ::core::fmt::Debug for #bits_ty_ident {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+              let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#bits_ty_ident));
+              ::core::fmt::DebugStruct::field(&mut debug_struct, "tag", &self.tag)?;
+              ::core::fmt::DebugStruct::field(&mut debug_struct, "payload", &self.payload);
+              ::core::fmt::DebugStruct::finish(&mut debug_struct)
+            }
           }
 
           #[derive(::core::clone::Clone, ::core::marker::Copy, #crate_name::AnyBitPattern)]
