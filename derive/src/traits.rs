@@ -617,14 +617,17 @@ fn generate_checked_bit_pattern_struct(
             #(#field_name: <#field_ty as #crate_name::CheckedBitPattern>::Bits,)*
         }
 
-        #[cfg(not(target_arch = "spirv"))]
-        impl ::core::fmt::Debug for #bits_ty {
-          fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-            let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#bits_ty));
-            #(::core::fmt::DebugStruct::field(&mut debug_struct, ::core::stringify!(#field_name), &self.#field_name);)*
-            ::core::fmt::DebugStruct::finish(&mut debug_struct)
+        #[allow(unexpected_cfgs)]
+        const _: () = {
+          #[cfg(not(target_arch = "spirv"))]
+          impl ::core::fmt::Debug for #bits_ty {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+              let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#bits_ty));
+              #(::core::fmt::DebugStruct::field(&mut debug_struct, ::core::stringify!(#field_name), &self.#field_name);)*
+              ::core::fmt::DebugStruct::finish(&mut debug_struct)
+            }
           }
-        }
+        };
     },
     quote! {
         type Bits = #bits_ty;
@@ -801,15 +804,18 @@ fn generate_checked_bit_pattern_enum_with_fields(
             payload: #variants_union_ident,
           }
 
-          #[cfg(not(target_arch = "spirv"))]
-          impl ::core::fmt::Debug for #bits_ty_ident {
-            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-              let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#bits_ty_ident));
-              ::core::fmt::DebugStruct::field(&mut debug_struct, "tag", &self.tag)?;
-              ::core::fmt::DebugStruct::field(&mut debug_struct, "payload", &self.payload);
-              ::core::fmt::DebugStruct::finish(&mut debug_struct)
+          #[allow(unexpected_cfgs)]
+          const _: () = {
+            #[cfg(not(target_arch = "spirv"))]
+            impl ::core::fmt::Debug for #bits_ty_ident {
+              fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#bits_ty_ident));
+                ::core::fmt::DebugStruct::field(&mut debug_struct, "tag", &self.tag);
+                ::core::fmt::DebugStruct::field(&mut debug_struct, "payload", &self.payload);
+                ::core::fmt::DebugStruct::finish(&mut debug_struct)
+              }
             }
-          }
+          };
 
           #[derive(::core::clone::Clone, ::core::marker::Copy, #crate_name::AnyBitPattern)]
           #[repr(C)]
@@ -818,13 +824,16 @@ fn generate_checked_bit_pattern_enum_with_fields(
             #(#union_fields,)*
           }
 
-          #[cfg(not(target_arch = "spirv"))]
-          impl ::core::fmt::Debug for #variants_union_ident {
-            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-              let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#variants_union_ident));
-              ::core::fmt::DebugStruct::finish_non_exhaustive(&mut debug_struct)
+          #[allow(unexpected_cfgs)]
+          const _: () = {
+            #[cfg(not(target_arch = "spirv"))]
+            impl ::core::fmt::Debug for #variants_union_ident {
+              fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#variants_union_ident));
+                ::core::fmt::DebugStruct::finish_non_exhaustive(&mut debug_struct)
+              }
             }
-          }
+          };
 
           #(#variant_struct_definitions)*
         },
@@ -941,14 +950,17 @@ fn generate_checked_bit_pattern_enum_with_fields(
             #(#union_fields,)*
           }
 
-          #[cfg(not(target_arch = "spirv"))]
-          impl ::core::fmt::Debug for #bits_ty_ident {
-            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-              let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#bits_ty_ident));
-              ::core::fmt::DebugStruct::field(&mut debug_struct, "tag", unsafe { &self.__tag });
-              ::core::fmt::DebugStruct::finish_non_exhaustive(&mut debug_struct)
+          #[allow(unexpected_cfgs)]
+          const _: () = {
+            #[cfg(not(target_arch = "spirv"))]
+            impl ::core::fmt::Debug for #bits_ty_ident {
+              fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                let mut debug_struct = ::core::fmt::Formatter::debug_struct(f, ::core::stringify!(#bits_ty_ident));
+                ::core::fmt::DebugStruct::field(&mut debug_struct, "tag", unsafe { &self.__tag });
+                ::core::fmt::DebugStruct::finish_non_exhaustive(&mut debug_struct)
+              }
             }
-          }
+          };
 
           #(#variant_struct_definitions)*
         },
