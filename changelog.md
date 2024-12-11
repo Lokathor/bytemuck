@@ -2,8 +2,8 @@
 
 ## Unreleased
 
-* Implement `Pod` and `Zeroable` for `__m512`, `__m512d` and `__m512i` without nightly.
-  Requires Rust 1.70, and is gated through the `avx512_simd` cargo feature.
+* Implement `Pod` and `Zeroable` for `core::arch::{x86, x86_64}::__m512`, `__m512d` and `__m512i` without nightly.
+  Requires Rust 1.72, and is gated through the `avx512_simd` cargo feature.
 
 * Allow the use of `must_cast_mut` and `must_cast_slice_mut` in const contexts.
   Requires Rust 1.83, and is gated through the `must_cast_extra` cargo feature.
