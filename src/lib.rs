@@ -1,5 +1,6 @@
 #![no_std]
 #![warn(missing_docs)]
+#![allow(unused_mut)]
 #![allow(clippy::match_like_matches_macro)]
 #![allow(clippy::uninlined_format_args)]
 #![allow(clippy::result_unit_err)]
