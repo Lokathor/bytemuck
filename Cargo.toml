@@ -49,7 +49,8 @@ transparentwrapper_extra = []
 
 const_zeroed = [] # MSRV 1.75.0: support const `zeroed()`
 
-alloc_uninit = [] # MSRV 1.82.0: support `zeroed_*rc*`
+# MSRV 1.82.0: support `zeroed_*rc*` when combined with `extern_crate_alloc`
+alloc_uninit = []
 
 # Do not use if you can avoid it, because this is **unsound**!!!!
 unsound_ptr_pod_impl = []
@@ -73,6 +74,7 @@ latest_stable_rust = [
   "must_cast",
   "must_cast_extra",
   "track_caller",
+  "transparentwrapper_extra",
   "wasm_simd",
   "zeroable_atomics",
   "zeroable_maybe_uninit",
