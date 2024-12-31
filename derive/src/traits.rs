@@ -80,7 +80,7 @@ impl Derivable for Pod {
     match &input.data {
       Data::Struct(_) => {
         let assert_no_padding = if !completly_packed {
-          Some(generate_assert_no_padding(input)?)
+          Some(generate_assert_no_padding(input, None)?)
         } else {
           None
         };
@@ -237,10 +237,18 @@ impl Derivable for NoUninit {
         Repr::C | Repr::Transparent => Ok(()),
         _ => bail!("NoUninit requires the struct to be #[repr(C)] or #[repr(transparent)]"),
       },
-      Data::Enum(_) => if repr.repr.is_integer() {
-        Ok(())
-      } else {
-        bail!("NoUninit requires the enum to be an explicit #[repr(Int)]")
+      Data::Enum(DataEnum { variants,.. }) => {
+        if !enum_has_fields(variants.iter()){
+          if repr.repr.is_integer() {
+            Ok(())
+          } else {
+            bail!("NoUninit requires the enum to be an explicit #[repr(Int)]")
+          }
+        } else if matches!(repr.repr, Repr::Rust) {
+          bail!("NoUninit requires an explicit repr annotation because `repr(Rust)` doesn't have a specified type layout")
+        } else {
+          Ok(())
+        }
       },
       Data::Union(_) => bail!("NoUninit can only be derived on enums and structs")
     }
@@ -255,7 +263,7 @@ impl Derivable for NoUninit {
 
     match &input.data {
       Data::Struct(DataStruct { .. }) => {
-        let assert_no_padding = generate_assert_no_padding(&input)?;
+        let assert_no_padding = generate_assert_no_padding(&input, None)?;
         let assert_fields_are_no_padding = generate_fields_are_trait(
           &input,
           None,
@@ -268,8 +276,24 @@ impl Derivable for NoUninit {
         ))
       }
       Data::Enum(DataEnum { variants, .. }) => {
-        if variants.iter().any(|variant| !variant.fields.is_empty()) {
-          bail!("Only fieldless enums are supported for NoUninit")
+        if enum_has_fields(variants.iter()) {
+          variants
+            .iter()
+            .map(|variant| {
+              let assert_no_padding =
+                generate_assert_no_padding(&input, Some(variant))?;
+              let assert_fields_are_no_padding = generate_fields_are_trait(
+                &input,
+                Some(variant),
+                Self::ident(input, crate_name)?,
+              )?;
+
+              Ok(quote!(
+                  #assert_no_padding
+                  #assert_fields_are_no_padding
+              ))
+            })
+            .collect()
         } else {
           Ok(quote!())
         }
@@ -981,14 +1005,34 @@ fn generate_checked_bit_pattern_enum_with_fields(
   }
 }
 
-/// Check that a struct has no padding by asserting that the size of the struct
-/// is equal to the sum of the size of it's fields
-fn generate_assert_no_padding(input: &DeriveInput) -> Result<TokenStream> {
+/// Check that a struct or enum has no padding by asserting that the size of
+/// the type is equal to the sum of the size of it's fields and enum
+/// discriminant
+fn generate_assert_no_padding(
+  input: &DeriveInput, enum_variant: Option<&Variant>,
+) -> Result<TokenStream> {
   let struct_type = &input.ident;
-  let enum_variant = None; // `no padding` check is not supported for `enum`s yet.
   let fields = get_fields(input, enum_variant)?;
 
-  let mut field_types = get_field_types(&fields);
+  // If the type is an enum, determine the type of its discriminant.
+  let enum_discriminant = if matches!(input.data, Data::Enum(_)) {
+    let repr = get_repr(&input.attrs)?;
+    let integer = match repr.repr {
+      Repr::C => quote!(::core::ffi::c_int),
+      Repr::Integer(integer) | Repr::CWithDiscriminant(integer) => {
+        quote!(#integer)
+      }
+      _ => unreachable!(),
+    };
+    Some(integer)
+  } else {
+    None
+  };
+
+  // Prepend the type of the discriminant to the types of the fields.
+  let mut field_types = enum_discriminant
+    .into_iter()
+    .chain(get_field_types(&fields).map(ToTokens::to_token_stream));
   let size_sum = if let Some(first) = field_types.next() {
     let size_first = quote!(::core::mem::size_of::<#first>());
     let size_rest = quote!(#( + ::core::mem::size_of::<#field_types>() )*);
