@@ -1,6 +1,10 @@
 
 ## `bytemuck_derive` changelog
 
+## 1.9.0
+
+* The crate now declares an MSRV, so updates going forward should be simpler.
+
 ## 1.8.1
 
 * https://github.com/Lokathor/bytemuck/pull/287
