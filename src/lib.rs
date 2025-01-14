@@ -88,6 +88,12 @@
 //! * `must_cast`: Provides the `must_` functions, which will compile error if
 //!   the requested cast can't be statically verified.
 //! * `const_zeroed`: Provides a const version of the `zeroed` function.
+//!
+//! ## Related Crates
+//!
+//! - [`pack1`](https://docs.rs/pack1), which contains `bytemuck`-compatible
+//!   packed little-endian, big-endian and native-endian integer and floating
+//!   point number types.
 
 #[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
 use core::arch::aarch64;
