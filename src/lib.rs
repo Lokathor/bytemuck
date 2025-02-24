@@ -82,6 +82,7 @@
 //!   Box and Vec.
 //! * `zeroable_maybe_uninit` and `zeroable_atomics`: Provide more [`Zeroable`]
 //!   impls.
+//! * `pod_saturating`: Provide more [`Pod`] and [`Zeroable`] impls.
 //! * `wasm_simd` and `aarch64_simd`: Support more SIMD types.
 //! * `min_const_generics`: Provides appropriate impls for arrays of all lengths
 //!   instead of just for a select list of array lengths.
