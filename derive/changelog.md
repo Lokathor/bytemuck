@@ -1,6 +1,11 @@
 
 ## `bytemuck_derive` changelog
 
+## 1.9.1
+
+* Fix the derive of CheckedBitPattern when used with a packed struct.
+  The Debug impl did not account for possibly-unaligned fields.
+
 ## 1.9.0
 
 * The crate now declares an MSRV, so updates going forward should be simpler.
