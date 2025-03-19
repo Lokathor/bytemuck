@@ -1,6 +1,11 @@
 
 ## `bytemuck_derive` changelog
 
+## 1.9.2
+
+* Removes the `resolver` key from the manifest. This breaks the build
+  with cryptic error messages despite current docs vaguely saying otherwise.
+
 ## 1.9.1
 
 * Fix the derive of CheckedBitPattern when used with a packed struct.
