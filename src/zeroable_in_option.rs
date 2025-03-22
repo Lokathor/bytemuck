@@ -42,6 +42,15 @@ macro_rules! impl_for_fn {
         unsafe impl<$($ArgTy,)* R> ZeroableInOption for unsafe extern "C" fn($($ArgTy,)*) -> R {}
         unsafe impl<$($ArgTy,)* R> ZeroableInOption for extern "system" fn($($ArgTy,)*) -> R {}
         unsafe impl<$($ArgTy,)* R> ZeroableInOption for unsafe extern "system" fn($($ArgTy,)*) -> R {}
+
+        #[cfg(feature = "zeroable_unwind_fn")]
+        unsafe impl<$($ArgTy,)* R> ZeroableInOption for extern "C-unwind" fn($($ArgTy,)*) -> R {}
+        #[cfg(feature = "zeroable_unwind_fn")]
+        unsafe impl<$($ArgTy,)* R> ZeroableInOption for unsafe extern "C-unwind" fn($($ArgTy,)*) -> R {}
+        #[cfg(feature = "zeroable_unwind_fn")]
+        unsafe impl<$($ArgTy,)* R> ZeroableInOption for extern "system-unwind" fn($($ArgTy,)*) -> R {}
+        #[cfg(feature = "zeroable_unwind_fn")]
+        unsafe impl<$($ArgTy,)* R> ZeroableInOption for unsafe extern "system-unwind" fn($($ArgTy,)*) -> R {}
     };
 }
 
