@@ -64,6 +64,9 @@ pod_saturating = []
 # MSRV 1.71: Adds ZeroableInOption impl for fn-ptrs with -unwind
 zeroable_unwind_fn = []
 
+# MSRV 1.81: Impls core::error:Error for error types
+impl_core_error = []
+
 # Enables all features that are both sound and supported on the latest stable
 # version of Rust, with the exception of `extern_crate_alloc` and
 # `extern_crate_std`.
@@ -76,6 +79,7 @@ latest_stable_rust = [
   "alloc_uninit",
   "const_zeroed",
   "derive",
+  "impl_core_error",
   "min_const_generics",
   "must_cast",
   "must_cast_extra",
