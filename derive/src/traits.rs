@@ -238,11 +238,11 @@ impl Derivable for NoUninit {
         _ => bail!("NoUninit requires the struct to be #[repr(C)] or #[repr(transparent)]"),
       },
       Data::Enum(DataEnum { variants,.. }) => {
-        if !enum_has_fields(variants.iter()){
-          if repr.repr.is_integer() {
+        if !enum_has_fields(variants.iter()) {
+          if matches!(repr.repr, Repr::C | Repr::Integer(_)) {
             Ok(())
           } else {
-            bail!("NoUninit requires the enum to be an explicit #[repr(Int)]")
+            bail!("NoUninit requires the enum to be #[repr(C)] or #[repr(Int)]")
           }
         } else if matches!(repr.repr, Repr::Rust) {
           bail!("NoUninit requires an explicit repr annotation because `repr(Rust)` doesn't have a specified type layout")
@@ -277,7 +277,8 @@ impl Derivable for NoUninit {
       }
       Data::Enum(DataEnum { variants, .. }) => {
         if enum_has_fields(variants.iter()) {
-          variants
+          let enum_discriminant = generate_enum_discriminant(input)?;
+          let variant_assertions = variants
             .iter()
             .map(|variant| {
               let assert_no_padding =
@@ -293,7 +294,13 @@ impl Derivable for NoUninit {
                   #assert_fields_are_no_padding
               ))
             })
-            .collect()
+            .collect::<Result<Vec<_>>>()?;
+          Ok(quote! {
+            const _: () = {
+              #enum_discriminant
+              #(#variant_assertions)*
+            };
+          })
         } else {
           Ok(quote!())
         }
@@ -325,10 +332,10 @@ impl Derivable for CheckedBitPattern {
       },
       Data::Enum(DataEnum { variants,.. }) => {
         if !enum_has_fields(variants.iter()){
-          if repr.repr.is_integer() {
+          if matches!(repr.repr, Repr::C | Repr::Integer(_)) {
             Ok(())
           } else {
-            bail!("CheckedBitPattern requires the enum to be an explicit #[repr(Int)]")
+            bail!("CheckedBitPattern requires the enum to be #[repr(C)] or #[repr(Int)]")
           }
         } else if matches!(repr.repr, Repr::Rust) {
           bail!("CheckedBitPattern requires an explicit repr annotation because `repr(Rust)` doesn't have a specified type layout")
@@ -672,12 +679,15 @@ fn generate_checked_bit_pattern_enum(
   if enum_has_fields(variants.iter()) {
     generate_checked_bit_pattern_enum_with_fields(input, variants, crate_name)
   } else {
-    generate_checked_bit_pattern_enum_without_fields(input, variants)
+    generate_checked_bit_pattern_enum_without_fields(
+      input, variants, crate_name,
+    )
   }
 }
 
 fn generate_checked_bit_pattern_enum_without_fields(
   input: &DeriveInput, variants: &Punctuated<Variant, Token![,]>,
+  crate_name: &TokenStream,
 ) -> Result<(TokenStream, TokenStream)> {
   let span = input.span();
   let mut variants_with_discriminant =
@@ -720,10 +730,9 @@ fn generate_checked_bit_pattern_enum_without_fields(
     quote!(matches!(*bits, #first #(| #rest )*))
   };
 
-  let repr = get_repr(&input.attrs)?;
-  let integer = repr.repr.as_integer().unwrap(); // should be checked in attr check already
+  let (integer, defs) = get_enum_discriminant(input, crate_name)?;
   Ok((
-    quote!(),
+    quote!(#defs),
     quote! {
         type Bits = #integer;
 
@@ -745,12 +754,8 @@ fn generate_checked_bit_pattern_enum_with_fields(
 
   match representation.repr {
     Repr::Rust => unreachable!(),
-    repr @ (Repr::C | Repr::CWithDiscriminant(_)) => {
-      let integer = match repr {
-        Repr::C => quote!(::core::ffi::c_int),
-        Repr::CWithDiscriminant(integer) => quote!(#integer),
-        _ => unreachable!(),
-      };
+    Repr::C | Repr::CWithDiscriminant(_) => {
+      let (integer, defs) = get_enum_discriminant(input, crate_name)?;
       let input_ident = &input.ident;
 
       let bits_repr = Representation { repr: Repr::C, ..representation };
@@ -820,6 +825,8 @@ fn generate_checked_bit_pattern_enum_with_fields(
 
       Ok((
         quote! {
+          #defs
+
           #[doc = #GENERATED_TYPE_DOCUMENTATION]
           #[derive(::core::clone::Clone, ::core::marker::Copy, #crate_name::AnyBitPattern)]
           #bits_repr
@@ -1016,15 +1023,9 @@ fn generate_assert_no_padding(
 
   // If the type is an enum, determine the type of its discriminant.
   let enum_discriminant = if matches!(input.data, Data::Enum(_)) {
-    let repr = get_repr(&input.attrs)?;
-    let integer = match repr.repr {
-      Repr::C => quote!(::core::ffi::c_int),
-      Repr::Integer(integer) | Repr::CWithDiscriminant(integer) => {
-        quote!(#integer)
-      }
-      _ => unreachable!(),
-    };
-    Some(integer)
+    let ident =
+      Ident::new(&format!("{}Discriminant", input.ident), input.ident.span());
+    Some(ident.into_token_stream())
   } else {
     None
   };
@@ -1065,6 +1066,60 @@ fn generate_fields_are_trait(
         assert_impl::<#field_types>();
       }
     };)*
+  })
+}
+
+/// Get the type of an enum's discriminant.
+///
+/// Returns a tuple of (type, auxiliary definitions)
+fn get_enum_discriminant(
+  input: &DeriveInput, crate_name: &TokenStream,
+) -> Result<(TokenStream, TokenStream)> {
+  let repr = get_repr(&input.attrs)?;
+  match repr.repr {
+    Repr::C => {
+      let enum_discriminant = generate_enum_discriminant(input)?;
+      let discriminant_ident =
+        Ident::new(&format!("{}Discriminant", input.ident), input.ident.span());
+      let raw_discriminant_ident = Ident::new(
+        &format!("{}RawDiscriminant", input.ident),
+        input.ident.span(),
+      );
+      Ok((
+        quote!(#raw_discriminant_ident),
+        quote! {
+          #enum_discriminant
+          type #raw_discriminant_ident = <[::core::primitive::u8; ::core::mem::size_of::<#discriminant_ident>()] as #crate_name::derive::EnumTagIntegerBytes>::Integer;
+        },
+      ))
+    }
+    Repr::Integer(integer) | Repr::CWithDiscriminant(integer) => {
+      Ok((quote!(#integer), quote!()))
+    }
+    _ => unreachable!(),
+  }
+}
+
+fn generate_enum_discriminant(input: &DeriveInput) -> Result<TokenStream> {
+  let e = if let Data::Enum(e) = &input.data { e } else { unreachable!() };
+  let repr = get_repr(&input.attrs)?;
+  let repr = match repr.repr {
+    Repr::C => quote!(#[repr(C)]),
+    Repr::Integer(int) | Repr::CWithDiscriminant(int) => quote!(#[repr(#int)]),
+    Repr::Rust | Repr::Transparent => unreachable!(),
+  };
+  let ident =
+    Ident::new(&format!("{}Discriminant", input.ident), input.ident.span());
+  let variants = e.variants.iter().cloned().map(|mut e| {
+    e.fields = Fields::Unit;
+    e
+  });
+  Ok(quote! {
+    #repr
+    #[allow(dead_code)]
+    enum #ident {
+      #(#variants,)*
+    }
   })
 }
 
@@ -1183,10 +1238,6 @@ enum Repr {
 }
 
 impl Repr {
-  fn is_integer(&self) -> bool {
-    matches!(self, Self::Integer(..))
-  }
-
   fn as_integer(&self) -> Option<IntegerRepr> {
     if let Self::Integer(v) = self {
       Some(*v)

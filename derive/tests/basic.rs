@@ -203,6 +203,13 @@ struct CheckedBitPatternStruct {
 
 #[derive(Debug, Copy, Clone, NoUninit)]
 #[repr(C)]
+enum NoUninitEnum {
+  A,
+  B,
+}
+
+#[derive(Debug, Copy, Clone, NoUninit)]
+#[repr(C)]
 enum NoUninitEnumWithFields {
   A(u32, u32),
   B(u16, u16, u16, u16),
@@ -233,6 +240,13 @@ struct AnyBitPatternTest<A: AnyBitPattern, B: AnyBitPattern> {
 #[repr(C, align(8))]
 struct CheckedBitPatternAlignedStruct {
   a: u16,
+}
+
+#[derive(Debug, Clone, Copy, CheckedBitPattern, PartialEq, Eq)]
+#[repr(C)]
+enum CheckedBitPatternCDefaultDiscriminantEnum {
+  A,
+  B,
 }
 
 #[derive(Debug, Clone, Copy, CheckedBitPattern, PartialEq, Eq)]
