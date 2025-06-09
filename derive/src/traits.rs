@@ -277,6 +277,36 @@ impl Derivable for NoUninit {
       }
       Data::Enum(DataEnum { variants, .. }) => {
         if enum_has_fields(variants.iter()) {
+          // There are two different C representations for enums with fields:
+          // There's `#[repr(C)]`/`[repr(C, int)]` and `#[repr(int)]`.
+          // `#[repr(C)]` is equivalent to a struct containing the discriminant
+          // and a union of structs representing each variant's fields.
+          // `#[repr(C)]` is equivalent to a union containing structs of the
+          // discriminant and the fields.
+          //
+          // See https://doc.rust-lang.org/reference/type-layout.html#r-layout.repr.c.adt
+          // and https://doc.rust-lang.org/reference/type-layout.html#r-layout.repr.primitive.adt
+          //
+          // In practice the only difference between the two is whether and
+          // where padding bytes are placed. For `#[repr(C)]` enums, the first
+          // enum fields of all variants start at the same location (the first
+          // byte in the union). For `#[repr(int)]` enums, the structs
+          // representing each variant are layed out individually and padding
+          // does not depend on other variants, but only on the size of the
+          // discriminant and the alignment of the first field. The location of
+          // the first field might differ between variants, potentially
+          // resulting in less padding or padding placed later in the enum.
+          //
+          // The `NoUninit` derive macro asserts that no padding exists by
+          // removing all padding with `#[repr(packed)]` and checking that this
+          // doesn't change the size. Since the location and presence of
+          // padding bytes is the only difference between the two
+          // representations and we're removing all padding bytes, the resuling
+          // layout would identical for both representations. This means that
+          // we can just pick one of the representations and don't have to
+          // implement desugaring for both. We chose to implement the
+          // desugaring for `#[repr(int)]`.
+
           let enum_discriminant = generate_enum_discriminant(input)?;
           let variant_assertions = variants
             .iter()
@@ -1013,8 +1043,8 @@ fn generate_checked_bit_pattern_enum_with_fields(
 }
 
 /// Check that a struct or enum has no padding by asserting that the size of
-/// the type is equal to the sum of the size of it's fields and enum
-/// discriminant
+/// the type is equal to the sum of the size of it's fields and discriminant
+/// (for enums, this must be asserted for each variant).
 fn generate_assert_no_padding(
   input: &DeriveInput, enum_variant: Option<&Variant>,
 ) -> Result<TokenStream> {
@@ -1071,7 +1101,22 @@ fn generate_fields_are_trait(
 
 /// Get the type of an enum's discriminant.
 ///
-/// Returns a tuple of (type, auxiliary definitions)
+/// For `repr(int)` and `repr(C, int)` enums, this will return the known bare
+/// integer type specified.
+///
+/// For `repr(C)` enums, this will extract the underlying size chosen by rustc.
+/// It will return a token stream which is a type expression that evaluates to
+/// a primitive integer type of this size, using our `EnumTagIntegerBytes`
+/// trait.
+///
+/// For fieldless `repr(C)` enums, we can feed the size of the enum directly
+/// into the trait.
+///
+/// For `repr(C)` enums with fields, we generate a new fieldless `repr(C)` enum
+/// with the same variants, then use that in the calculation. This is the
+/// specified behavior, see https://doc.rust-lang.org/stable/reference/type-layout.html#reprc-enums-with-fields
+///
+/// Returns a tuple of (type ident, auxiliary definitions)
 fn get_enum_discriminant(
   input: &DeriveInput, crate_name: &TokenStream,
 ) -> Result<(TokenStream, TokenStream)> {
