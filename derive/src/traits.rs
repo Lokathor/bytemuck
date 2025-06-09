@@ -1078,20 +1078,36 @@ fn get_enum_discriminant(
   let repr = get_repr(&input.attrs)?;
   match repr.repr {
     Repr::C => {
-      let enum_discriminant = generate_enum_discriminant(input)?;
-      let discriminant_ident =
-        Ident::new(&format!("{}Discriminant", input.ident), input.ident.span());
       let raw_discriminant_ident = Ident::new(
         &format!("{}RawDiscriminant", input.ident),
         input.ident.span(),
       );
-      Ok((
-        quote!(#raw_discriminant_ident),
-        quote! {
-          #enum_discriminant
-          type #raw_discriminant_ident = <[::core::primitive::u8; ::core::mem::size_of::<#discriminant_ident>()] as #crate_name::derive::EnumTagIntegerBytes>::Integer;
-        },
-      ))
+      let e = if let Data::Enum(e) = &input.data { e } else { unreachable!() };
+      if enum_has_fields(e.variants.iter()) {
+        // If the enum has fields, we must first isolate the discriminant by
+        // removing all the fields.
+        let enum_discriminant = generate_enum_discriminant(input)?;
+        let discriminant_ident = Ident::new(
+          &format!("{}Discriminant", input.ident),
+          input.ident.span(),
+        );
+        Ok((
+          quote!(#raw_discriminant_ident),
+          quote! {
+            #enum_discriminant
+            type #raw_discriminant_ident = <[::core::primitive::u8; ::core::mem::size_of::<#discriminant_ident>()] as #crate_name::derive::EnumTagIntegerBytes>::Integer;
+          },
+        ))
+      } else {
+        // If the enum doesn't have fields, we can just use it directly.
+        let ident = &input.ident;
+        Ok((
+          quote!(#raw_discriminant_ident),
+          quote! {
+            type #raw_discriminant_ident = <[::core::primitive::u8; ::core::mem::size_of::<#ident>()] as #crate_name::derive::EnumTagIntegerBytes>::Integer;
+          },
+        ))
+      }
     }
     Repr::Integer(integer) | Repr::CWithDiscriminant(integer) => {
       Ok((quote!(#integer), quote!()))
