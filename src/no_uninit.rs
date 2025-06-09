@@ -47,8 +47,11 @@ use core::num::{
 /// * Structs need to be `repr(C)` or `repr(transparent)`. In the case of
 ///   `repr(C)`, the `packed` and `align` repr modifiers can be used as long as
 ///   all other rules end up being followed.
-/// * Enums need to have an explicit `#[repr(Int)]`
-/// * Enums must have only fieldless variants
+/// * Enums need to be `#[repr(Int)]`, `#[repr(C)]`, or both.
+/// * Enums may have fields. These need to follow the same rules as fields in
+///   structs.
+/// * Additionally, enums must not contain padding bytes between the
+///   discriminant and the fields.
 /// * It is disallowed for types to contain pointer types, `Cell`, `UnsafeCell`,
 ///   atomics, and any other forms of interior mutability.
 /// * More precisely: A shared reference to the type must allow reads, and
