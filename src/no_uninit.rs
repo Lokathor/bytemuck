@@ -21,6 +21,9 @@ use core::num::{
 /// for a type that is only [`NoUninit`], consider also implementing
 /// [`CheckedBitPattern`][crate::CheckedBitPattern].
 ///
+/// The rules for padding for various types and representations are documented
+/// in the Rust reference section on [type layout].
+///
 /// # Derive
 ///
 /// A `#[derive(NoUninit)]` macro is provided under the `derive` feature flag
@@ -61,6 +64,8 @@ use core::num::{
 ///   it to deal with atomic and cells etc. We require the sharing predicate to
 ///   be trivial and permit only read-only access.
 /// * There's probably more, don't mess it up (I mean it).
+///
+/// [type layout]: <https://doc.rust-lang.org/reference/type-layout.html>
 pub unsafe trait NoUninit: Sized + Copy + 'static {}
 
 unsafe impl<T: Pod> NoUninit for T {}
