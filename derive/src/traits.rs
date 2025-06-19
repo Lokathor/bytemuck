@@ -487,7 +487,8 @@ impl Derivable for TransparentWrapper {
           if explicit {
             bail!("TransparentWrapper must have one field of the wrapped type. \
                    The type given in `#[transparent(Type)]` must match tokenwise \
-                   with the type in the struct definition, not just be the same type");
+                   with the type in the struct definition, not just be the same type. \
+                   You may be able to use a type alias to work around this limitation.");
           } else {
             bail!("TransparentWrapper must have one field of the wrapped type");
           }
