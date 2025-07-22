@@ -281,7 +281,7 @@ impl Derivable for NoUninit {
           // There's `#[repr(C)]`/`[repr(C, int)]` and `#[repr(int)]`.
           // `#[repr(C)]` is equivalent to a struct containing the discriminant
           // and a union of structs representing each variant's fields.
-          // `#[repr(C)]` is equivalent to a union containing structs of the
+          // `#[repr(int)]` is equivalent to a union containing structs of the
           // discriminant and the fields.
           //
           // See https://doc.rust-lang.org/reference/type-layout.html#r-layout.repr.c.adt
