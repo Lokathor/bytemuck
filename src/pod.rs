@@ -170,14 +170,14 @@ impl_unsafe_marker_for_simd!(
 );
 
 impl_unsafe_marker_for_simd!(
-  #[cfg(all(target_arch = "x86", feature = "nightly_stdsimd"))]
+  #[cfg(all(target_arch = "x86", feature = "nightly_stdsimd", feature = "avx512_simd"))]
   unsafe impl Pod for x86::{
     __m128bh, __m256bh, __m512bh
   }
 );
 
 impl_unsafe_marker_for_simd!(
-  #[cfg(all(target_arch = "x86_64", feature = "nightly_stdsimd"))]
+  #[cfg(all(target_arch = "x86_64", feature = "nightly_stdsimd", feature = "avx512_simd"))]
   unsafe impl Pod for x86_64::{
     __m128bh, __m256bh, __m512bh
   }
