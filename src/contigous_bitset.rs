@@ -21,6 +21,12 @@ where
 /// The trait bounds on the associated `Int` type allow for the set to convert
 /// an `Int` value into a `u64` bit position. All of Rust's integer types of 64
 /// bits or less will satisfy the bounds.
+///
+/// This type only works with Contiguous types where there's 64 or fewer values
+/// within the contiguous range. The [new][Self::new] function will just panic
+/// when called for a particular type that has too many potential values.
+/// Unfortunately, this cannot be computed at compile time because the
+/// `C::Int as Into<u64>` implementation can't be called in a `const` context.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct ContigousBitset64<C>(u64, PhantomData<C>)
@@ -41,10 +47,14 @@ where
   /// * `C::MAX_VALUE - C::MIN_VALUE` must be less than 64
   #[inline]
   #[must_use]
+  #[track_caller]
   pub fn new() -> Self {
     let c_max: u64 = C::MAX_VALUE.into();
     let c_min: u64 = C::MIN_VALUE.into();
-    assert!((c_max - c_min) < 64);
+    assert!(
+      (c_max - c_min) < 64,
+      "Contiguous type has more than 64 potential values."
+    );
     Self(0, PhantomData)
   }
 
