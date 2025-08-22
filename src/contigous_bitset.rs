@@ -4,7 +4,7 @@ use core::{convert::TryFrom, marker::PhantomData};
 
 use crate::Contiguous;
 
-fn contigous_index<C>(c: C) -> u64
+fn contiguous_index<C>(c: C) -> u64
 where
   C: Contiguous,
   <C as Contiguous>::Int: Into<u64>,
@@ -47,7 +47,7 @@ where
   /// Inserts a value into the bitset, returning if the value was already
   /// present.
   pub fn insert(&mut self, c: C) -> bool {
-    let index = contigous_index(c);
+    let index = contiguous_index(c);
     let already_set = (self.0 & index) != 0;
     self.0 |= index;
     already_set
@@ -55,7 +55,7 @@ where
 
   /// Removes a value from the bitset, returning if the value had been present.
   pub fn remove(&mut self, c: C) -> bool {
-    let index = contigous_index(c);
+    let index = contiguous_index(c);
     let already_set = (self.0 & index) != 0;
     self.0 &= !index;
     already_set
@@ -63,7 +63,7 @@ where
 
   /// If the given element is contained in the set.
   pub fn contains(&self, c: C) -> bool {
-    let index = contigous_index(c);
+    let index = contiguous_index(c);
     (self.0 & index) != 0
   }
 
