@@ -4,6 +4,8 @@ use core::{convert::TryFrom, marker::PhantomData};
 
 use crate::Contiguous;
 
+#[inline]
+#[must_use]
 fn contiguous_index<C>(c: C) -> u64
 where
   C: Contiguous,
@@ -37,6 +39,8 @@ where
   ///
   /// ## Panics
   /// * `C::MAX_VALUE - C::MIN_VALUE` must be less than 64
+  #[inline]
+  #[must_use]
   pub fn new() -> Self {
     let c_max: u64 = C::MAX_VALUE.into();
     let c_min: u64 = C::MIN_VALUE.into();
@@ -46,6 +50,7 @@ where
 
   /// Inserts a value into the bitset, returning if the value was already
   /// present.
+  #[inline]
   pub fn insert(&mut self, c: C) -> bool {
     let index = contiguous_index(c);
     let already_set = (self.0 & index) != 0;
@@ -54,6 +59,7 @@ where
   }
 
   /// Removes a value from the bitset, returning if the value had been present.
+  #[inline]
   pub fn remove(&mut self, c: C) -> bool {
     let index = contiguous_index(c);
     let already_set = (self.0 & index) != 0;
@@ -62,12 +68,16 @@ where
   }
 
   /// If the given element is contained in the set.
+  #[inline]
+  #[must_use]
   pub fn contains(&self, c: C) -> bool {
     let index = contiguous_index(c);
     (self.0 & index) != 0
   }
 
   /// Iterates the values of the bitset.
+  #[inline]
+  #[must_use]
   pub fn iter(&self) -> impl Iterator<Item = C> + Clone + '_ {
     let mut iter_index = 0;
     core::iter::from_fn(move || {
@@ -96,6 +106,7 @@ where
   <C as Contiguous>::Int: TryFrom<u64>,
 {
   /// See the [new][Self::new] function.
+  #[inline]
   fn default() -> Self {
     Self::new()
   }
