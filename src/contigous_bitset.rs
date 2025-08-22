@@ -61,6 +61,12 @@ where
     already_set
   }
 
+  /// If the given element is contained in the set.
+  pub fn contains(&self, c: C) -> bool {
+    let index = contigous_index(c);
+    (self.0 & index) != 0
+  }
+
   /// Iterates the values of the bitset.
   pub fn iter(&self) -> impl Iterator<Item = C> + Clone + '_ {
     let mut iter_index = 0;
