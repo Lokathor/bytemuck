@@ -47,7 +47,7 @@ where
   /// * `C::MAX_VALUE - C::MIN_VALUE` must be less than 64
   #[inline]
   #[must_use]
-  #[track_caller]
+  #[cfg_attr(feature = "track_caller", track_caller)]
   pub fn new() -> Self {
     let c_max: u64 = C::MAX_VALUE.into();
     let c_min: u64 = C::MIN_VALUE.into();
