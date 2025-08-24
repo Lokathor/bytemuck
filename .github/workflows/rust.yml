@@ -44,6 +44,7 @@ jobs:
     - run: cargo test --verbose --manifest-path=derive/Cargo.toml --all-features
       if: matrix.rust == 'nightly'
     - run: cd contigous_bitset && cargo test
+      if: matrix.rust == 'stable'
 
   cross-test:
     name: Test on ${{ matrix.target }} with cross
