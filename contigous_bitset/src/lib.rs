@@ -4,6 +4,7 @@ use core::{convert::TryFrom, marker::PhantomData};
 
 use crate::Contiguous;
 
+/// turns any `Contiguous` into its bit position within a `u64`
 #[inline]
 #[must_use]
 fn contiguous_index<C>(c: C) -> u64

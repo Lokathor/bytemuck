@@ -222,9 +222,6 @@ pub use no_uninit::*;
 mod contiguous;
 pub use contiguous::*;
 
-mod contigous_bitset;
-pub use contigous_bitset::*;
-
 mod offset_of;
 // ^ no import, the module only has a macro_rules, which are cursed and don't
 // follow normal import/export rules.

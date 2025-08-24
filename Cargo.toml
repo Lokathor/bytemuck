@@ -9,7 +9,7 @@ keywords = ["transmute", "bytes", "casting"]
 categories = ["encoding", "no-std"]
 edition = "2018"
 license = "Zlib OR Apache-2.0 OR MIT"
-exclude = ["/pedantic.bat"]
+exclude = ["/pedantic.bat", "derive/", "contigous_bitset/"]
 
 [features]
 # In v2 we'll fix these names to be more "normal".
@@ -37,10 +37,12 @@ min_const_generics = [] # MSRV 1.51: support arrays via min_const_generics
 
 wasm_simd = []    # MSRV 1.54.0: support wasm simd types
 aarch64_simd = [] # MSRV 1.59.0: support aarch64 simd types
-avx512_simd = [] # MSRV 1.72.0: support avx512 simd types
+avx512_simd = []  # MSRV 1.72.0: support avx512 simd types
 
 must_cast = [] # MSRV 1.64.0: support the `must` module.
-must_cast_extra = ["must_cast"] # MSRV 1.83.0: support mutable references in const
+must_cast_extra = [
+  "must_cast",
+] # MSRV 1.83.0: support mutable references in const
 
 # Adds `TransparentWrapper` impls for stdlib types newer than bytemuck's base MSRV.
 # Current MSRV 1.74.0: `core::num::Saturating`.
@@ -108,7 +110,9 @@ nightly_docs = []
 bytemuck_derive = { version = "1.10.1", path = "derive", optional = true }
 
 [lints.rust]
-unexpected_cfgs = { level = "deny", check-cfg = ['cfg(target_arch, values("spirv"))'] }
+unexpected_cfgs = { level = "deny", check-cfg = [
+  'cfg(target_arch, values("spirv"))',
+] }
 
 [package.metadata.docs.rs]
 # Note(Lokathor): Don't use all-features or it would use `unsound_ptr_pod_impl` too.
@@ -121,8 +125,4 @@ features = [
 
 [package.metadata.playground]
 # Note(Lokathor): Don't use all-features or it would use `unsound_ptr_pod_impl` too.
-features = [
-  "latest_stable_rust",
-  "extern_crate_alloc",
-  "extern_crate_std",
-]
+features = ["latest_stable_rust", "extern_crate_alloc", "extern_crate_std"]
