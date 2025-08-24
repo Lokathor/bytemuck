@@ -37,7 +37,7 @@ min_const_generics = [] # MSRV 1.51: support arrays via min_const_generics
 
 wasm_simd = []    # MSRV 1.54.0: support wasm simd types
 aarch64_simd = [] # MSRV 1.59.0: support aarch64 simd types
-avx512_simd = []  # MSRV 1.72.0: support avx512 simd types
+avx512_simd = []  # MSRV 1.89.0: support avx512 simd types
 
 must_cast = [] # MSRV 1.64.0: support the `must` module.
 must_cast_extra = [
