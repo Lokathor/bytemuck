@@ -8,4 +8,4 @@ edition = "2024"
 rust-version = "1.89"
 
 [dependencies]
-bytemuck = "1.24"
+bytemuck = "1.23"
