@@ -2,7 +2,7 @@
 
 use core::{convert::TryFrom, marker::PhantomData};
 
-use crate::Contiguous;
+use bytemuck::Contiguous;
 
 /// turns any `Contiguous` into its bit position within a `u64`
 #[inline]
