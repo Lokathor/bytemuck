@@ -9,7 +9,7 @@ keywords = ["transmute", "bytes", "casting"]
 categories = ["encoding", "no-std"]
 edition = "2018"
 license = "Zlib OR Apache-2.0 OR MIT"
-exclude = ["/pedantic.bat", "derive/", "contigous_bitset/"]
+exclude = ["/pedantic.bat", "derive/", "contiguous_bitset/"]
 
 [features]
 # In v2 we'll fix these names to be more "normal".
