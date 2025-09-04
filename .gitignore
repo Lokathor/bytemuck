@@ -1,12 +1,6 @@
 
 Cargo.lock
-/target/
-/.vscode/
-
 **/*.rs.bk
 
-/derive/target/
-/derive/.vscode/
-
-/contigous_bitset/target/
-/contigpus_bitset/.vscode/
+**/target/
+**/.vscode/
