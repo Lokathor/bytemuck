@@ -30,13 +30,13 @@ where
 /// `C::Int as Into<u64>` implementation can't be called in a `const` context.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct ContigousBitset64<C>(u64, PhantomData<C>)
+pub struct ContiguousBitset64<C>(u64, PhantomData<C>)
 where
   C: Contiguous,
   <C as Contiguous>::Int: Into<u64>,
   <C as Contiguous>::Int: TryFrom<u64>;
 
-impl<C> ContigousBitset64<C>
+impl<C> ContiguousBitset64<C>
 where
   C: Contiguous,
   <C as Contiguous>::Int: Into<u64>,
@@ -110,7 +110,7 @@ where
     })
   }
 }
-impl<C> Default for ContigousBitset64<C>
+impl<C> Default for ContiguousBitset64<C>
 where
   C: Contiguous,
   <C as Contiguous>::Int: Into<u64>,
