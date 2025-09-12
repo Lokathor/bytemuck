@@ -5,6 +5,7 @@
 #![allow(clippy::uninlined_format_args)]
 #![allow(clippy::result_unit_err)]
 #![allow(clippy::type_complexity)]
+#![allow(clippy::manual_is_multiple_of)]
 #![cfg_attr(feature = "nightly_docs", feature(doc_cfg))]
 #![cfg_attr(feature = "nightly_portable_simd", feature(portable_simd))]
 #![cfg_attr(feature = "nightly_float", feature(f16, f128))]
@@ -562,7 +563,7 @@ pub fn fill_zeroes<T: Zeroable>(slice: &mut [T]) {
     // case one of the intermediate drops does a panic.
     slice.iter_mut().for_each(write_zeroes);
   } else {
-    // Otherwise we can be really fast and just fill everthing with zeros.
+    // Otherwise we can be really fast and just fill everything with zeros.
     let len = slice.len();
     unsafe { core::ptr::write_bytes(slice.as_mut_ptr(), 0u8, len) }
   }
