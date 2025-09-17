@@ -1,3 +1,4 @@
+#![no_std]
 #![forbid(unsafe_code)]
 
 use core::{convert::TryFrom, marker::PhantomData};
@@ -120,5 +121,15 @@ where
   #[inline]
   fn default() -> Self {
     Self::new()
+  }
+}
+impl<C> core::fmt::Debug for ContiguousBitset64<C>
+where
+  C: Contiguous + core::fmt::Debug,
+  <C as Contiguous>::Int: Into<u64>,
+  <C as Contiguous>::Int: TryFrom<u64>,
+{
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    f.debug_set().entries(self.iter()).finish()
   }
 }
