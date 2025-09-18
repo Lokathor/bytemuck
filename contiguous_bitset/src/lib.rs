@@ -1,3 +1,4 @@
+#![no_std]
 #![forbid(unsafe_code)]
 
 use core::{convert::TryFrom, marker::PhantomData};
@@ -64,8 +65,9 @@ where
   #[inline]
   pub fn insert(&mut self, c: C) -> bool {
     let index = contiguous_index(c);
-    let already_set = (self.0 & index) != 0;
-    self.0 |= index;
+    let bit = 1 << index;
+    let already_set = (self.0 & bit) != 0;
+    self.0 |= bit;
     already_set
   }
 
@@ -73,8 +75,9 @@ where
   #[inline]
   pub fn remove(&mut self, c: C) -> bool {
     let index = contiguous_index(c);
-    let already_set = (self.0 & index) != 0;
-    self.0 &= !index;
+    let bit = 1 << index;
+    let already_set = (self.0 & bit) != 0;
+    self.0 &= !bit;
     already_set
   }
 
@@ -83,12 +86,12 @@ where
   #[must_use]
   pub fn contains(&self, c: C) -> bool {
     let index = contiguous_index(c);
-    (self.0 & index) != 0
+    let bit = 1 << index;
+    (self.0 & bit) != 0
   }
 
   /// Iterates the values of the bitset.
   #[inline]
-  #[must_use]
   pub fn iter(&self) -> impl Iterator<Item = C> + Clone + '_ {
     let mut iter_index = 0;
     core::iter::from_fn(move || {
@@ -106,7 +109,7 @@ where
           continue;
         }
       }
-      return None;
+      None
     })
   }
 }
@@ -120,5 +123,15 @@ where
   #[inline]
   fn default() -> Self {
     Self::new()
+  }
+}
+impl<C> core::fmt::Debug for ContiguousBitset64<C>
+where
+  C: Contiguous + core::fmt::Debug,
+  <C as Contiguous>::Int: Into<u64>,
+  <C as Contiguous>::Int: TryFrom<u64>,
+{
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    f.debug_set().entries(self.iter()).finish()
   }
 }
