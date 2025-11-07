@@ -14,7 +14,10 @@ exclude = ["/pedantic.bat", "derive/", "contiguous_bitset/"]
 [features]
 # In v2 we'll fix these names to be more "normal".
 
-# Enable deriving the various `bytemuck` traits.
+# All MSRV notes below are GUIDELINES and future versions may require even more
+# MSRV on any feature.
+
+# MSRV 1.68.0: Enable deriving the various `bytemuck` traits.
 derive = ["bytemuck_derive"]
 # Enable features requiring items from `extern crate alloc`.
 extern_crate_alloc = []
@@ -24,9 +27,6 @@ extern_crate_std = ["extern_crate_alloc"]
 zeroable_maybe_uninit = []
 # Implement `Zeroable` for `std::sync::atomic` types.
 zeroable_atomics = []
-
-# All MSRV notes below are GUIDELINES and future versions may require even more
-# MSRV on any feature.
 
 # MSRV 1.36: Use `align_offset` method instead of casting to `usize` to check
 # alignment of pointers, this *may* improve codegen in some cases (but it has
