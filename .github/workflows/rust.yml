@@ -51,8 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # we once had mips runners for Big-endian coverage but those got demoted to tier 3.
-        target: [i686-unknown-linux-gnu]
+        target: [i686-unknown-linux-gnu, s390x-unknown-linux-gnu]
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
