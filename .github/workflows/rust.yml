@@ -60,6 +60,7 @@ jobs:
     - run: cargo install cross
     - run: cross test --verbose --target=${{ matrix.target }} --no-default-features
     - run: cross test --verbose --target=${{ matrix.target }}
+    - run: cd derive && cross test --verbose --target=${{ matrix.target }}
     - run: cross test --verbose --target=${{ matrix.target }} --all-features
       if: matrix.rust == 'nightly'
     - run: cross test --verbose --target=${{ matrix.target }} --manifest-path=derive/Cargo.toml --all-features
