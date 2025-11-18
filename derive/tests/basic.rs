@@ -449,9 +449,14 @@ fn checkedbitpattern_c_default_discriminant_enum_with_fields() {
     CheckedBitPatternCDefaultDiscriminantEnumWithFields::A(0xcc555555555555cc)
   );
 
-  #[cfg(target_pointer_width = "64")]
+  #[cfg(all(target_pointer_width = "64", target_endian = "little"))]
   let pod = [
     0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xcc, 0x55, 0x55, 0x55,
+    0x55, 0x55, 0x55, 0xcc,
+  ];
+  #[cfg(all(target_pointer_width = "64", target_endian = "big"))]
+  let pod = [
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0xcc, 0x55, 0x55, 0x55,
     0x55, 0x55, 0x55, 0xcc,
   ];
   #[cfg(target_pointer_width = "32")]
@@ -546,11 +551,22 @@ fn checkedbitpattern_nested_enum_with_fields() {
   assert_eq!(result, Err(CheckedCastError::InvalidBitPattern));
 
   // next we'll check variant B, nested variant B
-  #[cfg(target_pointer_width = "64")]
+  #[cfg(all(target_pointer_width = "64", target_endian = "little"))]
   let pod = Align8Bytes([
     0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, // byte 0 discriminant = 1 = variant B, bytes 1-7 padding
     0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, /* bytes 8-15 is C int size discriminant of
+           * CheckedBitPatternCDefaultDiscrimimantEnumWithFields, 1 (LE byte
+           * order) = variant B */
+    0xcc, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+    0xcc, // bytes 16-23 is the data contained in nested variant B
+  ]);
+  #[cfg(all(target_pointer_width = "64", target_endian = "big"))]
+  let pod = Align8Bytes([
+    0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, // byte 0 discriminant = 1 = variant B, bytes 1-7 padding
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
     0x00, /* bytes 8-15 is C int size discriminant of
            * CheckedBitPatternCDefaultDiscrimimantEnumWithFields, 1 (LE byte
            * order) = variant B */
