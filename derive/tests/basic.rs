@@ -229,6 +229,16 @@ enum NoUninitEnumWithFieldsAndDiscriminant {
   B(u8, u8, u8, u8),
 }
 
+#[derive(Copy, Clone, NoUninit)]
+#[repr(transparent)]
+struct NoUninitTransparentWrapper<T: NoUninit>(T);
+
+impl<T: NoUninit> NoUninitTransparentWrapper<T> {
+  fn new(value: T) -> Self {
+    Self(value)
+  }
+}
+
 #[derive(Debug, Copy, Clone, AnyBitPattern, PartialEq, Eq)]
 #[repr(C)]
 struct AnyBitPatternTest<A: AnyBitPattern, B: AnyBitPattern> {
