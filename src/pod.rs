@@ -143,6 +143,7 @@ impl_unsafe_marker_for_simd!(
   }
 );
 
+#[rustversion::before(2026-01-27)] // See https://github.com/Lokathor/bytemuck/issues/343
 #[cfg(feature = "nightly_portable_simd")]
 #[cfg_attr(
   feature = "nightly_docs",
@@ -152,6 +153,18 @@ unsafe impl<T, const N: usize> Pod for core::simd::Simd<T, N>
 where
   T: core::simd::SimdElement + Pod,
   core::simd::LaneCount<N>: core::simd::SupportedLaneCount,
+{
+}
+
+#[rustversion::since(2026-01-27)] // See https://github.com/Lokathor/bytemuck/issues/343
+#[cfg(feature = "nightly_portable_simd")]
+#[cfg_attr(
+  feature = "nightly_docs",
+  doc(cfg(feature = "nightly_portable_simd"))
+)]
+unsafe impl<T, const N: usize> Pod for core::simd::Simd<T, N>
+where
+  T: core::simd::SimdElement + Pod,
 {
 }
 
