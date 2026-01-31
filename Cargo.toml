@@ -97,7 +97,7 @@ latest_stable_rust = [
 # ALL FEATURES BELOW THIS ARE NOT SEMVER SUPPORTED! TEMPORARY ONLY!
 
 # Enable support for `std::simd` types.
-nightly_portable_simd = []
+nightly_portable_simd = ["rustversion"]
 # Enable support for unstable `std::arch` types (such as the AVX512 types).
 nightly_stdsimd = []
 # Enable `f16` and `f128`
@@ -108,6 +108,7 @@ nightly_docs = []
 
 [dependencies]
 bytemuck_derive = { version = "1.10.2", path = "derive", optional = true }
+rustversion = { version = "1.0.22", optional = true }
 
 [lints.rust]
 unexpected_cfgs = { level = "deny", check-cfg = [
