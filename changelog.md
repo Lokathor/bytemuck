@@ -1,5 +1,11 @@
 # `bytemuck` changelog
 
+## 1.25
+
+* [Remove extern "stdcall" fn ptr impls on non-x86-32 windows.](https://github.com/Lokathor/bytemuck/pull/333)
+* [Make derive(NoUninit) have the same constraints as Pod](https://github.com/Lokathor/bytemuck/pull/341)
+* [Fix nightly_portable_simd after LaneCount removal.](https://github.com/Lokathor/bytemuck/pull/344)
+
 ## 1.24
 
 * [use new stable avx512 types from rust 1.89](https://github.com/Lokathor/bytemuck/pull/322)
