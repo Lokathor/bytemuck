@@ -1,5 +1,9 @@
 # `bytemuck` changelog
 
+## 1.25.1
+
+* [Don't impl core::error::Error on spirv](https://github.com/Lokathor/bytemuck/pull/348), which was causing a build error on that target.
+
 ## 1.25
 
 * [Remove extern "stdcall" fn ptr impls on non-x86-32 windows.](https://github.com/Lokathor/bytemuck/pull/333)
