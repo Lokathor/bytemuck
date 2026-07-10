@@ -3,6 +3,7 @@
 ## 1.25.1
 
 * [Don't impl core::error::Error on spirv](https://github.com/Lokathor/bytemuck/pull/348), which was causing a build error on that target.
+* Added a reminder on `try_cast_slice` that empty slices must still be aligned.
 
 ## 1.25
 
