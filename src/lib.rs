@@ -497,24 +497,13 @@ pub fn try_cast_mut<
 /// ## Failure
 ///
 /// * If the target type has a greater alignment requirement and the input slice
-///   isn't aligned.
+///   isn't aligned. **Note:** This rule applies even if the slice is empty!
 /// * If the target element type is a different size from the current element
 ///   type, and the output slice wouldn't be a whole number of elements when
 ///   accounting for the size change (eg: 3 `u16` values is 1.5 `u32` values, so
 ///   that's a failure).
 /// * Similarly, you can't convert between a [ZST](https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
 ///   and a non-ZST.
-///
-/// ## Note
-///
-/// An empty input slice is **not** exempt from the alignment requirement. If
-/// the target type has a greater alignment than the source type then this can
-/// still fail (and [`cast_slice`] can still panic) even when the slice is
-/// empty, because the slice's data pointer must satisfy the target alignment.
-/// An empty slice such as `&[]` typically carries a dangling pointer aligned
-/// only to the source type, which may be under-aligned for the target. If you
-/// need casting an empty slice to always succeed, test for emptiness yourself
-/// and substitute an empty slice of the target type.
 #[inline]
 pub fn try_cast_slice<A: NoUninit, B: AnyBitPattern>(
   a: &[A],
