@@ -12,6 +12,7 @@ jobs:
     name: Test Rust ${{ matrix.rust }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         # it's a little tempting to use `matrix` to do a cartesian product with
         # our `--feature` config here, but doing so will be very slow, as the
@@ -27,8 +28,8 @@ jobs:
         - { rust: stable, os: macos-latest }
         - { rust: stable, os: windows-latest }
         - { rust: stable-x86_64-gnu, os: windows-latest }
-        - { rust: stable-i686-msvc, os: windows-latest }
-        - { rust: stable-i686-gnu, os: windows-latest }
+        # i686 windows host toolchains omitted: rustup 1.29+ refuses them on
+        # 64-bit windows-latest. 32-bit is the linux cross-test job.
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
