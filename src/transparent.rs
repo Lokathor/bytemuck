@@ -304,6 +304,7 @@ pub unsafe trait TransparentWrapper<Inner: ?Sized> {
   }
 }
 
+unsafe impl<T> TransparentWrapper<T> for T {}
 unsafe impl<T> TransparentWrapper<T> for core::num::Wrapping<T> {}
 #[cfg(feature = "transparentwrapper_extra")]
 #[cfg_attr(
