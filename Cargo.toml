@@ -102,6 +102,8 @@ nightly_portable_simd = ["rustversion"]
 nightly_stdsimd = []
 # Enable `f16` and `f128`
 nightly_float = []
+# Enable SIMD for the `wasm64-unknown-unknown` target.
+nightly_simd_wasm64 = []
 
 # Improved documentation using the nightly toolchain
 nightly_docs = []

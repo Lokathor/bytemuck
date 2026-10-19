@@ -9,6 +9,10 @@
 #![cfg_attr(feature = "nightly_docs", feature(doc_cfg))]
 #![cfg_attr(feature = "nightly_portable_simd", feature(portable_simd))]
 #![cfg_attr(feature = "nightly_float", feature(f16, f128))]
+#![cfg_attr(
+  all(target_arch = "wasm64", feature = "nightly_simd_wasm64"),
+  feature(simd_wasm64)
+)]
 
 //! This crate gives small utilities for casting between plain data types.
 //!
@@ -93,7 +97,13 @@
 #[cfg(all(target_arch = "aarch64", feature = "aarch64_simd"))]
 use core::arch::aarch64;
 #[cfg(all(target_arch = "wasm32", feature = "wasm_simd"))]
-use core::arch::wasm32;
+use core::arch::wasm32 as wasm;
+#[cfg(all(
+  target_arch = "wasm64",
+  feature = "wasm_simd",
+  feature = "nightly_simd_wasm64"
+))]
+use core::arch::wasm64 as wasm;
 #[cfg(target_arch = "x86")]
 use core::arch::x86;
 #[cfg(target_arch = "x86_64")]
