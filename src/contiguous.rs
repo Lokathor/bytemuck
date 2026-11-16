@@ -1,4 +1,5 @@
 #![allow(clippy::legacy_numeric_constants)]
+#![allow(deprecated)]
 
 use super::*;
 
