@@ -88,6 +88,8 @@ unsafe impl NoUninit for NonZeroI128 {}
 unsafe impl NoUninit for NonZeroUsize {}
 unsafe impl NoUninit for NonZeroIsize {}
 
+unsafe impl<T: 'static> NoUninit for core::ptr::NonNull<T> {}
+
 #[cfg(feature = "min_const_generics")]
 #[cfg_attr(feature = "nightly_docs", doc(cfg(feature = "min_const_generics")))]
 mod no_uninit_array {
